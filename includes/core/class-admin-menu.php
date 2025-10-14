@@ -10,23 +10,25 @@ final class GDM_Admin_Menu {
     }
 
     /**
-     * Registrar menú y submenús, usando filtros para que otros módulos puedan agregar más
+     * Registrar menú y submenús.
+     * El menú principal se agrega solo una vez con add_menu_page.
+     * Solo agrega manualmente los submenús secundarios.
      */
     public static function register_menu() {
-        // Menú principal
         $main_slug = 'gdm_content_rules';
 
+        // Menú principal
         add_menu_page(
             __('Reglas de Contenido', 'product-conditional-content'),
             __('Reglas de Contenido', 'product-conditional-content'),
             'manage_options',
             $main_slug,
-            '', // <--- No agregues callback aquí, ni como submenú (WordPress lo crea solo)
+            '', // El callback puede quedar vacío, WordPress agrega el primer submenú automáticamente
             'dashicons-filter',
             25
         );
 
-        // Solo los submenús secundarios, NO repitas el slug principal aquí
+        // Submenús secundarios (NO incluyas el principal)
         $submenus = [
             [
                 'parent_slug' => $main_slug,
@@ -48,12 +50,12 @@ final class GDM_Admin_Menu {
             ],
         ];
 
-        // Permite que otros módulos o plugins añadan/quiten submenús fácilmente
+        // Permite que otros módulos añadan submenús desde filtros
         $submenus = apply_filters('gdm_admin_submenus', $submenus);
 
-        // Añadir todos los submenús (excepto el principal)
+        // Añade todos los submenús manualmente (excepto el principal)
         foreach ($submenus as $submenu) {
-            // Evitar agregar el submenú con el mismo slug que el principal
+            // Evita agregar el submenú con el slug principal (WordPress ya lo hace)
             if ($submenu['menu_slug'] === $main_slug) continue;
             add_submenu_page(
                 $submenu['parent_slug'],
