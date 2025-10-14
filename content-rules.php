@@ -65,13 +65,14 @@ add_action('plugins_loaded', function() {
 
     /** --- Carga según contexto --- */
     if (is_admin()) {
-        require_once GDM_PLUGIN_DIR . 'includes/admin/class-admin-helpers.php'; 
+        require_once GDM_PLUGIN_DIR . 'includes/admin/class-admin-helpers.php';
         require_once GDM_PLUGIN_DIR . 'includes/admin/class-fields-admin.php';
         require_once GDM_PLUGIN_DIR . 'includes/admin/class-rules-admin.php';
         require_once GDM_PLUGIN_DIR . 'includes/admin/class-meta-boxes.php';
         require_once GDM_PLUGIN_DIR . 'includes/admin/class-opciones-metabox.php';
     } else {
         require_once GDM_PLUGIN_DIR . 'includes/frontend/class-rules-frontend.php';
-        require_once GDM_PLUGIN_DIR . 'includes/frontend/class-frontend-fields.php';
+        require_once GDM_PLUGIN_DIR . 'includes/frontend/class-fields-frontend.php';
+        require_once GDM_PLUGIN_DIR . 'includes/frontend/class-shortcodes.php';
     }
 }, 20);

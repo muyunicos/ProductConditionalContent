@@ -366,20 +366,14 @@ final class GDM_Opciones_Metabox {
     /**
      * Guardar datos
      */
-    public static function save_metabox($post_id, $post) {
-        if (!isset($_POST['gdm_opcion_nonce']) || !wp_verify_nonce($_POST['gdm_opcion_nonce'], 'gdm_save_opcion_data')) {
-            return;
-        }
-        
-        if (!current_user_can('edit_post', $post_id)) {
-            return;
-        }
-        
-        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
-            return;
-        }
-        
-        if ($post->post_type !== 'gdm_opcion') {
+     public static function save_metabox($post_id, $post) {
+        if (!GDM_Admin_Helpers::validate_metabox_save(
+            $post_id, 
+            $post, 
+            'gdm_opcion_nonce', 
+            'gdm_save_opcion_data', 
+            'gdm_opcion'
+        )) {
             return;
         }
 
@@ -418,10 +412,8 @@ final class GDM_Opciones_Metabox {
         }
         update_post_meta($post_id, '_gdm_opcion_choices', $choices);
 
-        // Guardar condiciones
-        $condicion_categorias = isset($_POST['gdm_condicion_categorias']) && is_array($_POST['gdm_condicion_categorias'])
-            ? array_map('intval', $_POST['gdm_condicion_categorias'])
-            : [];
+        // ✅ USAR HELPER PARA SANITIZAR ARRAY
+        $condicion_categorias = GDM_Admin_Helpers::sanitize_int_array($_POST['gdm_condicion_categorias'] ?? []);
         update_post_meta($post_id, '_gdm_condicion_categorias', $condicion_categorias);
     }
 

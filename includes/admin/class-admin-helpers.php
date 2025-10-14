@@ -48,38 +48,39 @@ final class GDM_Admin_Helpers {
     /**
      * Sanitizar array de enteros
      * 
-     * @param array $array Array a sanitizar
+     * @param array|mixed $array Array a sanitizar
      * @return array Array sanitizado
      */
     public static function sanitize_int_array($array) {
         if (!is_array($array)) {
             return [];
         }
-        return array_map('intval', $array);
+        return array_map('intval', array_filter($array));
     }
     
     /**
      * Sanitizar array de strings
      * 
-     * @param array $array Array a sanitizar
+     * @param array|mixed $array Array a sanitizar
      * @return array Array sanitizado
      */
     public static function sanitize_text_array($array) {
         if (!is_array($array)) {
             return [];
         }
-        return array_map('sanitize_text_field', $array);
+        return array_map('sanitize_text_field', array_filter($array));
     }
     
     /**
      * Obtener opciones disponibles (CPT gdm_opcion)
      * 
+     * @param bool $force_refresh Forzar recarga desde BD
      * @return array Array de WP_Post
      */
-    public static function get_available_opciones() {
+    public static function get_available_opciones($force_refresh = false) {
         static $cache = null;
         
-        if ($cache !== null) {
+        if ($cache !== null && !$force_refresh) {
             return $cache;
         }
         
@@ -99,9 +100,10 @@ final class GDM_Admin_Helpers {
      * Obtener reglas disponibles (CPT gdm_regla)
      * 
      * @param int $exclude_id ID a excluir (opcional)
+     * @param bool $only_reusable Solo reglas reutilizables
      * @return array Array de WP_Post
      */
-    public static function get_available_reglas($exclude_id = 0) {
+    public static function get_available_reglas($exclude_id = 0, $only_reusable = false) {
         $args = [
             'post_type' => 'gdm_regla',
             'posts_per_page' => -1,
@@ -115,25 +117,48 @@ final class GDM_Admin_Helpers {
             $args['exclude'] = [$exclude_id];
         }
         
-        return get_posts($args);
+        $reglas = get_posts($args);
+        
+        // Filtrar solo reutilizables si se solicita
+        if ($only_reusable) {
+            $reglas = array_filter($reglas, function($regla) {
+                $aplicar_a = get_post_meta($regla->ID, '_gdm_aplicar_a', true) ?: [];
+                return in_array('reutilizable', $aplicar_a);
+            });
+        }
+        
+        return $reglas;
     }
     
     /**
      * Renderizar campo select múltiple con WooCommerce enhanced select
      * 
      * @param string $id ID del campo
-     * @param string $name Nombre del campo
+     * @param string $name Nombre del campo (sin [])
      * @param array $options Opciones [id => titulo]
      * @param array $selected IDs seleccionados
      * @param string $description Descripción del campo
+     * @param array $args Argumentos adicionales (placeholder, class, etc)
      */
-    public static function render_enhanced_select($id, $name, $options, $selected = [], $description = '') {
+    public static function render_enhanced_select($id, $name, $options, $selected = [], $description = '', $args = []) {
+        $defaults = [
+            'placeholder' => __('Seleccionar...', 'product-conditional-content'),
+            'class' => 'wc-enhanced-select',
+            'style' => 'width:50%;',
+            'multiple' => true,
+        ];
+        
+        $args = wp_parse_args($args, $defaults);
+        
         ?>
         <select id="<?php echo esc_attr($id); ?>" 
                 name="<?php echo esc_attr($name); ?>[]" 
-                class="wc-enhanced-select" 
-                multiple="multiple" 
-                style="width:50%;">
+                class="<?php echo esc_attr($args['class']); ?>" 
+                <?php echo $args['multiple'] ? 'multiple="multiple"' : ''; ?>
+                style="<?php echo esc_attr($args['style']); ?>"
+                <?php if (!empty($args['placeholder'])): ?>
+                    data-placeholder="<?php echo esc_attr($args['placeholder']); ?>"
+                <?php endif; ?>>
             <?php foreach ($options as $option_id => $option_title): ?>
                 <option value="<?php echo esc_attr($option_id); ?>" 
                         <?php selected(in_array($option_id, $selected)); ?>>
@@ -142,8 +167,58 @@ final class GDM_Admin_Helpers {
             <?php endforeach; ?>
         </select>
         <?php if ($description): ?>
-            <span class="description"><?php echo esc_html($description); ?></span>
+            <span class="description"><?php echo wp_kses_post($description); ?></span>
         <?php endif; ?>
         <?php
+    }
+    
+    /**
+     * Obtener categorías de producto para select
+     * 
+     * @return array [term_id => name]
+     */
+    public static function get_product_categories() {
+        $categories = get_terms([
+            'taxonomy' => 'product_cat',
+            'hide_empty' => false,
+            'orderby' => 'name',
+            'order' => 'ASC',
+        ]);
+        
+        if (is_wp_error($categories)) {
+            return [];
+        }
+        
+        $result = [];
+        foreach ($categories as $cat) {
+            $result[$cat->term_id] = $cat->name;
+        }
+        
+        return $result;
+    }
+    
+    /**
+     * Obtener tags de producto para select
+     * 
+     * @return array [term_id => name]
+     */
+    public static function get_product_tags() {
+        $tags = get_terms([
+            'taxonomy' => 'product_tag',
+            'hide_empty' => false,
+            'orderby' => 'name',
+            'order' => 'ASC',
+        ]);
+        
+        if (is_wp_error($tags)) {
+            return [];
+        }
+        
+        $result = [];
+        foreach ($tags as $tag) {
+            $result[$tag->term_id] = $tag->name;
+        }
+        
+        return $result;
     }
 }
