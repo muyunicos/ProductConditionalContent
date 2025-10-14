@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name:       Motor de Reglas de Contenido MuyUnicos
+ * Plugin Name:       Reglas de Contenido para WooCommerce
  * Description:       Aplica contenido dinámico a productos basado en reglas y campos personalizados condicionales.
  * Version:           5.0.0
  * Author:            Muy Únicos
