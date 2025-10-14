@@ -48,7 +48,7 @@ final class GDM_Rules_Frontend
         if (!is_a($product, 'WC_Product')) return $initial_content;
 
         $all_rules = get_posts([
-            'post_type'      => 'descripcion_regla',
+            'post_type'      => 'gdm_regla',
             'posts_per_page' => -1,
             'post_status'    => 'publish',
             'meta_key'       => '_gdm_prioridad',
@@ -137,7 +137,7 @@ final class GDM_Rules_Frontend
         if (isset(self::$rule_cache[$rule_id])) return self::$rule_cache[$rule_id];
 
         $post = get_post($rule_id);
-        if (!$post || $post->post_type !== 'descripcion_regla' || $post->post_status !== 'publish') return null;
+        if (!$post || $post->post_type !== 'gdm_regla' || $post->post_status !== 'publish') return null;
 
         $data = [
             'prioridad'           => (int) (get_post_meta($rule_id, '_gdm_prioridad', true) ?: 10),
