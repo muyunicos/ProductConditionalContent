@@ -1,35 +1,128 @@
 <?php
 /**
  * Plugin Name:       Motor de Reglas de Contenido MuyUnicos
- * Description:       Aplica contenido dinámico a productos basado en un sistema de reglas avanzado.
- * Version:           4.0.0
+ * Description:       Aplica contenido dinámico a productos basado en reglas y campos personalizados condicionales.
+ * Version:           5.0.0
  * Author:            Muy Únicos
- * Requires at least: 6.0
- * Requires PHP:      8.0
- * WC requires at least: 9.0
+ * Requires at least: 6.8.3
+ * Requires PHP:      8.2
+ * WC requires at least: 10.2.2
  * WC tested up to:   10.2.2
+ * License:           GPLv3
+ * Text Domain:       product-conditional-content
  */
 
 if (!defined('ABSPATH')) exit;
 
-// Constantes globales
-define('GDM_VERSION', '4.0.0');
+/**
+ * ==========================
+ * Árbol de directorios (referencia)
+ * 
+ * product-conditional-content/
+ * ├── content-rules.php                     # Archivo principal del plugin. Encargado de declaraciones, compatibilidad y carga modular.
+ * ├── includes/
+ * │   ├── core/
+ * │   │   ├── class-plugin-init.php         # Inicialización global, hooks generales, helpers comunes.
+ * │   │   └── class-admin-menu.php          # Definición del árbol de menús y permisos de acceso en el admin de WP.
+ * │   ├── admin/
+ * │   │   ├── class-fields-admin.php        # Lógica de gestión de campos personalizados (alta, edición, borrado, condiciones).
+ * │   │   ├── class-rules-admin.php         # Lógica de gestión de reglas y variantes para productos (alta, edición, borrado).
+ * │   │   └── class-meta-boxes.php          # Meta boxes extra para edición de productos, reglas, y campos.
+ * │   ├── frontend/
+ * │   │   ├── class-fields-frontend.php     # Renderizado de campos personalizados y lógica de interacción en la página de producto.
+ * │   │   ├── class-rules-frontend.php      # Aplicación de reglas y variantes en el frontend; filtrado de contenido dinámico.
+ * │   │   └── class-shortcodes.php          # Implementación de shortcodes (ej: [campo-cond id="..."]) para uso en contenido.
+ * │   └── compatibility/
+ * │       └── class-compat-check.php        # Comprobaciones de versión de WP, PHP, WooCommerce y dependencias, muestra avisos si no cumplen.
+ * ├── assets/
+ * │   ├── admin/
+ * │   │   ├── fields-admin.js               # JS para el admin de campos personalizados (tablas, modals, validación).
+ * │   │   ├── fields-admin.css              # CSS específico para el admin de campos personalizados.
+ * │   │   ├── rules-admin.js                # JS para el admin de reglas y variantes.
+ * │   │   └── rules-admin.css               # CSS específico para la gestión de reglas y variantes.
+ * │   ├── frontend/
+ * │   │   ├── fields-frontend.js            # JS para campos personalizados en el frontend (condiciones, validaciones, UX).
+ * │   │   ├── fields-frontend.css           # CSS para el diseño de campos personalizados en el producto.
+ * │   │   └── rules-frontend.js             # JS para lógica avanzada de reglas en el frontend.
+ * │   └── shared/
+ * │       └── shared-styles.css             # Estilos reutilizables por admin y frontend (helpers, utilidades, variables).
+ * ├── languages/
+ * │   └── product-conditional-content-es_ES.mo  # Traducciones.
+ * └── readme.txt                            # Documentación para WordPress.org y desarrolladores.
+ * ==========================
+ */
+
+/** --- Compatibilidad y declaración de requisitos --- */
+function gdm_check_plugin_compat() {
+    global $wp_version;
+    $min_wp     = '6.8.3';
+    $min_php    = '8.2';
+    $min_wc     = '10.2.2';
+    $error_msgs = [];
+
+    if (version_compare($wp_version, $min_wp, '<')) {
+        $error_msgs[] = "WordPress $min_wp+";
+    }
+    if (version_compare(PHP_VERSION, $min_php, '<')) {
+        $error_msgs[] = "PHP $min_php+";
+    }
+    if (!defined('WC_VERSION') || version_compare(WC_VERSION, $min_wc, '<')) {
+        $error_msgs[] = "WooCommerce $min_wc+";
+    }
+    if ($error_msgs) {
+        add_action('admin_notices', function() use ($error_msgs) {
+            echo '<div class="notice notice-error"><p><b>Motor de Reglas MuyUnicos:</b> Requiere: '
+                . implode(', ', $error_msgs) . '.</p></div>';
+        });
+        return false;
+    }
+    return true;
+}
+if (!gdm_check_plugin_compat()) return;
+
+/** --- Constantes globales --- */
+define('GDM_VERSION', '5.0.0');
 define('GDM_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('GDM_PLUGIN_URL', plugin_dir_url(__FILE__));
 
-// Hook para declarar compatibilidad HPOS
+/** --- Compatibilidad HPOS (WooCommerce High-Performance Order Storage) --- */
 add_action('before_woocommerce_init', function() {
     if (class_exists(\Automattic\WooCommerce\Utilities\FeaturesUtil::class)) {
         \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
     }
 });
 
-// Cargar solo lo necesario según el contexto
+/** --- Inicialización global y carga modular --- */
+// Carga núcleo (hooks, helpers, utilidades)
+require_once GDM_PLUGIN_DIR . 'includes/core/class-plugin-init.php';
+require_once GDM_PLUGIN_DIR . 'includes/core/class-admin-menu.php';
+
+// Carga lógica según contexto
 if (is_admin()) {
-    require_once GDM_PLUGIN_DIR . 'includes/class-gdm-admin.php';
-    require_once GDM_PLUGIN_DIR . 'includes/class-gdm-fields-admin.php'; // <--- AGREGAR ESTA LINEA
-    GDM_Admin::instance();
+    require_once GDM_PLUGIN_DIR . 'includes/admin/class-fields-admin.php';
+    require_once GDM_PLUGIN_DIR . 'includes/admin/class-rules-admin.php';
+    require_once GDM_PLUGIN_DIR . 'includes/admin/class-meta-boxes.php';
 } else {
-    require_once GDM_PLUGIN_DIR . 'includes/class-gdm-frontend.php';
-    GDM_Frontend::instance();
+    // Frontend: carga selectiva solo si el producto necesita reglas o campos personalizados
+    add_action('wp', function() {
+        if (is_product()) {
+            $product_id = get_the_ID();
+            $has_rules  = apply_filters('gdm_product_has_rules', false, $product_id);
+            $has_fields = apply_filters('gdm_product_has_custom_fields', false, $product_id);
+            if ($has_rules) {
+                require_once GDM_PLUGIN_DIR . 'includes/frontend/class-rules-frontend.php';
+            }
+            if ($has_fields) {
+                require_once GDM_PLUGIN_DIR . 'includes/frontend/class-fields-frontend.php';
+            }
+            if ($has_rules || $has_fields) {
+                require_once GDM_PLUGIN_DIR . 'includes/frontend/class-shortcodes.php';
+            }
+        }
+    });
+}
+
+// Siempre carga comprobaciones de compatibilidad si existen
+if (file_exists(GDM_PLUGIN_DIR . 'includes/compatibility/class-compat-check.php')) {
+    require_once GDM_PLUGIN_DIR . 'includes/compatibility/class-compat-check.php';
 }
