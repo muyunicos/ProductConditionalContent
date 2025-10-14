@@ -1,4 +1,8 @@
 <?php
+/**
+ * Custom Post Types
+ * Compatible con WordPress 6.8.3, PHP 8.2
+ */
 if (!defined('ABSPATH')) exit;
 
 final class GDM_CPT {
@@ -13,8 +17,8 @@ final class GDM_CPT {
                 'name'               => __('Reglas de Contenido', 'product-conditional-content'),
                 'singular_name'      => __('Regla de Contenido', 'product-conditional-content'),
                 'menu_name'          => __('Reglas de Contenido', 'product-conditional-content'),
-                'all_items'          => __('Reglas de Contenido', 'product-conditional-content'),
-                'add_new'            => __('Agregar Regla', 'product-conditional-content'),
+                'all_items'          => __('Todas las Reglas', 'product-conditional-content'),
+                'add_new'            => __('Agregar Nueva', 'product-conditional-content'),
                 'add_new_item'       => __('Agregar Nueva Regla', 'product-conditional-content'),
                 'edit_item'          => __('Editar Regla', 'product-conditional-content'),
                 'new_item'           => __('Nueva Regla', 'product-conditional-content'),
@@ -25,36 +29,41 @@ final class GDM_CPT {
             ],
             'public'             => false,
             'show_ui'            => true,
-            'show_in_menu'       => false, // Importante: menú solo en admin_menu
-            'menu_position'      => 3,
-            'menu_icon'          => 'dashicons-list-view',
-            'supports'           => ['title', 'custom-fields'],
+            'show_in_menu'       => true, // CAMBIADO: ahora se muestra en el menú principal
+            'menu_position'      => 25,
+            'menu_icon'          => 'dashicons-filter',
+            'supports'           => ['title'],
             'capability_type'    => 'post',
+            'hierarchical'       => false,
+            'has_archive'        => false,
+            'rewrite'            => false,
         ]);
 
-        // CPT para Campos Personalizados
-        register_post_type('gdm_campo', [
+        // CPT para Opciones de Producto (antes gdm_campo)
+        register_post_type('gdm_opcion', [
             'labels' => [
-                'name'               => __('Campos Personalizados', 'product-conditional-content'),
-                'singular_name'      => __('Campo Personalizado', 'product-conditional-content'),
-                'menu_name'          => __('Campos Personalizados', 'product-conditional-content'),
-                'all_items'          => __('Campos Personalizados', 'product-conditional-content'),
-                'add_new'            => __('Agregar Campo', 'product-conditional-content'),
-                'add_new_item'       => __('Agregar Nuevo Campo', 'product-conditional-content'),
-                'edit_item'          => __('Editar Campo', 'product-conditional-content'),
-                'new_item'           => __('Nuevo Campo', 'product-conditional-content'),
-                'view_item'          => __('Ver Campo', 'product-conditional-content'),
-                'search_items'       => __('Buscar Campos', 'product-conditional-content'),
-                'not_found'          => __('No se encontraron campos', 'product-conditional-content'),
-                'not_found_in_trash' => __('No hay campos en la papelera', 'product-conditional-content'),
+                'name'               => __('Opciones de Producto', 'product-conditional-content'),
+                'singular_name'      => __('Opción de Producto', 'product-conditional-content'),
+                'menu_name'          => __('Opciones de Producto', 'product-conditional-content'),
+                'all_items'          => __('Todas las Opciones', 'product-conditional-content'),
+                'add_new'            => __('Agregar Nueva', 'product-conditional-content'),
+                'add_new_item'       => __('Agregar Nueva Opción', 'product-conditional-content'),
+                'edit_item'          => __('Editar Opción', 'product-conditional-content'),
+                'new_item'           => __('Nueva Opción', 'product-conditional-content'),
+                'view_item'          => __('Ver Opción', 'product-conditional-content'),
+                'search_items'       => __('Buscar Opciones', 'product-conditional-content'),
+                'not_found'          => __('No se encontraron opciones', 'product-conditional-content'),
+                'not_found_in_trash' => __('No hay opciones en la papelera', 'product-conditional-content'),
             ],
             'public'             => false,
             'show_ui'            => true,
-            'show_in_menu'       => false, // Importante: menú solo en admin_menu
-            'menu_position'      => 4,
-            'menu_icon'          => 'dashicons-list-view',
-            'supports'           => ['title', 'custom-fields'],
+            'show_in_menu'       => 'edit.php?post_type=gdm_regla', // Submenu de Reglas
+            'menu_position'      => 26,
+            'supports'           => ['title'],
             'capability_type'    => 'post',
+            'hierarchical'       => false,
+            'has_archive'        => false,
+            'rewrite'            => false,
         ]);
     }
 }

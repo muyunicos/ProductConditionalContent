@@ -1,4 +1,8 @@
 <?php
+/**
+ * Estructura de Menú del Admin
+ * Compatible con WordPress 6.8.3
+ */
 if (!defined('ABSPATH')) exit;
 
 final class GDM_Admin_Menu {
@@ -7,51 +11,62 @@ final class GDM_Admin_Menu {
     }
 
     public static function register_menu() {
-        // Menú principal
+        // Menú principal - redirige a listado de reglas
         add_menu_page(
             __('Reglas de Contenido', 'product-conditional-content'),
             __('Reglas de Contenido', 'product-conditional-content'),
             'manage_options',
-            'gdm_content_rules',
+            'edit.php?post_type=gdm_regla', // CORREGIDO: apunta directamente al listado
             '',
             'dashicons-filter',
             25
         );
 
-        // Submenú: Listado de Reglas
+        // Submenú: Todas las Reglas (redundante pero necesario para estructura)
         add_submenu_page(
-            'gdm_content_rules',
-            __('Reglas de Contenido', 'product-conditional-content'),
-            __('Reglas de Contenido', 'product-conditional-content'),
+            'edit.php?post_type=gdm_regla',
+            __('Todas las Reglas', 'product-conditional-content'),
+            __('Todas las Reglas', 'product-conditional-content'),
             'manage_options',
             'edit.php?post_type=gdm_regla'
         );
 
-        // Submenú: Agregar Regla
+        // Submenú: Agregar Nueva Regla
         add_submenu_page(
-            'gdm_content_rules',
-            __('Agregar Regla', 'product-conditional-content'),
-            __('Agregar Regla', 'product-conditional-content'),
+            'edit.php?post_type=gdm_regla',
+            __('Agregar Nueva Regla', 'product-conditional-content'),
+            __('Agregar Nueva', 'product-conditional-content'),
             'manage_options',
             'post-new.php?post_type=gdm_regla'
         );
 
-        // Submenú: Listado de Campos
+        // Separador visual (usando submenu deshabilitado)
         add_submenu_page(
-            'gdm_content_rules',
-            __('Campos Personalizados', 'product-conditional-content'),
-            __('Campos Personalizados', 'product-conditional-content'),
+            'edit.php?post_type=gdm_regla',
+            '',
+            '<span style="display:block; margin: 5px 0; padding: 0; height: 1px; background: #dcdcde;"></span>',
             'manage_options',
-            'edit.php?post_type=gdm_campo'
+            '#',
+            '',
+            10
         );
 
-        // Submenú: Agregar Campo
+        // Submenú: Opciones de Producto (antes "Campos Personalizados")
         add_submenu_page(
-            'gdm_content_rules',
-            __('Agregar Campo', 'product-conditional-content'),
-            __('Agregar Campo', 'product-conditional-content'),
+            'edit.php?post_type=gdm_regla',
+            __('Opciones de Producto', 'product-conditional-content'),
+            __('Opciones de Producto', 'product-conditional-content'),
             'manage_options',
-            'post-new.php?post_type=gdm_campo'
+            'edit.php?post_type=gdm_opcion'
+        );
+
+        // Submenú: Agregar Nueva Opción
+        add_submenu_page(
+            'edit.php?post_type=gdm_regla',
+            __('Agregar Nueva Opción', 'product-conditional-content'),
+            __('Nueva Opción', 'product-conditional-content'),
+            'manage_options',
+            'post-new.php?post_type=gdm_opcion'
         );
     }
 }
