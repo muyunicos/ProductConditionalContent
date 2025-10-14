@@ -30,14 +30,22 @@ final class GDM_Admin_Menu {
         $submenus = [
             [
                 'parent_slug' => $main_slug,
+                'page_title'  => __('Reglas de Contenido', 'product-conditional-content'),
+                'menu_title'  => __('Reglas de Contenido', 'product-conditional-content'),
+                'capability'  => 'manage_options',
+                'menu_slug'   => 'gdm_content_rules_list',
+                'callback'    => [\GDM_Rules_Admin::class, 'admin_page'],
+                'position'    => 1,
+            ],
+            [
+                'parent_slug' => $main_slug,
                 'page_title'  => __('Campos Personalizados', 'product-conditional-content'),
                 'menu_title'  => __('Campos Personalizados', 'product-conditional-content'),
                 'capability'  => 'manage_options',
                 'menu_slug'   => 'gdm_product_fields',
-                'callback'    => [self::class, 'submenu_placeholder'],
+                'callback'    => [\GDM_Fields_Admin::class, 'admin_page'],
                 'position'    => 2,
             ],
-            // Puedes añadir más submenús aquí si lo necesitas
         ];
 
         // Permite que otros módulos o plugins añadan/quiten submenús fácilmente
