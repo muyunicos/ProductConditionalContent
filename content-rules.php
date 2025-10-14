@@ -100,6 +100,7 @@ add_action('before_woocommerce_init', function() {
 // Carga núcleo (hooks, helpers, utilidades)
 require_once GDM_PLUGIN_DIR . 'includes/core/class-plugin-init.php';
 require_once GDM_PLUGIN_DIR . 'includes/core/class-admin-menu.php';
+require_once GDM_PLUGIN_DIR . '/includes/core/class-cpt.php';
 
 // Carga lógica según contexto
 if (is_admin()) {

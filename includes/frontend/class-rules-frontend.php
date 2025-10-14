@@ -208,7 +208,6 @@ final class GDM_Rules_Frontend
         $content = str_replace('[slug-prod]', ucwords(str_replace('-', ' ', $product->get_slug())), $content);
         $content = str_replace('[var-cond]', $variant_text, $content);
 
-        // [rule-id id="123"] recursividad limitada
         $content = preg_replace_callback('/\[rule-id id=["\']?(\d+)["\']?\]/', function($matches) use ($product) {
             $rule_id = intval($matches[1]);
             if (in_array($rule_id, $this->processed_rules, true)) return '';
