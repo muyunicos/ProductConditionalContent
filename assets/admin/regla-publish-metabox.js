@@ -1,10 +1,10 @@
 /**
- * Metabox "Publicar" Mejorado para Reglas
- * Integración con toggle y programación
+ * Metabox "Publicar" Mejorado para Reglas - OPTIMIZADO
+ * Nueva lógica: Habilitada/Deshabilitada con estados dinámicos
  * Compatible con WordPress 6.8.3
  * 
  * @package ProductConditionalContent
- * @since 5.0.3
+ * @since 5.0.4
  */
 
 (function($) {
@@ -15,6 +15,7 @@
     // =========================================================================
 
     let validationTimeout = null;
+    let updateStatusTimeout = null;
 
     // =========================================================================
     // INIT
@@ -29,7 +30,6 @@
         initScheduleFields();
         initQuickDates();
         initValidation();
-        updatePublishButton();
 
         console.log('✅ GDM Publish Metabox: Initialized');
     });
@@ -48,11 +48,10 @@
             return;
         }
 
-        // Sincronizar con el selector de estado nativo de WordPress
-        $toggle.on('change', function() {
+        $toggle.off('change.gdm').on('change.gdm', function() {
             const isEnabled = $(this).is(':checked');
             updateMetaboxUI(isEnabled);
-            updatePublishButton();
+            updateStatusMessage();
         });
 
         // Estado inicial
@@ -65,33 +64,27 @@
     function updateMetaboxUI(isEnabled) {
         const $indicator = $('.gdm-status-indicator');
         const $scheduleSection = $('.gdm-schedule-section');
-        const $statusDisplay = $('.gdm-status-display');
-
-        // Actualizar clases del indicador
-        $indicator
-            .removeClass('status-disabled status-active status-scheduled status-expiring status-expired')
-            .addClass(isEnabled ? 'status-active' : 'status-disabled');
-
-        // Actualizar texto
-        if ($statusDisplay.length) {
-            const text = isEnabled 
-                ? (gdmPublishMetabox.i18n.enabled || 'Habilitada')
-                : (gdmPublishMetabox.i18n.disabled || 'Deshabilitada');
-            
-            $statusDisplay.text(text);
-        }
-
-        // Habilitar/deshabilitar programación
         const $programarCheckbox = $('#gdm_programar');
         const $scheduleFields = $('#gdm-schedule-fields');
 
+        // Actualizar clase del indicador
+        $indicator
+            .removeClass('status-disabled status-active status-scheduled status-expiring status-expired');
+
         if (!isEnabled) {
-            // Si está deshabilitada, ocultar y deshabilitar programación
-            $programarCheckbox.prop('checked', false).prop('disabled', true);
-            $scheduleFields.hide();
+            $indicator.addClass('status-disabled');
+            
+            // Deshabilitar programación
+            $programarCheckbox.prop('disabled', true);
             $scheduleSection.css('opacity', '0.5');
+            
+            // Ocultar campos de programación si estaban visibles
+            if ($programarCheckbox.is(':checked')) {
+                $programarCheckbox.prop('checked', false);
+                $scheduleFields.slideUp(200);
+            }
         } else {
-            // Si está habilitada, habilitar programación
+            // Habilitar programación
             $programarCheckbox.prop('disabled', false);
             $scheduleSection.css('opacity', '1');
         }
@@ -105,28 +98,47 @@
      * Inicializar campos de programación
      */
     function initScheduleFields() {
-        // Toggle de "Programar"
-        $('#gdm_programar').on('change', function() {
+        const $programarCheckbox = $('#gdm_programar');
+        const $scheduleFields = $('#gdm-schedule-fields');
+        
+        // IMPORTANTE: Usar namespace para evitar eventos duplicados
+        $programarCheckbox.off('change.gdm').on('change.gdm', function() {
             const isChecked = $(this).is(':checked');
-            $('#gdm-schedule-fields').slideToggle(200);
             
             if (isChecked) {
-                // Si activa programación, setear fecha de inicio por defecto
+                $scheduleFields.slideDown(200);
+                
+                // Si activa programación, setear fecha de inicio por defecto si está vacía
                 const $fechaInicio = $('#gdm_fecha_inicio');
                 if (!$fechaInicio.val()) {
                     setDefaultStartDate();
                 }
+            } else {
+                $scheduleFields.slideUp(200);
             }
+            
+            // Actualizar mensaje de estado
+            updateStatusMessage();
         });
 
         // Toggle de "Fecha Fin"
-        $('#gdm_habilitar_fecha_fin').on('change', function() {
-            $('#gdm-fecha-fin-wrapper').slideToggle(200);
+        $('#gdm_habilitar_fecha_fin').off('change.gdm').on('change.gdm', function() {
+            const $wrapper = $('#gdm-fecha-fin-wrapper');
+            
+            if ($(this).is(':checked')) {
+                $wrapper.slideDown(200);
+            } else {
+                $wrapper.slideUp(200);
+            }
+            
+            // Actualizar mensaje de estado
+            updateStatusMessage();
         });
 
-        // Validar fechas en tiempo real
-        $('#gdm_fecha_inicio, #gdm_fecha_fin').on('change', function() {
+        // Validar y actualizar cuando cambian las fechas
+        $('#gdm_fecha_inicio, #gdm_fecha_fin').off('change.gdm blur.gdm').on('change.gdm blur.gdm', function() {
             validateDates();
+            updateStatusMessage();
         });
     }
 
@@ -146,6 +158,7 @@
         $input.val(formatted);
         
         validateDates();
+        updateStatusMessage();
     }
 
     /**
@@ -162,168 +175,216 @@
     }
 
     // =========================================================================
+    // ACTUALIZAR MENSAJE DE ESTADO DINÁMICAMENTE
+    // =========================================================================
+
+    /**
+     * Actualizar mensaje de estado según la nueva lógica
+     */
+    function updateStatusMessage() {
+        clearTimeout(updateStatusTimeout);
+        
+        updateStatusTimeout = setTimeout(function() {
+            const $toggle = $('#gdm-metabox-toggle');
+            const $programar = $('#gdm_programar');
+            const $fechaInicio = $('#gdm_fecha_inicio');
+            const $fechaFin = $('#gdm_fecha_fin');
+            const $habilitarFin = $('#gdm_habilitar_fecha_fin');
+            const $statusDisplay = $('.gdm-status-display');
+            const $statusDescription = $('.gdm-status-indicator .description');
+            const $indicator = $('.gdm-status-indicator');
+            
+            const isEnabled = $toggle.is(':checked');
+            const tieneProgramacion = $programar.is(':checked');
+            const fechaInicio = $fechaInicio.val();
+            const fechaFin = $fechaFin.val();
+            const habilitarFin = $habilitarFin.is(':checked');
+            
+            let titulo = '';
+            let descripcion = '';
+            let clase = '';
+            
+            // CASO: DESHABILITADA
+            if (!isEnabled) {
+                titulo = 'Deshabilitada';
+                descripcion = 'La regla está desactivada';
+                clase = 'status-disabled';
+            }
+            // CASO: HABILITADA
+            else {
+                // Sin programación = activa
+                if (!tieneProgramacion || !fechaInicio) {
+                    titulo = 'Habilitada';
+                    descripcion = 'Activa actualmente';
+                    clase = 'status-active';
+                }
+                // Con programación
+                else {
+                    const now = new Date();
+                    const inicio = new Date(fechaInicio);
+                    
+                    // Programada (aún no inicia)
+                    if (inicio > now) {
+                        const tiempoRestante = calcularTiempoRestante(inicio - now);
+                        titulo = 'Habilitada';
+                        descripcion = 'Programada, inicia en ' + tiempoRestante;
+                        clase = 'status-scheduled';
+                        
+                        // Si tiene fecha fin, agregar info
+                        if (habilitarFin && fechaFin) {
+                            const fin = new Date(fechaFin);
+                            const tiempoFin = calcularTiempoRestante(fin - now);
+                            descripcion += ', termina en ' + tiempoFin;
+                        }
+                    }
+                    // Ya inició
+                    else {
+                        // Con fecha fin
+                        if (habilitarFin && fechaFin) {
+                            const fin = new Date(fechaFin);
+                            
+                            // Ya terminó
+                            if (fin < now) {
+                                titulo = 'Habilitada';
+                                descripcion = 'Inactiva, ya terminó';
+                                clase = 'status-expired';
+                            }
+                            // Activa con fin próximo
+                            else {
+                                const tiempoFin = calcularTiempoRestante(fin - now);
+                                titulo = 'Habilitada';
+                                descripcion = 'Activa, termina en ' + tiempoFin;
+                                clase = 'status-active';
+                            }
+                        }
+                        // Sin fecha fin
+                        else {
+                            titulo = 'Habilitada';
+                            descripcion = 'Activa actualmente';
+                            clase = 'status-active';
+                        }
+                    }
+                }
+            }
+            
+            // Actualizar UI
+            $statusDisplay.text(titulo);
+            
+            // Actualizar o crear descripción
+            if ($statusDescription.length) {
+                $statusDescription.text(descripcion);
+            } else {
+                $('.gdm-status-indicator > div').append(
+                    '<p class="description" style="margin: 4px 0 0 0;">' + descripcion + '</p>'
+                );
+            }
+            
+            // Actualizar clases del indicador
+            $indicator
+                .removeClass('status-disabled status-active status-scheduled status-expiring status-expired')
+                .addClass(clase);
+            
+        }, 100); // Pequeño delay para evitar múltiples llamadas
+    }
+
+    /**
+     * Calcular tiempo restante en formato legible
+     */
+    function calcularTiempoRestante(milisegundos) {
+        if (milisegundos < 0) {
+            return 'ya pasó';
+        }
+        
+        const segundos = Math.floor(milisegundos / 1000);
+        const dias = Math.floor(segundos / 86400);
+        const horas = Math.floor((segundos % 86400) / 3600);
+        const minutos = Math.floor((segundos % 3600) / 60);
+        
+        const partes = [];
+        
+        if (dias > 0) {
+            partes.push(dias + (dias === 1 ? ' día' : ' días'));
+        }
+        
+        if (horas > 0 && dias < 7) {
+            partes.push(horas + (horas === 1 ? ' hora' : ' horas'));
+        }
+        
+        if (dias === 0 && horas === 0 && minutos > 0) {
+            partes.push(minutos + (minutos === 1 ? ' minuto' : ' minutos'));
+        }
+        
+        return partes.join(' y ') || '1 minuto';
+    }
+
+    // =========================================================================
     // FECHAS RÁPIDAS (SHORTCUTS)
     // =========================================================================
 
     /**
      * Inicializar botones de fechas rápidas
      */
-    /**
- * Inicializar campos de programación
- */
-function initScheduleFields() {
-    const $programarCheckbox = $('#gdm_programar');
-    const $scheduleFields = $('#gdm-schedule-fields');
-    
-    // IMPORTANTE: Usar .off() para evitar eventos duplicados
-    $programarCheckbox.off('change.gdm').on('change.gdm', function() {
-        const isChecked = $(this).is(':checked');
-        
-        if (isChecked) {
-            $scheduleFields.slideDown(200);
+    function initQuickDates() {
+        // Solo crear si no existen
+        if ($('.gdm-quick-dates').length === 0) {
+            const $quickDates = $('<div class="gdm-quick-dates" style="margin-top: 8px;"></div>');
             
-            // Si activa programación, setear fecha de inicio por defecto si está vacía
-            const $fechaInicio = $('#gdm_fecha_inicio');
-            if (!$fechaInicio.val()) {
-                setDefaultStartDate();
-            }
-        } else {
-            $scheduleFields.slideUp(200);
-        }
-    });
-
-    // Toggle de "Fecha Fin"
-    $('#gdm_habilitar_fecha_fin').off('change.gdm').on('change.gdm', function() {
-        const $wrapper = $('#gdm-fecha-fin-wrapper');
-        
-        if ($(this).is(':checked')) {
-            $wrapper.slideDown(200);
-        } else {
-            $wrapper.slideUp(200);
-        }
-    });
-
-    // Validar fechas en tiempo real
-    $('#gdm_fecha_inicio, #gdm_fecha_fin').off('change.gdm').on('change.gdm', function() {
-        validateDates();
-    });
-}
-/**
- * Actualizar mensaje de estado dinámicamente
- */
-function updateStatusMessage() {
-    const $toggle = $('#gdm-metabox-toggle');
-    const $programar = $('#gdm_programar');
-    const $fechaInicio = $('#gdm_fecha_inicio');
-    const $fechaFin = $('#gdm_fecha_fin');
-    const $habilitarFin = $('#gdm_habilitar_fecha_fin');
-    const $statusDisplay = $('.gdm-status-display');
-    const $statusDescription = $('.gdm-status-indicator .description');
-    
-    const isEnabled = $toggle.is(':checked');
-    const tieneProgramacion = $programar.is(':checked');
-    const fechaInicio = $fechaInicio.val();
-    const fechaFin = $fechaFin.val();
-    const habilitarFin = $habilitarFin.is(':checked');
-    
-    let titulo = '';
-    let descripcion = '';
-    
-    // DESHABILITADA
-    if (!isEnabled) {
-        titulo = 'Deshabilitada';
-        descripcion = 'La regla no se activará';
-    }
-    // HABILITADA sin programación
-    else if (!tieneProgramacion || !fechaInicio) {
-        titulo = 'Habilitada';
-        descripcion = 'Se activa inmediatamente';
-    }
-    // HABILITADA con programación
-    else {
-        const now = new Date();
-        const inicio = new Date(fechaInicio);
-        
-        // Programada (futuro)
-        if (inicio > now) {
-            const diff = inicio - now;
-            const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const horas = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const shortcuts = [
+                { label: 'En 1 hora', type: 'hours', value: 1 },
+                { label: 'Mañana 9:00', type: 'tomorrow' },
+                { label: 'Próximo lunes 9:00', type: 'monday' }
+            ];
             
-            let tiempoTexto = '';
-            if (dias > 0) {
-                tiempoTexto = dias + (dias === 1 ? ' día' : ' días');
-                if (horas > 0) {
-                    tiempoTexto += ' y ' + horas + (horas === 1 ? ' hora' : ' horas');
-                }
-            } else if (horas > 0) {
-                tiempoTexto = horas + (horas === 1 ? ' hora' : ' horas');
-            } else {
-                const minutos = Math.max(1, Math.floor(diff / (1000 * 60)));
-                tiempoTexto = minutos + (minutos === 1 ? ' minuto' : ' minutos');
-            }
-            
-            titulo = 'Habilitada';
-            descripcion = 'Se activa en ' + tiempoTexto;
-        }
-        // Ya comenzó
-        else {
-            // Con fecha fin
-            if (habilitarFin && fechaFin) {
-                const fin = new Date(fechaFin);
+            shortcuts.forEach(function(shortcut) {
+                const $btn = $('<button>', {
+                    type: 'button',
+                    class: 'button button-small gdm-quick-date',
+                    text: shortcut.label,
+                    'data-type': shortcut.type,
+                    'data-value': shortcut.value || 0
+                });
                 
-                // Ya terminó
-                if (fin < now) {
-                    titulo = 'Habilitada';
-                    descripcion = 'Terminada (fecha fin alcanzada)';
-                }
-                // Aún activa
-                else {
-                    const diff = fin - now;
-                    const horasRestantes = Math.floor(diff / (1000 * 60 * 60));
-                    
-                    titulo = 'Habilitada';
-                    if (horasRestantes < 24) {
-                        descripcion = 'Activa (termina en ' + Math.max(1, horasRestantes) + ' horas)';
-                    } else {
-                        const diasRestantes = Math.floor(diff / (1000 * 60 * 60 * 24));
-                        descripcion = 'Activa (termina en ' + diasRestantes + ' días)';
-                    }
-                }
-            }
-            // Sin fecha fin
-            else {
-                titulo = 'Habilitada';
-                descripcion = 'Activa actualmente';
-            }
+                $quickDates.append($btn);
+            });
+            
+            $('#gdm_fecha_inicio').after($quickDates);
         }
-    }
-    
-    // Actualizar UI
-    $statusDisplay.text(titulo);
-    
-    if ($statusDescription.length) {
-        $statusDescription.text(descripcion);
-    } else {
-        // Crear el elemento si no existe
-        $('.gdm-status-indicator > div').append(
-            '<p class="description" style="margin: 4px 0 0 0;">' + descripcion + '</p>'
-        );
-    }
-}
 
-// Agregar al documento ready y eventos
-$(document).ready(function() {
-    if (!$('body').hasClass('post-type-gdm_regla')) {
-        return;
+        if ($('.gdm-quick-durations').length === 0) {
+            const $quickDurations = $('<div class="gdm-quick-durations" style="margin-top: 8px;"></div>');
+            
+            const durations = [
+                { label: '7 días', days: 7 },
+                { label: '30 días', days: 30 },
+                { label: '90 días', days: 90 }
+            ];
+            
+            durations.forEach(function(duration) {
+                const $btn = $('<button>', {
+                    type: 'button',
+                    class: 'button button-small gdm-quick-duration',
+                    text: duration.label,
+                    'data-days': duration.days
+                });
+                
+                $quickDurations.append($btn);
+            });
+            
+            $('#gdm_fecha_fin').after($quickDurations);
+        }
+
+        // Bind eventos (solo una vez)
+        $(document).off('click.gdm', '.gdm-quick-date').on('click.gdm', '.gdm-quick-date', function(e) {
+            e.preventDefault();
+            handleQuickDate($(this));
+        });
+
+        $(document).off('click.gdm', '.gdm-quick-duration').on('click.gdm', '.gdm-quick-duration', function(e) {
+            e.preventDefault();
+            handleQuickDuration($(this));
+        });
     }
 
-    // ... código existente ...
-    
-    // Actualizar mensajes cuando cambian los campos
-    $('#gdm-metabox-toggle, #gdm_programar, #gdm_fecha_inicio, #gdm_fecha_fin, #gdm_habilitar_fecha_fin')
-        .on('change', updateStatusMessage);
-});
     /**
      * Manejar clic en fecha rápida
      */
@@ -359,6 +420,7 @@ $(document).ready(function() {
 
         $('#gdm_fecha_inicio').val(formatDateForInput(targetDate));
         validateDates();
+        updateStatusMessage();
 
         // Feedback visual
         $btn.addClass('button-primary');
@@ -382,11 +444,11 @@ $(document).ready(function() {
         const startDate = new Date($fechaInicio.val());
         const endDate = new Date(startDate.getTime() + (days * 24 * 60 * 60 * 1000));
         
-        // Setear a las 23:59 del último día
         endDate.setHours(23, 59, 0, 0);
 
         $('#gdm_fecha_fin').val(formatDateForInput(endDate));
         validateDates();
+        updateStatusMessage();
 
         // Feedback visual
         $btn.addClass('button-primary');
@@ -403,7 +465,6 @@ $(document).ready(function() {
      * Inicializar validación
      */
     function initValidation() {
-        // Crear contenedor de validación si no existe
         if ($('#gdm-date-validation').length === 0) {
             const $validation = $('<div>', {
                 id: 'gdm-date-validation',
@@ -414,8 +475,7 @@ $(document).ready(function() {
             $('#gdm-schedule-fields').append($validation);
         }
 
-        // Validar antes de publicar
-        $('#post').on('submit', function(e) {
+        $('#post').off('submit.gdm').on('submit.gdm', function(e) {
             if (!validateBeforePublish()) {
                 e.preventDefault();
                 return false;
@@ -435,7 +495,6 @@ $(document).ready(function() {
             const $fechaFin = $('#gdm_fecha_fin');
             const $habilitarFin = $('#gdm_habilitar_fecha_fin');
 
-            // Si no hay fecha de inicio, no validar
             if (!$fechaInicio.val()) {
                 $validation.hide();
                 return;
@@ -446,18 +505,15 @@ $(document).ready(function() {
             const errors = [];
             const warnings = [];
 
-            // Validar fecha de inicio
             if (inicio < now) {
                 warnings.push('⚠️ La fecha de inicio ya pasó. Se activará inmediatamente.');
             }
 
-            // Validar si está muy lejos en el futuro
             const diasHastaInicio = Math.ceil((inicio - now) / (1000 * 60 * 60 * 24));
             if (diasHastaInicio > 90) {
                 warnings.push(`⚠️ La regla se activará en ${diasHastaInicio} días.`);
             }
 
-            // Validar fecha de fin
             if ($habilitarFin.is(':checked') && $fechaFin.val()) {
                 const fin = new Date($fechaFin.val());
 
@@ -471,7 +527,6 @@ $(document).ready(function() {
                 }
             }
 
-            // Mostrar resultados
             if (errors.length > 0) {
                 $validation
                     .removeClass('success warning')
@@ -491,7 +546,6 @@ $(document).ready(function() {
                     .html('✓ Las fechas son válidas')
                     .slideDown(200);
 
-                // Auto-ocultar después de 2 segundos
                 setTimeout(function() {
                     $validation.slideUp(200);
                 }, 2000);
@@ -509,12 +563,10 @@ $(document).ready(function() {
         const $fechaFin = $('#gdm_fecha_fin');
         const $habilitarFin = $('#gdm_habilitar_fecha_fin');
 
-        // Si está deshabilitada, permitir guardar
         if (!$toggle.is(':checked')) {
             return true;
         }
 
-        // Si tiene programación, validar fechas
         if ($programar.is(':checked')) {
             if (!$fechaInicio.val()) {
                 alert('Por favor establece una fecha de inicio para la programación.');
@@ -524,7 +576,6 @@ $(document).ready(function() {
 
             const inicio = new Date($fechaInicio.val());
 
-            // Validar fecha de fin si está habilitada
             if ($habilitarFin.is(':checked')) {
                 if (!$fechaFin.val()) {
                     alert('Por favor establece una fecha de fin o desmarca la opción.');
@@ -546,71 +597,11 @@ $(document).ready(function() {
     }
 
     // =========================================================================
-    // BOTÓN PUBLICAR
+    // ESTILOS INLINE
     // =========================================================================
 
     /**
-     * Actualizar texto del botón Publicar
-     */
-    function updatePublishButton() {
-        const $publishBtn = $('#publish');
-        const $toggle = $('#gdm-metabox-toggle');
-        const $programar = $('#gdm_programar');
-
-        if (!$publishBtn.length) {
-            return;
-        }
-
-        let buttonText = 'Guardar';
-
-        if ($toggle.is(':checked')) {
-            if ($programar.is(':checked')) {
-                buttonText = 'Programar Regla';
-            } else {
-                buttonText = 'Activar Regla';
-            }
-        } else {
-            buttonText = 'Guardar Deshabilitada';
-        }
-
-        $publishBtn.val(buttonText);
-    }
-
-    // Actualizar botón cuando cambian los toggles
-    $(document).on('change', '#gdm-metabox-toggle, #gdm_programar', updatePublishButton);
-
-    // =========================================================================
-    // OCULTAR CAMPOS NATIVOS DE WORDPRESS
-    // =========================================================================
-
-    /**
-     * Ocultar el selector de estados nativo
-     */
-    function hideNativeStatusSelector() {
-        // Ocultar toda la sección de estado
-        $('.misc-pub-section.misc-pub-post-status').hide();
-        
-        // Mantener sincronizado el estado oculto con nuestro toggle
-        $('#gdm-metabox-toggle').on('change', function() {
-            const newStatus = $(this).is(':checked') ? 'habilitada' : 'deshabilitada';
-            $('#post_status').val(newStatus);
-            $('#hidden_post_status').val(newStatus);
-        });
-    }
-
-    // Ejecutar al cargar
-    $(document).ready(function() {
-        if ($('body').hasClass('post-type-gdm_regla')) {
-            hideNativeStatusSelector();
-        }
-    });
-
-    // =========================================================================
-    // HELPERS
-    // =========================================================================
-
-    /**
-     * Añadir estilos CSS inline para validación
+     * Añadir estilos CSS inline
      */
     function addValidationStyles() {
         if ($('#gdm-validation-styles').length > 0) {
