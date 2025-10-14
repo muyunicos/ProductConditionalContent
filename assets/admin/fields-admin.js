@@ -1,82 +1,115 @@
+/**
+ * JS para la administración de Campos Personalizados
+ * - Renderiza la tabla de campos, permite agregar/editar/eliminar (con modal)
+ * - Soporta selección múltiple y eliminación en lote
+ * - Guarda los cambios por AJAX
+ * - Prepara el modal para edición avanzada (placeholder, opciones, reglas, etc.)
+ */
 jQuery(function($){
-    /** Cargar campos existentes */
-    var fields = <?php echo json_encode(GDM_Fields_Admin::get_fields()); ?>;
-    var $tbody = $('#gdm-fields-table tbody');
-    var tmpl = _.template($('#gdm-field-row-template').html());
+    "use strict";
+    let fields = gdmFieldsAdmin.fields || [];
+    const $tbody = $('#gdm-fields-table tbody');
+    const tmpl = _.template($('#gdm-field-row-template').html());
 
     function renderFields() {
         $tbody.empty();
         if (!fields.length) return;
         fields.forEach(function(f, idx){
             $tbody.append(tmpl({
-                label: f.label||"",
-                id: f.id||"",
-                type: f.type||"text",
-                options: (f.options||[]).map(function(opt){ return opt.value+':'+opt.label; }).join(','),
-                prices: (f.options||[]).map(function(opt){ return opt.value+':'+(opt.price||0); }).join(','),
-                conditional: JSON.stringify(f.conditional||{}),
-                required: f.required||false
+                id: f.id || idx + 1,
+                label: f.label || "",
+                type: f.type || "text",
+                price: f.price || "",
+                required: f.required || false
             }));
         });
     }
     renderFields();
 
+    // Seleccionar/deseleccionar todos
+    $('#gdm-select-all-fields').on('change', function(){
+        $tbody.find('.gdm-field-row-checkbox').prop('checked', $(this).is(':checked')).trigger('change');
+    });
+
+    // Actualiza estado del botón eliminar
+    $tbody.on('change', '.gdm-field-row-checkbox', function(){
+        const selected = $tbody.find('.gdm-field-row-checkbox:checked').length;
+        $('#gdm-delete-selected-fields').prop('disabled', selected === 0);
+    });
+
+    // Añadir campo
     $('#gdm-add-field').on('click', function(){
-        fields.push({label:"",id:"",type:"text",options:[],conditional:{},required:false});
+        fields.push({id: '', label: '', type: 'text', price: '', required: false});
         renderFields();
     });
 
-    $tbody.on('click','.gdm-delete-field',function(){
-        var idx = $(this).closest('tr').index();
-        fields.splice(idx,1);
+    // Eliminar seleccionados
+    $('#gdm-delete-selected-fields').on('click', function(){
+        fields = fields.filter(function(f, idx){
+            return !$tbody.find('tr').eq(idx).find('.gdm-field-row-checkbox').is(':checked');
+        });
         renderFields();
+        $('#gdm-select-all-fields').prop('checked', false);
+        $('#gdm-delete-selected-fields').prop('disabled', true);
     });
 
+    // Modal de edición avanzada (ejemplo simple, personaliza según tus necesidades)
+    let editingIdx = null;
+    $tbody.on('click', '.gdm-edit-field', function(){
+        editingIdx = $(this).closest('tr').index();
+        const field = fields[editingIdx];
+        // Renderiza formulario de edición avanzada en el modal
+        const $modal = $('#gdm-field-modal');
+        $modal.html(`
+            <div class="gdm-modal-content">
+                <h2>Editar Campo</h2>
+                <label>ID: <input type="text" id="gdm-modal-field-id" value="${field.id||''}" /></label><br>
+                <label>Nombre: <input type="text" id="gdm-modal-field-label" value="${field.label||''}" /></label><br>
+                <label>Tipo:
+                    <select id="gdm-modal-field-type">
+                        <option value="text"${field.type==='text'?' selected':''}>Texto</option>
+                        <option value="textarea"${field.type==='textarea'?' selected':''}>Área de texto</option>
+                        <option value="select"${field.type==='select'?' selected':''}>Select</option>
+                        <option value="checkbox"${field.type==='checkbox'?' selected':''}>Checkbox</option>
+                        <option value="radio"${field.type==='radio'?' selected':''}>Radio</option>
+                    </select>
+                </label><br>
+                <label>Precio: <input type="text" id="gdm-modal-field-price" value="${field.price||''}" /></label><br>
+                <label>Requerido: <input type="checkbox" id="gdm-modal-field-required"${field.required?' checked':''} /></label><br>
+                <button type="button" class="button button-primary" id="gdm-modal-save-field">Guardar</button>
+                <button type="button" class="button" id="gdm-modal-cancel">Cancelar</button>
+            </div>
+        `).show();
+    });
+
+    // Guardar cambios del modal
+    $(document).on('click', '#gdm-modal-save-field', function(){
+        if (editingIdx === null) return;
+        fields[editingIdx].id = $('#gdm-modal-field-id').val();
+        fields[editingIdx].label = $('#gdm-modal-field-label').val();
+        fields[editingIdx].type = $('#gdm-modal-field-type').val();
+        fields[editingIdx].price = $('#gdm-modal-field-price').val();
+        fields[editingIdx].required = $('#gdm-modal-field-required').is(':checked');
+        $('#gdm-field-modal').hide().empty();
+        renderFields();
+        editingIdx = null;
+    });
+    // Cancelar modal
+    $(document).on('click', '#gdm-modal-cancel', function(){
+        $('#gdm-field-modal').hide().empty();
+        editingIdx = null;
+    });
+
+    // Guardar campos
     $('#gdm-fields-form').on('submit', function(e){
         e.preventDefault();
-        // Recopilar campos del DOM
-        var newFields = [];
-        $tbody.find('tr').each(function(){
-            var $tr = $(this);
-            var type = $tr.find('.gdm-field-type').val();
-            var optionsArr = [];
-            // Opciones y precios
-            if(type==="select" || type==="radio" || type==="checkbox"){
-                var opts = $tr.find('.gdm-field-options').val().split(',');
-                var prices = $tr.find('.gdm-field-prices').val().split(',');
-                opts.forEach(function(optStr,i){
-                    var parts = optStr.split(':');
-                    if(parts.length<2) return;
-                    var val = parts[0], label = parts[1];
-                    var price = 0;
-                    if(prices[i]){
-                        var priceParts = prices[i].split(':');
-                        if(priceParts[0]===val) price = parseFloat(priceParts[1]);
-                    }
-                    optionsArr.push({value:val,label:label,price:price});
-                });
-            }
-            // Parse condicional
-            var conditional = {};
-            try { conditional = JSON.parse($tr.find('.gdm-field-conditional').val()||"{}"); } catch(e){}
-            newFields.push({
-                label: $tr.find('.gdm-field-label').val(),
-                id: $tr.find('.gdm-field-id').val(),
-                type: type,
-                options: optionsArr,
-                conditional: conditional,
-                required: $tr.find('.gdm-field-required').is(':checked')
-            });
-        });
-        // Guardar por AJAX
         $.post(gdmFieldsAdmin.ajaxUrl, {
             action: 'gdm_save_fields',
             nonce: gdmFieldsAdmin.nonce,
-            fields: JSON.stringify(newFields)
+            fields: JSON.stringify(fields)
         }, function(resp){
             if(resp.success){
                 $('#gdm-fields-saved').show().delay(2500).fadeOut();
-                fields = newFields;
             }
         });
     });
