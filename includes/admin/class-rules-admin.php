@@ -7,6 +7,7 @@ if (!defined('ABSPATH')) exit;
  * - Permite agregar, editar, borrar y guardar reglas y variantes condicionales.
  * - Carga JS/CSS solo en la página correspondiente.
  * - AJAX para guardar configuración de reglas.
+ * - Prepara modal de edición avanzada y manejo de variantes.
  */
 final class GDM_Rules_Admin {
     const OPTION_KEY = 'gdm_content_rules';
