@@ -1,7 +1,4 @@
 <?php
-/**
- * Registro de Custom Post Types para Reglas y Campos Personalizados
- */
 if (!defined('ABSPATH')) exit;
 
 final class GDM_CPT {
@@ -28,10 +25,10 @@ final class GDM_CPT {
             ],
             'public'             => false,
             'show_ui'            => true,
-            'show_in_menu'       => 'gdm_content_rules',
-            'menu_position'      => 1,
-            'menu_icon'          => 'dashicons-filter',
-            'supports'           => ['title', 'editor', 'custom-fields'],
+            'show_in_menu'       => false, // Importante: menú solo en admin_menu
+            'menu_position'      => 3,
+            'menu_icon'          => 'dashicons-list-view',
+            'supports'           => ['title', 'custom-fields'],
             'capability_type'    => 'post',
         ]);
 
@@ -53,8 +50,8 @@ final class GDM_CPT {
             ],
             'public'             => false,
             'show_ui'            => true,
-            'show_in_menu'       => 'gdm_content_rules',
-            'menu_position'      => 3,
+            'show_in_menu'       => false, // Importante: menú solo en admin_menu
+            'menu_position'      => 4,
             'menu_icon'          => 'dashicons-list-view',
             'supports'           => ['title', 'custom-fields'],
             'capability_type'    => 'post',

@@ -13,7 +13,7 @@ final class GDM_Admin_Menu {
             __('Reglas de Contenido', 'product-conditional-content'),
             'manage_options',
             'gdm_content_rules',
-            '', // No callback, solo menú padre
+            '',
             'dashicons-filter',
             25
         );
