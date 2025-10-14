@@ -184,5 +184,4 @@ final class GDM_Fields_Frontend {
     }
 }
 
-// Inicializar el módulo solo si el producto requiere campos personalizados (plugin-init.php puede filtrar si lo deseas)
 GDM_Fields_Frontend::instance();

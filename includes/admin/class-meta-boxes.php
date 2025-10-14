@@ -431,7 +431,6 @@ final class GDM_Reglas_Metabox {
             update_post_meta($post_id, $key, $value);
         }
 
-        // ✅ USAR HELPER PARA SANITIZAR ARRAYS
         $aplicar_a = GDM_Admin_Helpers::sanitize_text_array($_POST['gdm_aplicar_a'] ?? []);
         update_post_meta($post_id, '_gdm_aplicar_a', $aplicar_a);
         
@@ -441,7 +440,6 @@ final class GDM_Reglas_Metabox {
         $tags = GDM_Admin_Helpers::sanitize_int_array($_POST['gdm_tags_objetivo'] ?? []);
         update_post_meta($post_id, '_gdm_tags_objetivo', $tags);
 
-        // Guardar variantes (mantener lógica existente)
         $variantes_sanitizadas = [];
         if (isset($_POST['gdm_variantes']) && is_array($_POST['gdm_variantes'])) {
             foreach ($_POST['gdm_variantes'] as $variante) {
@@ -473,7 +471,6 @@ final class GDM_Reglas_Metabox {
         
         $current_post_id = isset($_POST['current_post_id']) ? intval($_POST['current_post_id']) : 0;
         
-        // ✅ USAR HELPER
         $rules = GDM_Admin_Helpers::get_available_reglas($current_post_id);
         
         $reusable_rules = [];
