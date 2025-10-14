@@ -10,9 +10,7 @@ final class GDM_Admin_Menu {
     }
 
     /**
-     * Registrar menú y submenús.
-     * El menú principal se agrega solo una vez con add_menu_page.
-     * Solo agrega manualmente los submenús secundarios.
+     * Registrar menú y submenús, usando filtros para que otros módulos puedan agregar más
      */
     public static function register_menu() {
         $main_slug = 'gdm_content_rules';
@@ -23,12 +21,12 @@ final class GDM_Admin_Menu {
             __('Reglas de Contenido', 'product-conditional-content'),
             'manage_options',
             $main_slug,
-            '', // El callback puede quedar vacío, WordPress agrega el primer submenú automáticamente
+            '', // El callback puede quedar vacío porque el primer submenú lo genera WordPress automáticamente
             'dashicons-filter',
             25
         );
 
-        // Submenús secundarios (NO incluyas el principal)
+        // Submenús secundarios
         $submenus = [
             [
                 'parent_slug' => $main_slug,
@@ -41,21 +39,38 @@ final class GDM_Admin_Menu {
             ],
             [
                 'parent_slug' => $main_slug,
+                'page_title'  => __('Agregar Regla', 'product-conditional-content'),
+                'menu_title'  => __('Agregar Regla', 'product-conditional-content'),
+                'capability'  => 'manage_options',
+                'menu_slug'   => 'gdm_add_rule',
+                'callback'    => [\GDM_Rules_Admin::class, 'add_page'],
+                'position'    => 2,
+            ],
+            [
+                'parent_slug' => $main_slug,
                 'page_title'  => __('Campos Personalizados', 'product-conditional-content'),
                 'menu_title'  => __('Campos Personalizados', 'product-conditional-content'),
                 'capability'  => 'manage_options',
                 'menu_slug'   => 'gdm_product_fields',
                 'callback'    => [\GDM_Fields_Admin::class, 'admin_page'],
-                'position'    => 2,
+                'position'    => 3,
+            ],
+            [
+                'parent_slug' => $main_slug,
+                'page_title'  => __('Agregar Campo', 'product-conditional-content'),
+                'menu_title'  => __('Agregar Campo', 'product-conditional-content'),
+                'capability'  => 'manage_options',
+                'menu_slug'   => 'gdm_add_field',
+                'callback'    => [\GDM_Fields_Admin::class, 'add_page'],
+                'position'    => 4,
             ],
         ];
 
-        // Permite que otros módulos añadan submenús desde filtros
+        // Permite que otros módulos o plugins añadan/quiten submenús fácilmente
         $submenus = apply_filters('gdm_admin_submenus', $submenus);
 
-        // Añade todos los submenús manualmente (excepto el principal)
+        // Añadir todos los submenús manualmente (excepto el principal)
         foreach ($submenus as $submenu) {
-            // Evita agregar el submenú con el slug principal (WordPress ya lo hace)
             if ($submenu['menu_slug'] === $main_slug) continue;
             add_submenu_page(
                 $submenu['parent_slug'],
