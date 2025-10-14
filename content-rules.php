@@ -70,9 +70,23 @@ add_action('plugins_loaded', function() {
         require_once GDM_PLUGIN_DIR . 'includes/admin/class-rules-admin.php';
         require_once GDM_PLUGIN_DIR . 'includes/admin/class-meta-boxes.php';
         require_once GDM_PLUGIN_DIR . 'includes/admin/class-opciones-metabox.php';
+        require_once GDM_PLUGIN_DIR . 'includes/admin/class-regla-status-manager.php';
     } else {
         require_once GDM_PLUGIN_DIR . 'includes/frontend/class-rules-frontend.php';
         require_once GDM_PLUGIN_DIR . 'includes/frontend/class-fields-frontend.php';
         require_once GDM_PLUGIN_DIR . 'includes/frontend/class-shortcodes.php';
     }
+    /**
+ * Activar cron para verificar programaciones
+ */
+if (!wp_next_scheduled('gdm_check_regla_schedules')) {
+    wp_schedule_event(time(), 'hourly', 'gdm_check_regla_schedules');
+}
+
+/**
+ * Desactivar cron al desactivar el plugin
+ */
+register_deactivation_hook(__FILE__, function() {
+    wp_clear_scheduled_hook('gdm_check_regla_schedules');
+});
 }, 20);
