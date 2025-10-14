@@ -14,16 +14,15 @@ final class GDM_Fields_Admin {
     }
 
     public static function add_admin_menu() {
-        add_menu_page(
-            'Campos Personalizados Producto',
-            'Campos Producto',
-            'manage_options',
-            'gdm_product_fields',
-            [__CLASS__, 'admin_page'],
-            'dashicons-list-view',
-            26
-        );
-    }
+    add_submenu_page(
+        'edit.php?post_type=descripcion_regla',
+        'Campos Personalizados',
+        'Campos Personalizados',
+        'manage_options',
+        'gdm_product_fields',
+        [__CLASS__, 'admin_page']
+    );
+}
 
     public static function enqueue_scripts($hook) {
         if ($hook === 'toplevel_page_gdm_product_fields') {
