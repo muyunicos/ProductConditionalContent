@@ -464,121 +464,244 @@ final class GDM_Regla_Status_Manager {
     /**
      * Modificar metabox "Publicar"
      */
-    public static function modify_publish_metabox() {
-        global $post, $current_screen;
-        
-        if (!$post || $current_screen->post_type !== 'gdm_regla') {
-            return;
-        }
-        
-        $current_status = $post->post_status;
-        if ($current_status === 'publish' || $current_status === 'auto-draft') {
-            $current_status = 'habilitada';
-        }
-        
-        $is_enabled = ($current_status === 'habilitada');
-        $programar = get_post_meta($post->ID, '_gdm_programar', true);
-        $fecha_inicio = get_post_meta($post->ID, '_gdm_fecha_inicio', true);
-        $fecha_fin = get_post_meta($post->ID, '_gdm_fecha_fin', true);
-        $habilitar_fin = get_post_meta($post->ID, '_gdm_habilitar_fecha_fin', true);
-        
-        // Calcular sub-estado
-        $sub_status = self::calculate_substatus(null, $post->ID, $current_status);
-        
-        wp_nonce_field('gdm_regla_schedule_nonce', 'gdm_regla_schedule_nonce');
-        
-        ?>
-        <!-- Ocultar sección de visibilidad -->
-        <style>
-        .post-type-gdm_regla #visibility { display: none !important; }
-        </style>
-        
-        <!-- Sección de Toggle -->
-        <div class="misc-pub-section gdm-status-section">
-            <div class="gdm-status-indicator <?php echo esc_attr($sub_status['class']); ?>">
-                <label class="gdm-toggle-switch gdm-toggle-metabox">
-                    <input type="checkbox" 
-                           id="gdm-metabox-toggle"
-                           name="gdm_regla_enabled" 
-                           value="1" 
-                           <?php checked($is_enabled); ?>>
-                    <span class="gdm-toggle-slider"></span>
-                </label>
-                
-                <div style="flex: 1;">
-                    <strong><?php _e('Estado:', 'product-conditional-content'); ?></strong>
-                    <span class="gdm-status-display">
-                        <?php echo esc_html($sub_status['label']); ?>
-                    </span>
-                    <?php if (!empty($sub_status['description'])): ?>
-                        <p class="description" style="margin: 4px 0 0 0;">
-                            <?php echo esc_html($sub_status['description']); ?>
-                        </p>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Sección de Programación -->
-        <div class="misc-pub-section gdm-schedule-section">
-            <label style="display: flex; align-items: center; gap: 8px;">
+   /**
+ * Modificar metabox "Publicar"
+ */
+public static function modify_publish_metabox() {
+    global $post, $current_screen;
+    
+    if (!$post || $current_screen->post_type !== 'gdm_regla') {
+        return;
+    }
+    
+    $current_status = $post->post_status;
+    if ($current_status === 'publish' || $current_status === 'auto-draft') {
+        $current_status = 'habilitada';
+    }
+    
+    $is_enabled = ($current_status === 'habilitada');
+    $programar = get_post_meta($post->ID, '_gdm_programar', true);
+    $fecha_inicio = get_post_meta($post->ID, '_gdm_fecha_inicio', true);
+    $fecha_fin = get_post_meta($post->ID, '_gdm_fecha_fin', true);
+    $habilitar_fin = get_post_meta($post->ID, '_gdm_habilitar_fecha_fin', true);
+    
+    // Calcular mensaje descriptivo del estado
+    $estado_mensaje = self::get_estado_mensaje($is_enabled, $programar, $fecha_inicio, $fecha_fin, $habilitar_fin);
+    
+    wp_nonce_field('gdm_regla_schedule_nonce', 'gdm_regla_schedule_nonce');
+    
+    ?>
+    <!-- Ocultar secciones nativas innecesarias -->
+    <style>
+    /* Ocultar visibilidad */
+    .post-type-gdm_regla #visibility { 
+        display: none !important; 
+    }
+    
+    /* Ocultar timestamp nativo "Publicar el:" */
+    .post-type-gdm_regla .misc-pub-curtime {
+        display: none !important;
+    }
+    
+    /* Ocultar botón "Solo guardar" */
+    .post-type-gdm_regla #save-action {
+        display: none !important;
+    }
+    </style>
+    
+    <!-- Sección de Toggle -->
+    <div class="misc-pub-section gdm-status-section">
+        <div class="gdm-status-indicator <?php echo $is_enabled ? 'status-active' : 'status-disabled'; ?>">
+            <label class="gdm-toggle-switch gdm-toggle-metabox">
                 <input type="checkbox" 
-                       name="gdm_programar" 
-                       id="gdm_programar" 
+                       id="gdm-metabox-toggle" 
+                       name="gdm_regla_enabled" 
                        value="1" 
-                       <?php checked($programar, '1'); ?>>
-                <strong><?php _e('Programar activación', 'product-conditional-content'); ?></strong>
+                       <?php checked($is_enabled); ?>>
+                <span class="gdm-toggle-slider"></span>
             </label>
             
-            <div id="gdm-schedule-fields" style="<?php echo $programar !== '1' ? 'display:none;' : ''; ?> margin-top: 12px; padding-left: 24px;">
-                <div style="margin-bottom: 12px;">
-                    <label style="display: block; margin-bottom: 4px;">
-                        <strong><?php _e('Fecha de Inicio:', 'product-conditional-content'); ?></strong>
-                    </label>
-                    <input type="datetime-local" 
-                           name="gdm_fecha_inicio" 
-                           id="gdm_fecha_inicio" 
-                           value="<?php echo $fecha_inicio ? esc_attr(date('Y-m-d\TH:i', strtotime($fecha_inicio))) : ''; ?>" 
-                           style="width: 100%;">
-                </div>
-                
-                <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                    <input type="checkbox" 
-                           name="gdm_habilitar_fecha_fin" 
-                           id="gdm_habilitar_fecha_fin" 
-                           value="1" 
-                           <?php checked($habilitar_fin, '1'); ?>>
-                    <?php _e('Programar fecha de fin', 'product-conditional-content'); ?>
-                </label>
-                
-                <div id="gdm-fecha-fin-wrapper" style="<?php echo $habilitar_fin !== '1' ? 'display:none;' : ''; ?>">
-                    <label style="display: block; margin-bottom: 4px;">
-                        <strong><?php _e('Fecha de Fin:', 'product-conditional-content'); ?></strong>
-                    </label>
-                    <input type="datetime-local" 
-                           name="gdm_fecha_fin" 
-                           id="gdm_fecha_fin" 
-                           value="<?php echo $fecha_fin ? esc_attr(date('Y-m-d\TH:i', strtotime($fecha_fin))) : ''; ?>" 
-                           style="width: 100%;">
-                </div>
+            <div style="flex: 1;">
+                <strong><?php _e('Estado:', 'product-conditional-content'); ?></strong>
+                <span class="gdm-status-display">
+                    <?php echo esc_html($estado_mensaje['titulo']); ?>
+                </span>
+                <?php if (!empty($estado_mensaje['descripcion'])): ?>
+                    <p class="description" style="margin: 4px 0 0 0;">
+                        <?php echo esc_html($estado_mensaje['descripcion']); ?>
+                    </p>
+                <?php endif; ?>
             </div>
         </div>
+    </div>
+    
+    <!-- Sección de Programación -->
+    <div class="misc-pub-section gdm-schedule-section">
+        <label style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" 
+                   name="gdm_programar" 
+                   id="gdm_programar" 
+                   value="1" 
+                   <?php checked($programar, '1'); ?>
+                   <?php disabled(!$is_enabled); ?>>
+            <strong><?php _e('Programar activación', 'product-conditional-content'); ?></strong>
+        </label>
         
-        <script>
-        jQuery(document).ready(function($) {
-            // Toggle de programación
-            $('#gdm_programar').on('change', function() {
-                $('#gdm-schedule-fields').toggle(this.checked);
-            });
+        <div id="gdm-schedule-fields" style="<?php echo $programar !== '1' ? 'display:none;' : ''; ?> margin-top: 12px; padding-left: 24px;">
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; margin-bottom: 4px;">
+                    <strong><?php _e('📅 Fecha de Inicio:', 'product-conditional-content'); ?></strong>
+                </label>
+                <input type="datetime-local" 
+                       name="gdm_fecha_inicio" 
+                       id="gdm_fecha_inicio" 
+                       value="<?php echo $fecha_inicio ? esc_attr(date('Y-m-d\TH:i', strtotime($fecha_inicio))) : ''; ?>" 
+                       style="width: 100%;">
+                <p class="description" style="margin: 4px 0 0 0; font-size: 11px;">
+                    <?php _e('La regla se activará automáticamente', 'product-conditional-content'); ?>
+                </p>
+            </div>
             
-            // Toggle de fecha fin
-            $('#gdm_habilitar_fecha_fin').on('change', function() {
-                $('#gdm-fecha-fin-wrapper').toggle(this.checked);
-            });
-        });
-        </script>
-        <?php
+            <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <input type="checkbox" 
+                       name="gdm_habilitar_fecha_fin" 
+                       id="gdm_habilitar_fecha_fin" 
+                       value="1" 
+                       <?php checked($habilitar_fin, '1'); ?>>
+                <?php _e('Programar fecha de fin', 'product-conditional-content'); ?>
+            </label>
+            
+            <div id="gdm-fecha-fin-wrapper" style="<?php echo $habilitar_fin !== '1' ? 'display:none;' : ''; ?>">
+                <label style="display: block; margin-bottom: 4px;">
+                    <strong><?php _e('📅 Fecha de Fin:', 'product-conditional-content'); ?></strong>
+                </label>
+                <input type="datetime-local" 
+                       name="gdm_fecha_fin" 
+                       id="gdm_fecha_fin" 
+                       value="<?php echo $fecha_fin ? esc_attr(date('Y-m-d\TH:i', strtotime($fecha_fin))) : ''; ?>" 
+                       style="width: 100%;">
+                <p class="description" style="margin: 4px 0 0 0; font-size: 11px;">
+                    <?php _e('Se desactivará automáticamente', 'product-conditional-content'); ?>
+                </p>
+            </div>
+        </div>
+    </div>
+    <?php
+}
+
+/**
+ * Obtener mensaje de estado según contexto
+ */
+private static function get_estado_mensaje($is_enabled, $programar, $fecha_inicio, $fecha_fin, $habilitar_fin) {
+    $now = current_time('mysql');
+    
+    // Estado DESHABILITADA
+    if (!$is_enabled) {
+        return [
+            'titulo' => __('Deshabilitada', 'product-conditional-content'),
+            'descripcion' => __('La regla no se activará', 'product-conditional-content'),
+        ];
     }
+    
+    // Estado HABILITADA sin programación
+    if ($programar !== '1' || !$fecha_inicio) {
+        return [
+            'titulo' => __('Habilitada', 'product-conditional-content'),
+            'descripcion' => __('Se activa inmediatamente', 'product-conditional-content'),
+        ];
+    }
+    
+    // Estado HABILITADA con programación
+    
+    // Fecha de inicio en el futuro = PROGRAMADA
+    if ($fecha_inicio > $now) {
+        $timestamp_inicio = strtotime($fecha_inicio);
+        $timestamp_now = strtotime($now);
+        $diff = $timestamp_inicio - $timestamp_now;
+        
+        $dias = floor($diff / 86400);
+        $horas = floor(($diff % 86400) / 3600);
+        
+        $tiempo_texto = '';
+        if ($dias > 0) {
+            $tiempo_texto = sprintf(
+                _n('%d día', '%d días', $dias, 'product-conditional-content'),
+                $dias
+            );
+            if ($horas > 0) {
+                $tiempo_texto .= ' ' . sprintf(
+                    _n('y %d hora', 'y %d horas', $horas, 'product-conditional-content'),
+                    $horas
+                );
+            }
+        } else if ($horas > 0) {
+            $tiempo_texto = sprintf(
+                _n('%d hora', '%d horas', $horas, 'product-conditional-content'),
+                $horas
+            );
+        } else {
+            $minutos = floor($diff / 60);
+            $tiempo_texto = sprintf(
+                _n('%d minuto', '%d minutos', max(1, $minutos), 'product-conditional-content'),
+                max(1, $minutos)
+            );
+        }
+        
+        return [
+            'titulo' => __('Habilitada', 'product-conditional-content'),
+            'descripcion' => sprintf(
+                __('Se activa en %s', 'product-conditional-content'),
+                $tiempo_texto
+            ),
+        ];
+    }
+    
+    // Fecha de inicio ya pasó
+    
+    // Si tiene fecha de fin
+    if ($habilitar_fin === '1' && $fecha_fin) {
+        
+        // Ya expiró = TERMINADA
+        if ($fecha_fin < $now) {
+            return [
+                'titulo' => __('Habilitada', 'product-conditional-content'),
+                'descripcion' => __('Terminada (fecha fin alcanzada)', 'product-conditional-content'),
+            ];
+        }
+        
+        // Activa pero cerca de expirar
+        $timestamp_fin = strtotime($fecha_fin);
+        $timestamp_now = strtotime($now);
+        $diff = $timestamp_fin - $timestamp_now;
+        
+        $horas_restantes = floor($diff / 3600);
+        
+        if ($horas_restantes < 24) {
+            return [
+                'titulo' => __('Habilitada', 'product-conditional-content'),
+                'descripcion' => sprintf(
+                    __('Activa (termina en %d horas)', 'product-conditional-content'),
+                    max(1, $horas_restantes)
+                ),
+            ];
+        }
+        
+        $dias_restantes = floor($diff / 86400);
+        return [
+            'titulo' => __('Habilitada', 'product-conditional-content'),
+            'descripcion' => sprintf(
+                __('Activa (termina en %d días)', 'product-conditional-content'),
+                $dias_restantes
+            ),
+        ];
+    }
+    
+    // Activa sin fecha de fin
+    return [
+        'titulo' => __('Habilitada', 'product-conditional-content'),
+        'descripcion' => __('Activa actualmente', 'product-conditional-content'),
+    ];
+}
     
     /**
      * Guardar datos del metabox
