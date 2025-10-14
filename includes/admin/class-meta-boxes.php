@@ -405,20 +405,15 @@ final class GDM_Reglas_Metabox {
     /**
      * Guardar datos
      */
-    public static function save_metabox($post_id, $post) {
-        if (!isset($_POST['gdm_nonce']) || !wp_verify_nonce($_POST['gdm_nonce'], 'gdm_save_rule_data')) {
-            return;
-        }
-        
-        if (!current_user_can('edit_post', $post_id)) {
-            return;
-        }
-        
-        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
-            return;
-        }
-        
-        if ($post->post_type !== 'gdm_regla') {
+     public static function save_metabox($post_id, $post) {
+        // ✅ USAR HELPER EN VEZ DE CÓDIGO DUPLICADO
+        if (!GDM_Admin_Helpers::validate_metabox_save(
+            $post_id, 
+            $post, 
+            'gdm_nonce', 
+            'gdm_save_rule_data', 
+            'gdm_regla'
+        )) {
             return;
         }
 
@@ -431,26 +426,22 @@ final class GDM_Reglas_Metabox {
             '_gdm_forzar_aplicacion' => isset($_POST['gdm_forzar_aplicacion']) ? '1' : '0',
             '_gdm_descripcion' => isset($_POST['gdm_descripcion']) ? wp_kses_post($_POST['gdm_descripcion']) : ''
         ];
-        
+
         foreach ($fields_to_save as $key => $value) {
             update_post_meta($post_id, $key, $value);
         }
 
-        $aplicar_a = isset($_POST['gdm_aplicar_a']) && is_array($_POST['gdm_aplicar_a']) 
-            ? array_map('sanitize_text_field', $_POST['gdm_aplicar_a']) 
-            : [];
+        // ✅ USAR HELPER PARA SANITIZAR ARRAYS
+        $aplicar_a = GDM_Admin_Helpers::sanitize_text_array($_POST['gdm_aplicar_a'] ?? []);
         update_post_meta($post_id, '_gdm_aplicar_a', $aplicar_a);
         
-        $categorias = isset($_POST['gdm_categorias_objetivo']) && is_array($_POST['gdm_categorias_objetivo'])
-            ? array_map('intval', $_POST['gdm_categorias_objetivo']) 
-            : [];
+        $categorias = GDM_Admin_Helpers::sanitize_int_array($_POST['gdm_categorias_objetivo'] ?? []);
         update_post_meta($post_id, '_gdm_categorias_objetivo', $categorias);
         
-        $tags = isset($_POST['gdm_tags_objetivo']) && is_array($_POST['gdm_tags_objetivo'])
-            ? array_map('intval', $_POST['gdm_tags_objetivo']) 
-            : [];
+        $tags = GDM_Admin_Helpers::sanitize_int_array($_POST['gdm_tags_objetivo'] ?? []);
         update_post_meta($post_id, '_gdm_tags_objetivo', $tags);
 
+        // Guardar variantes (mantener lógica existente)
         $variantes_sanitizadas = [];
         if (isset($_POST['gdm_variantes']) && is_array($_POST['gdm_variantes'])) {
             foreach ($_POST['gdm_variantes'] as $variante) {
@@ -475,25 +466,20 @@ final class GDM_Reglas_Metabox {
     }
     
     /**
-     * AJAX: Reglas reutilizables
+     * AJAX: Reglas reutilizables - USANDO HELPER
      */
     public static function ajax_get_reusable_rules() {
         check_ajax_referer('gdm_admin_nonce', 'nonce');
         
         $current_post_id = isset($_POST['current_post_id']) ? intval($_POST['current_post_id']) : 0;
         
-        $rules = get_posts([
-            'post_type' => 'gdm_regla',
-            'posts_per_page' => -1,
-            'post_status' => 'publish',
-            'exclude' => [$current_post_id],
-            'orderby' => 'title',
-            'order' => 'ASC',
-        ]);
+        // ✅ USAR HELPER
+        $rules = GDM_Admin_Helpers::get_available_reglas($current_post_id);
         
         $reusable_rules = [];
         foreach ($rules as $rule) {
             $aplicar_a = get_post_meta($rule->ID, '_gdm_aplicar_a', true) ?: [];
+            
             if (in_array('reutilizable', $aplicar_a)) {
                 $reusable_rules[] = [
                     'id' => $rule->ID,
@@ -519,9 +505,9 @@ final class GDM_Reglas_Metabox {
             'prioridad' => (int) (get_post_meta($rule_id, '_gdm_prioridad', true) ?: 10),
             'aplicar_a' => get_post_meta($rule_id, '_gdm_aplicar_a', true) ?: [],
             'todas_categorias' => get_post_meta($rule_id, '_gdm_todas_categorias', true),
-            'categorias_objetivo' => array_map('intval', get_post_meta($rule_id, '_gdm_categorias_objetivo', true) ?: []),
+            'categorias_objetivo' => GDM_Admin_Helpers::sanitize_int_array(get_post_meta($rule_id, '_gdm_categorias_objetivo', true) ?: []),
             'cualquier_tag' => get_post_meta($rule_id, '_gdm_cualquier_tag', true),
-            'tags_objetivo' => array_map('intval', get_post_meta($rule_id, '_gdm_tags_objetivo', true) ?: []),
+            'tags_objetivo' => GDM_Admin_Helpers::sanitize_int_array(get_post_meta($rule_id, '_gdm_tags_objetivo', true) ?: []),
             'ubicacion' => get_post_meta($rule_id, '_gdm_ubicacion', true) ?: 'reemplaza',
             'regla_final' => get_post_meta($rule_id, '_gdm_regla_final', true),
             'forzar_aplicacion' => get_post_meta($rule_id, '_gdm_forzar_aplicacion', true),
