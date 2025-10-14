@@ -1,10 +1,10 @@
 /**
- * Toggle Switch Styles
+ * Toggle Switch Styles - OPTIMIZADO
  * Diseño moderno inspirado en iOS/Android
  * Compatible con WordPress 6.8.3
  * 
  * @package ProductConditionalContent
- * @since 5.0.3
+ * @since 5.0.4
  */
 
 /* ========================================================================
@@ -34,10 +34,7 @@
 
 .gdm-toggle-slider {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     background-color: #999;
     border-radius: 24px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -56,7 +53,7 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Estado checked (ON) */
+/* Estados del toggle */
 .gdm-toggle-switch input:checked + .gdm-toggle-slider {
     background-color: #46b450;
 }
@@ -65,7 +62,6 @@
     transform: translateX(20px);
 }
 
-/* Hover */
 .gdm-toggle-switch:hover .gdm-toggle-slider {
     box-shadow: 0 0 0 4px rgba(70, 180, 80, 0.1);
 }
@@ -74,8 +70,14 @@
     background-color: #3a9943;
 }
 
-/* Loading state */
-.gdm-toggle-switch.loading {
+.gdm-toggle-switch:focus-within .gdm-toggle-slider {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
+}
+
+/* Loading y disabled */
+.gdm-toggle-switch.loading,
+.gdm-toggle-switch.disabled {
     pointer-events: none;
     opacity: 0.6;
 }
@@ -84,19 +86,32 @@
     animation: gdm-toggle-pulse 1s infinite;
 }
 
+.gdm-toggle-switch.disabled {
+    opacity: 0.4;
+}
+
 @keyframes gdm-toggle-pulse {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(0.9); }
 }
 
-/* Disabled */
-.gdm-toggle-switch.disabled {
-    pointer-events: none;
-    opacity: 0.4;
+/* Toggle grande para metabox */
+.gdm-toggle-metabox {
+    width: 52px;
+    height: 28px;
+}
+
+.gdm-toggle-metabox .gdm-toggle-slider:before {
+    height: 22px;
+    width: 22px;
+}
+
+.gdm-toggle-metabox input:checked + .gdm-toggle-slider:before {
+    transform: translateX(24px);
 }
 
 /* ========================================================================
-   STATUS BADGES
+   STATUS BADGES Y ESTADOS
    ======================================================================== */
 
 .gdm-status-badge {
@@ -111,33 +126,136 @@
     color: #fff;
 }
 
-.gdm-status-badge.status-active {
-    background-color: #46b450;
-}
-
-.gdm-status-badge.status-scheduled {
-    background-color: #00a0d2;
-}
-
-.gdm-status-badge.status-expiring {
-    background-color: #f0b849;
-}
-
-.gdm-status-badge.status-expired {
-    background-color: #dc3232;
-}
-
-.gdm-status-badge.status-disabled {
-    background-color: #999;
-}
-
-/* Icono de estado */
 .gdm-status-icon {
     display: inline-block;
     width: 8px;
     height: 8px;
     border-radius: 50%;
     background-color: currentColor;
+}
+
+/* Colores por estado */
+.gdm-status-badge.status-active,
+.gdm-status-indicator.status-active {
+    background-color: #46b450;
+    border-left-color: #46b450;
+}
+
+.gdm-status-badge.status-scheduled,
+.gdm-status-indicator.status-scheduled {
+    background-color: #00a0d2;
+    border-left-color: #00a0d2;
+}
+
+.gdm-status-badge.status-expiring,
+.gdm-status-indicator.status-expiring {
+    background-color: #f0b849;
+    border-left-color: #f0b849;
+}
+
+.gdm-status-badge.status-expired,
+.gdm-status-indicator.status-expired {
+    background-color: #dc3232;
+    border-left-color: #dc3232;
+}
+
+.gdm-status-badge.status-disabled,
+.gdm-status-indicator.status-disabled {
+    background-color: #999;
+    border-left-color: #999;
+}
+
+/* Backgrounds especiales para indicador */
+.gdm-status-indicator.status-scheduled {
+    background: #e5f5fa;
+}
+
+.gdm-status-indicator.status-expiring {
+    background: #fffbf0;
+}
+
+.gdm-status-indicator.status-expired {
+    background: #fef7f7;
+}
+
+.gdm-status-indicator.status-disabled {
+    background: #f0f0f1;
+}
+
+/* ========================================================================
+   METABOX PUBLISH
+   ======================================================================== */
+
+.gdm-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: #f6f7f7;
+    border-radius: 4px;
+    border-left: 4px solid;
+    transition: all 0.3s ease;
+}
+
+.gdm-status-display {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.gdm-status-indicator .description,
+.gdm-status-description {
+    margin: 4px 0 0 0 !important;
+    font-size: 12px;
+    color: #666;
+    line-height: 1.4;
+    font-weight: normal;
+}
+
+.gdm-status-with-description {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.gdm-status-description {
+    font-size: 11px;
+}
+
+/* Sección de programación */
+.gdm-schedule-section {
+    transition: opacity 0.3s ease;
+}
+
+.gdm-schedule-section input[type="datetime-local"] {
+    padding: 6px 8px;
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    font-size: 13px;
+    width: 100%;
+}
+
+.gdm-schedule-section input[type="datetime-local"]:focus {
+    border-color: #2271b1;
+    outline: none;
+    box-shadow: 0 0 0 1px #2271b1;
+}
+
+/* Botones de fechas rápidas */
+.gdm-quick-dates,
+.gdm-quick-durations {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.gdm-quick-dates button,
+.gdm-quick-durations button {
+    font-size: 11px;
+    padding: 4px 8px;
+    height: auto;
+    line-height: 1.4;
 }
 
 /* ========================================================================
@@ -150,71 +268,6 @@
 
 .column-gdm_estado {
     width: 220px;
-}
-
-/* Estado con descripción */
-.gdm-status-with-description {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.gdm-status-description {
-    font-size: 11px;
-    color: #666;
-    font-weight: normal;
-}
-
-/* ========================================================================
-   METABOX PUBLISH
-   ======================================================================== */
-
-.gdm-status-section {
-    border-top: 1px solid #dcdcde;
-    padding: 12px;
-}
-
-.gdm-status-indicator {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
-    padding: 10px;
-    background: #f6f7f7;
-    border-radius: 4px;
-    border-left: 3px solid #46b450;
-}
-
-.gdm-status-indicator.status-disabled {
-    border-left-color: #999;
-    background: #f0f0f1;
-}
-
-.gdm-status-indicator.status-scheduled {
-    border-left-color: #00a0d2;
-}
-
-.gdm-status-indicator.status-expiring {
-    border-left-color: #f0b849;
-}
-
-.gdm-status-indicator.status-expired {
-    border-left-color: #dc3232;
-}
-
-/* Toggle grande en metabox */
-.gdm-toggle-metabox {
-    width: 52px;
-    height: 28px;
-}
-
-.gdm-toggle-metabox .gdm-toggle-slider:before {
-    height: 22px;
-    width: 22px;
-}
-
-.gdm-toggle-metabox input:checked + .gdm-toggle-slider:before {
-    transform: translateX(24px);
 }
 
 /* ========================================================================
@@ -243,6 +296,10 @@
     border-left-color: #46b450;
 }
 
+.gdm-toggle-notification.hiding {
+    animation: gdm-slide-out 0.3s ease-out forwards;
+}
+
 @keyframes gdm-slide-in {
     from {
         transform: translateX(400px);
@@ -252,10 +309,6 @@
         transform: translateX(0);
         opacity: 1;
     }
-}
-
-.gdm-toggle-notification.hiding {
-    animation: gdm-slide-out 0.3s ease-out forwards;
 }
 
 @keyframes gdm-slide-out {
@@ -295,98 +348,15 @@
    ACCESSIBILITY
    ======================================================================== */
 
-.gdm-toggle-switch:focus-within .gdm-toggle-slider {
-    outline: 2px solid #2271b1;
-    outline-offset: 2px;
-}
-
-/* Prefers reduced motion */
 @media (prefers-reduced-motion: reduce) {
     .gdm-toggle-slider,
-    .gdm-toggle-slider:before {
+    .gdm-toggle-slider:before,
+    .gdm-status-indicator,
+    .gdm-schedule-section {
         transition: none;
     }
-}
-/* ========================================================================
-   METABOX MEJORADO
-   ======================================================================== */
-
-/* Indicador de estado más visual */
-.gdm-status-indicator {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    background: #f6f7f7;
-    border-radius: 4px;
-    border-left: 4px solid #46b450;
-    transition: all 0.3s ease;
-}
-
-.gdm-status-indicator.status-disabled {
-    border-left-color: #999;
-    background: #f0f0f1;
-}
-
-.gdm-status-indicator.status-scheduled {
-    border-left-color: #00a0d2;
-    background: #e5f5fa;
-}
-
-.gdm-status-indicator.status-expiring {
-    border-left-color: #f0b849;
-    background: #fffbf0;
-}
-
-.gdm-status-indicator.status-expired {
-    border-left-color: #dc3232;
-    background: #fef7f7;
-}
-
-/* Status display más grande y visible */
-.gdm-status-display {
-    font-size: 14px;
-    font-weight: 600;
-    color: #1d2327;
-}
-
-.gdm-status-indicator .description {
-    margin: 4px 0 0 0 !important;
-    font-size: 12px;
-    color: #666;
-    line-height: 1.4;
-}
-
-/* Sección de programación */
-.gdm-schedule-section {
-    transition: opacity 0.3s ease;
-}
-
-.gdm-schedule-section input[type="datetime-local"] {
-    padding: 6px 8px;
-    border: 1px solid #8c8f94;
-    border-radius: 4px;
-    font-size: 13px;
-}
-
-.gdm-schedule-section input[type="datetime-local"]:focus {
-    border-color: #2271b1;
-    outline: none;
-    box-shadow: 0 0 0 1px #2271b1;
-}
-
-/* Botones de fechas rápidas */
-.gdm-quick-dates,
-.gdm-quick-durations {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-}
-
-.gdm-quick-dates button,
-.gdm-quick-durations button {
-    font-size: 11px;
-    padding: 4px 8px;
-    height: auto;
-    line-height: 1.4;
+    
+    .gdm-toggle-notification {
+        animation: none;
+    }
 }
