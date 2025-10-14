@@ -23,7 +23,12 @@ final class GDM_Rules_Admin {
      */
     public static function enqueue_scripts($hook) {
         $screen = get_current_screen();
-        if ($screen && ($screen->id === 'gdm_content_rules_page_gdm_content_rules_list' || $screen->id === 'toplevel_page_gdm_content_rules')) {
+        // Check if we're on the CPT edit screen (list or add/edit pages)
+        if ($screen && (
+            $screen->id === 'edit-gdm_regla' || 
+            $screen->id === 'gdm_regla' || 
+            $screen->post_type === 'gdm_regla'
+        )) {
             wp_enqueue_script('gdm-rules-admin', GDM_PLUGIN_URL . 'assets/admin/rules-admin.js', ['jquery'], GDM_VERSION, true);
             wp_enqueue_style('gdm-rules-admin', GDM_PLUGIN_URL . 'assets/admin/rules-admin.css', [], GDM_VERSION);
             wp_localize_script('gdm-rules-admin', 'gdmRulesAdmin', [
