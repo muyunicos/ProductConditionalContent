@@ -1,9 +1,9 @@
 /**
- * JS para la administración de Campos Personalizados
- * - Renderiza la tabla de campos, permite agregar/editar/eliminar (con modal)
+ * JS para la administración de Campos Personalizados (solo admin)
+ * - Renderiza la tabla, permite agregar/editar/eliminar campos
  * - Soporta selección múltiple y eliminación en lote
  * - Guarda los cambios por AJAX
- * - Prepara el modal para edición avanzada (placeholder, opciones, reglas, etc.)
+ * - Modal básico de edición (personalizar en producción)
  */
 jQuery(function($){
     "use strict";
@@ -26,12 +26,10 @@ jQuery(function($){
     }
     renderFields();
 
-    // Seleccionar/deseleccionar todos
+    // Selección múltiple
     $('#gdm-select-all-fields').on('change', function(){
         $tbody.find('.gdm-field-row-checkbox').prop('checked', $(this).is(':checked')).trigger('change');
     });
-
-    // Actualiza estado del botón eliminar
     $tbody.on('change', '.gdm-field-row-checkbox', function(){
         const selected = $tbody.find('.gdm-field-row-checkbox:checked').length;
         $('#gdm-delete-selected-fields').prop('disabled', selected === 0);
@@ -53,12 +51,11 @@ jQuery(function($){
         $('#gdm-delete-selected-fields').prop('disabled', true);
     });
 
-    // Modal de edición avanzada (ejemplo simple, personaliza según tus necesidades)
+    // Modal de edición (simple)
     let editingIdx = null;
     $tbody.on('click', '.gdm-edit-field', function(){
         editingIdx = $(this).closest('tr').index();
         const field = fields[editingIdx];
-        // Renderiza formulario de edición avanzada en el modal
         const $modal = $('#gdm-field-modal');
         $modal.html(`
             <div class="gdm-modal-content">
@@ -81,8 +78,6 @@ jQuery(function($){
             </div>
         `).show();
     });
-
-    // Guardar cambios del modal
     $(document).on('click', '#gdm-modal-save-field', function(){
         if (editingIdx === null) return;
         fields[editingIdx].id = $('#gdm-modal-field-id').val();
@@ -94,13 +89,12 @@ jQuery(function($){
         renderFields();
         editingIdx = null;
     });
-    // Cancelar modal
     $(document).on('click', '#gdm-modal-cancel', function(){
         $('#gdm-field-modal').hide().empty();
         editingIdx = null;
     });
 
-    // Guardar campos
+    // Guardar campos por AJAX
     $('#gdm-fields-form').on('submit', function(e){
         e.preventDefault();
         $.post(gdmFieldsAdmin.ajaxUrl, {

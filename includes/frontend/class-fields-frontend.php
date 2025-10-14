@@ -2,11 +2,13 @@
 if (!defined('ABSPATH')) exit;
 
 /**
- * Renderizado y procesamiento de campos personalizados en el frontend de productos WooCommerce
- * - Muestra los campos personalizados según configuración guardada
- * - Procesa el guardado y visualización en carrito
- * - Aplica precios extra según los valores seleccionados
- * - Carga JS/CSS solo en productos que realmente usan campos personalizados
+ * Renderizado y procesamiento de campos personalizados en el frontend de productos WooCommerce.
+ * 
+ * Responsabilidad SOLA: Renderizar y procesar campos personalizados (NO reglas, NO shortcodes).
+ * - Muestra los campos personalizados según configuración guardada.
+ * - Procesa guardado y visualización en carrito/checkout.
+ * - Aplica precios extra según los valores seleccionados.
+ * - Carga JS/CSS solo en productos que usan campos personalizados.
  */
 final class GDM_Fields_Frontend {
     private static $instance = null;
@@ -20,16 +22,16 @@ final class GDM_Fields_Frontend {
     }
 
     private function __construct() {
-        // Cargar configuración de campos personalizados (se asume guardada por el admin)
+        // Cargar configuración de campos personalizados (guardada por el admin)
         $this->fields = get_option('gdm_product_custom_fields', []);
 
-        // Hook para mostrar campos en la página de producto
+        // Mostrar campos en la página de producto
         add_action('woocommerce_before_add_to_cart_button', [$this, 'display_fields']);
 
         // Guardar valores al añadir al carrito
         add_filter('woocommerce_add_cart_item_data', [$this, 'save_field_values'], 10, 3);
 
-        // Mostrar valores en el carrito
+        // Mostrar valores en el carrito/checkout
         add_filter('woocommerce_get_item_data', [$this, 'display_field_values_in_cart'], 10, 2);
 
         // Sumar precios adicionales de campos personalizados
@@ -40,7 +42,7 @@ final class GDM_Fields_Frontend {
     }
 
     /**
-     * Renderiza los campos personalizados en el producto
+     * Renderiza los campos personalizados en el producto.
      */
     public function display_fields() {
         if (empty($this->fields)) return;
@@ -111,7 +113,7 @@ final class GDM_Fields_Frontend {
     }
 
     /**
-     * Guardar los valores de los campos personalizados en el carrito
+     * Guarda los valores de los campos personalizados en el carrito.
      */
     public function save_field_values($cart_item_data, $product_id, $variation_id) {
         foreach ($this->fields as $field) {
@@ -130,7 +132,7 @@ final class GDM_Fields_Frontend {
     }
 
     /**
-     * Mostrar los valores de los campos personalizados en el carrito y checkout
+     * Muestra los valores de los campos personalizados en el carrito y checkout.
      */
     public function display_field_values_in_cart($item_data, $cart_item) {
         foreach ($this->fields as $field) {
@@ -146,7 +148,7 @@ final class GDM_Fields_Frontend {
     }
 
     /**
-     * Suma el precio extra de los campos personalizados al total del carrito
+     * Suma el precio extra de los campos personalizados al total del carrito.
      */
     public function add_custom_price($cart) {
         foreach ($cart->get_cart() as $cart_item_key => $cart_item) {
@@ -171,7 +173,7 @@ final class GDM_Fields_Frontend {
     }
 
     /**
-     * Cargar JS/CSS solo si hay campos personalizados en el producto
+     * Cargar JS/CSS solo si hay campos personalizados en el producto.
      */
     public function enqueue_scripts() {
         if (!is_product() || empty($this->fields)) return;
@@ -188,12 +190,12 @@ final class GDM_Fields_Frontend {
             [],
             GDM_VERSION
         );
-        // Pasar config al JS
+        // Pasar config al JS (si lo necesitas)
         wp_localize_script('gdm-fields-frontend', 'gdmFieldsFrontend', [
             'fields' => $this->fields
         ]);
     }
 }
 
-// Inicializar el módulo solo si el producto requiere campos personalizados
+// Inicializar el módulo solo si el producto requiere campos personalizados (plugin-init.php puede filtrar si lo deseas)
 GDM_Fields_Frontend::instance();

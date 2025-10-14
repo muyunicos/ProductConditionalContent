@@ -1,9 +1,9 @@
 /**
- * JS para la administración de Reglas de Contenido
- * - Renderiza la tabla de reglas, permite agregar/editar/eliminar (con modal)
+ * JS para la administración de Reglas de Contenido (solo admin)
+ * - Renderiza la tabla, permite agregar/editar/eliminar reglas
  * - Soporta selección múltiple y eliminación en lote
  * - Guarda los cambios por AJAX
- * - Prepara el modal para edición avanzada de reglas/variantes
+ * - Modal básico de edición de reglas
  */
 jQuery(function($){
     "use strict";
@@ -26,12 +26,10 @@ jQuery(function($){
     }
     renderRules();
 
-    // Seleccionar/deseleccionar todos
+    // Selección múltiple
     $('#gdm-select-all-rules').on('change', function(){
         $tbody.find('.gdm-rule-row-checkbox').prop('checked', $(this).is(':checked')).trigger('change');
     });
-
-    // Actualiza estado del botón eliminar
     $tbody.on('change', '.gdm-rule-row-checkbox', function(){
         const selected = $tbody.find('.gdm-rule-row-checkbox:checked').length;
         $('#gdm-delete-selected-rules').prop('disabled', selected === 0);
@@ -43,7 +41,7 @@ jQuery(function($){
         renderRules();
     });
 
-    // Eliminar seleccionados
+    // Eliminar seleccionadas
     $('#gdm-delete-selected-rules').on('click', function(){
         rules = rules.filter(function(r, idx){
             return !$tbody.find('tr').eq(idx).find('.gdm-rule-row-checkbox').is(':checked');
@@ -53,7 +51,7 @@ jQuery(function($){
         $('#gdm-delete-selected-rules').prop('disabled', true);
     });
 
-    // Modal de edición avanzada (básico, personaliza según tus necesidades)
+    // Modal de edición (simple)
     let editingIdx = null;
     $tbody.on('click', '.gdm-edit-rule', function(){
         editingIdx = $(this).closest('tr').index();
@@ -72,8 +70,6 @@ jQuery(function($){
             </div>
         `).show();
     });
-
-    // Guardar cambios del modal
     $(document).on('click', '#gdm-modal-save-rule', function(){
         if (editingIdx === null) return;
         rules[editingIdx].id = $('#gdm-modal-rule-id').val();
@@ -85,14 +81,12 @@ jQuery(function($){
         renderRules();
         editingIdx = null;
     });
-
-    // Cancelar modal
     $(document).on('click', '#gdm-modal-cancel', function(){
         $('#gdm-rule-modal').hide().empty();
         editingIdx = null;
     });
 
-    // Guardar reglas
+    // Guardar reglas por AJAX
     $('#gdm-rules-form').on('submit', function(e){
         e.preventDefault();
         $.post(gdmRulesAdmin.ajaxUrl, {

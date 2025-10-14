@@ -2,12 +2,13 @@
 if (!defined('ABSPATH')) exit;
 
 /**
- * Clase para gestionar campos personalizados condicionales desde el admin
+ * Clase para gestionar campos personalizados condicionales desde el admin.
  *
- * - Añade el submenú "Campos Personalizados" bajo "Reglas de Contenido"
- * - Permite agregar, editar (con modal), borrar y guardar campos personalizados
- * - Carga JS/CSS solo en la página correspondiente
- * - AJAX para guardar configuración
+ * Responsabilidad SOLA: UI y gestión de campos personalizados en el admin.
+ * - Añade el submenú "Campos Personalizados" bajo "Reglas de Contenido" (no frontend).
+ * - Permite agregar, editar (con modal), borrar y guardar campos personalizados vía AJAX.
+ * - Carga JS/CSS solo en la página correspondiente.
+ * - Sanitiza y valida los datos antes de guardar.
  */
 final class GDM_Fields_Admin {
     const OPTION_KEY = 'gdm_product_custom_fields';
@@ -23,7 +24,7 @@ final class GDM_Fields_Admin {
      */
     public static function add_admin_menu() {
         add_submenu_page(
-            'gdm_content_rules', // Slug del menú principal (coincide con class-admin-menu.php)
+            'gdm_content_rules', // Slug del menú principal
             __('Campos Personalizados', 'product-conditional-content'),
             __('Campos Personalizados', 'product-conditional-content'),
             'manage_options',
@@ -37,9 +38,8 @@ final class GDM_Fields_Admin {
      * Carga assets solo en la página de campos personalizados
      */
     public static function enqueue_scripts($hook) {
-        // Verifica si estamos en la página correcta
         $screen = get_current_screen();
-        if ($screen && $screen->id === 'toplevel_page_gdm_product_fields' || $screen->id === 'gdm_content_rules_page_gdm_product_fields') {
+        if ($screen && ($screen->id === 'toplevel_page_gdm_product_fields' || $screen->id === 'gdm_content_rules_page_gdm_product_fields')) {
             wp_enqueue_script('gdm-fields-admin', GDM_PLUGIN_URL . 'assets/admin/fields-admin.js', ['jquery'], GDM_VERSION, true);
             wp_enqueue_style('gdm-fields-admin', GDM_PLUGIN_URL . 'assets/admin/fields-admin.css', [], GDM_VERSION);
             wp_localize_script('gdm-fields-admin', 'gdmFieldsAdmin', [
@@ -51,7 +51,7 @@ final class GDM_Fields_Admin {
     }
 
     /**
-     * Página de gestión de campos personalizados
+     * Página de gestión de campos personalizados (solo admin)
      */
     public static function admin_page() {
         ?>
@@ -107,10 +107,36 @@ final class GDM_Fields_Admin {
      * Guarda los campos personalizados vía AJAX
      */
     public static function ajax_save_fields() {
+        // Solo admins
+        if (!current_user_can('manage_options')) wp_send_json_error('Sin permisos');
         check_ajax_referer('gdm_fields_admin_nonce', 'nonce');
         $fields = isset($_POST['fields']) ? json_decode(stripslashes($_POST['fields']), true) : [];
         if (!is_array($fields)) wp_send_json_error('Formato inválido');
-        update_option(self::OPTION_KEY, $fields);
+
+        // Sanitización básica por campo
+        $sanitized = [];
+        foreach ($fields as $f) {
+            $sanitized[] = [
+                'id'        => sanitize_key($f['id'] ?? ''),
+                'label'     => sanitize_text_field($f['label'] ?? ''),
+                'type'      => in_array($f['type'] ?? '', ['text','textarea','select','checkbox','radio']) ? $f['type'] : 'text',
+                'price'     => is_numeric($f['price'] ?? '') ? floatval($f['price']) : '',
+                'required'  => !empty($f['required']),
+                // Opciones y condicionales si existen
+                'options'   => isset($f['options']) && is_array($f['options']) ? array_map(function($opt){
+                    return [
+                        'value' => sanitize_key($opt['value'] ?? ''),
+                        'label' => sanitize_text_field($opt['label'] ?? ''),
+                        'price' => isset($opt['price']) && is_numeric($opt['price']) ? floatval($opt['price']) : '',
+                    ];
+                }, $f['options']) : [],
+                'conditional' => isset($f['conditional']) && is_array($f['conditional']) ? $f['conditional'] : [],
+                'placeholder' => sanitize_text_field($f['placeholder'] ?? ''),
+                'maxlength'   => isset($f['maxlength']) ? intval($f['maxlength']) : null,
+            ];
+        }
+
+        update_option(self::OPTION_KEY, $sanitized);
         wp_send_json_success();
     }
 
@@ -119,8 +145,7 @@ final class GDM_Fields_Admin {
      */
     public static function get_fields() {
         $fields = get_option(self::OPTION_KEY, []);
-        // Puedes filtrar/ordenar aquí si lo necesitas
-        return $fields;
+        return is_array($fields) ? $fields : [];
     }
 }
 

@@ -4,10 +4,11 @@ if (!defined('ABSPATH')) exit;
 /**
  * Renderizado y aplicación de reglas de contenido en el frontend.
  *
+ * Responsabilidad SOLA: Aplicar reglas y variantes a descripciones (NO campos, NO shortcodes).
  * - Aplica reglas a la descripción larga o corta del producto usando filtros.
  * - Soporta variantes condicionales, reglas reutilizables, y recursividad limitada.
- * - No debe contener lógica de administración ni helpers compartidos.
- * - La lógica de shortcodes como [campo-cond] debe ir en class-shortcodes.php.
+ * - NO contiene lógica de administración ni helpers compartidos.
+ * - La lógica de shortcodes como [campo-cond] va en class-shortcodes.php.
  */
 final class GDM_Rules_Frontend
 {
@@ -103,7 +104,7 @@ final class GDM_Rules_Frontend
     }
 
     /**
-     * Verifica si una regla es aplicable a este producto y tipo de descripción
+     * Verifica si una regla es aplicable a este producto y tipo de descripción.
      */
     private function is_rule_applicable($rule_id, $product, $type) {
         $data = $this->get_rule_data($rule_id);
@@ -119,7 +120,7 @@ final class GDM_Rules_Frontend
     }
 
     /**
-     * Verifica si una regla está en el ámbito del producto (categoría/tag)
+     * Verifica si una regla está en el ámbito del producto (categoría/tag).
      */
     private function is_rule_in_scope($data, $product) {
         $category_match = $data['todas_categorias'] === '1' ||
@@ -130,7 +131,7 @@ final class GDM_Rules_Frontend
     }
 
     /**
-     * Obtiene y cachea los datos de una regla por ID
+     * Obtiene y cachea los datos de una regla por ID.
      */
     private function get_rule_data($rule_id) {
         if (isset(self::$rule_cache[$rule_id])) return self::$rule_cache[$rule_id];

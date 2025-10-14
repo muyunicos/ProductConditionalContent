@@ -3,11 +3,12 @@ if (!defined('ABSPATH')) exit;
 
 /**
  * Clase para gestionar reglas de contenido en el admin.
+ *
+ * Responsabilidad SOLA: UI y gestión de reglas de contenido en el admin.
  * - Añade el submenú "Reglas de Contenido" bajo el menú principal.
- * - Permite agregar, editar, borrar y guardar reglas y variantes condicionales.
+ * - Permite agregar, editar, borrar y guardar reglas y variantes condicionales vía AJAX.
  * - Carga JS/CSS solo en la página correspondiente.
- * - AJAX para guardar configuración de reglas.
- * - Prepara modal de edición avanzada y manejo de variantes.
+ * - Sanitiza y valida los datos antes de guardar.
  */
 final class GDM_Rules_Admin {
     const OPTION_KEY = 'gdm_content_rules';
@@ -50,7 +51,7 @@ final class GDM_Rules_Admin {
     }
 
     /**
-     * Página principal de gestión de reglas y variantes
+     * Página principal de gestión de reglas y variantes (solo admin)
      */
     public static function admin_page() {
         ?>
@@ -106,10 +107,25 @@ final class GDM_Rules_Admin {
      * Guarda las reglas por AJAX
      */
     public static function ajax_save_rules() {
+        // Solo admins
+        if (!current_user_can('manage_options')) wp_send_json_error('Sin permisos');
         check_ajax_referer('gdm_rules_admin_nonce', 'nonce');
         $rules = isset($_POST['rules']) ? json_decode(stripslashes($_POST['rules']), true) : [];
         if (!is_array($rules)) wp_send_json_error('Formato inválido');
-        update_option(self::OPTION_KEY, $rules);
+
+        // Sanitización básica por regla
+        $sanitized = [];
+        foreach ($rules as $r) {
+            $sanitized[] = [
+                'id'        => sanitize_key($r['id'] ?? ''),
+                'name'      => sanitize_text_field($r['name'] ?? ''),
+                'priority'  => isset($r['priority']) ? intval($r['priority']) : 10,
+                'conditions'=> sanitize_text_field($r['conditions'] ?? ''),
+                'enabled'   => !empty($r['enabled']),
+                // Aquí puedes añadir más campos (variantes, acciones, etc.) según tu UI/UX
+            ];
+        }
+        update_option(self::OPTION_KEY, $sanitized);
         wp_send_json_success();
     }
 
@@ -118,7 +134,7 @@ final class GDM_Rules_Admin {
      */
     public static function get_rules() {
         $rules = get_option(self::OPTION_KEY, []);
-        return $rules;
+        return is_array($rules) ? $rules : [];
     }
 }
 
