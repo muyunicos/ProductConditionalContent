@@ -48,7 +48,7 @@ add_action('plugins_loaded', function() {
     if (!gdm_check_plugin_compat()) return;
 
     /** --- Constantes globales --- */
-    define('GDM_VERSION', '5.0.1');
+    define('GDM_VERSION', '5.0.3'); // ACTUALIZADO
     define('GDM_PLUGIN_DIR', plugin_dir_path(__FILE__));
     define('GDM_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -64,29 +64,31 @@ add_action('plugins_loaded', function() {
     require_once GDM_PLUGIN_DIR . 'includes/core/class-cpt.php';
 
     /** --- Carga según contexto --- */
+    /** --- Carga según contexto --- */
     if (is_admin()) {
         require_once GDM_PLUGIN_DIR . 'includes/admin/class-admin-helpers.php';
         require_once GDM_PLUGIN_DIR . 'includes/admin/class-fields-admin.php';
         require_once GDM_PLUGIN_DIR . 'includes/admin/class-rules-admin.php';
         require_once GDM_PLUGIN_DIR . 'includes/admin/class-meta-boxes.php';
         require_once GDM_PLUGIN_DIR . 'includes/admin/class-opciones-metabox.php';
+        require_once GDM_PLUGIN_DIR . 'includes/admin/class-regla-toggle-ajax.php';
         require_once GDM_PLUGIN_DIR . 'includes/admin/class-regla-status-manager.php';
     } else {
         require_once GDM_PLUGIN_DIR . 'includes/frontend/class-rules-frontend.php';
         require_once GDM_PLUGIN_DIR . 'includes/frontend/class-fields-frontend.php';
         require_once GDM_PLUGIN_DIR . 'includes/frontend/class-shortcodes.php';
     }
-    /**
- * Activar cron para verificar programaciones
- */
-if (!wp_next_scheduled('gdm_check_regla_schedules')) {
-    wp_schedule_event(time(), 'hourly', 'gdm_check_regla_schedules');
-}
+        /**
+     * Activar cron para verificar programaciones
+     */
+    if (!wp_next_scheduled('gdm_check_regla_schedules')) {
+        wp_schedule_event(time(), 'hourly', 'gdm_check_regla_schedules');
+    }
 
-/**
- * Desactivar cron al desactivar el plugin
- */
-register_deactivation_hook(__FILE__, function() {
-    wp_clear_scheduled_hook('gdm_check_regla_schedules');
-});
+    /**
+     * Desactivar cron al desactivar el plugin
+     */
+    register_deactivation_hook(__FILE__, function() {
+        wp_clear_scheduled_hook('gdm_check_regla_schedules');
+    });
 }, 20);

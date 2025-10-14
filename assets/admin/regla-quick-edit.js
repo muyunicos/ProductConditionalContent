@@ -1,91 +1,216 @@
-<?php
 /**
- * Plugin Name:       Reglas de Contenido para WooCommerce
- * Description:       Aplica contenido dinámico a productos basado en reglas y opciones personalizadas condicionales.
- * Version:           5.0.2
- * Author:            Muy Únicos
- * Requires at least: 6
- * Requires PHP:      8.2
- * WC requires at least: 10
- * WC tested up to:   10.2.2
- * License:           GPLv3
- * Text Domain:       product-conditional-content
+ * Quick Edit para Reglas con Toggle
+ * Compatible con WordPress 6.8.3
+ * 
+ * @package ProductConditionalContent
+ * @since 5.0.3
  */
 
-if (!defined('ABSPATH')) exit;
+(function($) {
+    'use strict';
 
-/** --- Compatibilidad y declaración de requisitos --- */
-function gdm_check_plugin_compat() {
-    global $wp_version;
-    $min_wp     = '6';
-    $min_php    = '8.2';
-    $min_wc     = '10.0.0';
-    $error_msgs = [];
+    // =========================================================================
+    // QUICK EDIT ENHANCEMENT
+    // =========================================================================
 
-    if (version_compare($wp_version, $min_wp, '<')) {
-        $error_msgs[] = "WordPress $min_wp+";
-    }
-    if (version_compare(PHP_VERSION, $min_php, '<')) {
-        $error_msgs[] = "PHP $min_php+";
-    }
-    if (!defined('WC_VERSION')) {
-        $error_msgs[] = "WooCommerce $min_wc+ (WooCommerce no está activo)";
-    } elseif (version_compare(WC_VERSION, $min_wc, '<')) {
-        $error_msgs[] = "WooCommerce $min_wc+";
+    // Guardar la función original de WordPress
+    const wp_inline_edit = inlineEditPost.edit;
+
+    // Sobreescribir la función
+    inlineEditPost.edit = function(id) {
+        // Llamar a la función original
+        wp_inline_edit.apply(this, arguments);
+
+        // Obtener el ID del post
+        let post_id = 0;
+        if (typeof(id) === 'object') {
+            post_id = parseInt(this.getId(id));
+        }
+
+        if (post_id > 0) {
+            populateQuickEditData(post_id);
+        }
+    };
+
+    /**
+     * Popular Quick Edit con datos de la regla
+     */
+    function populateQuickEditData(post_id) {
+        // Obtener la fila del post
+        const $row = $('#post-' + post_id);
+        const $toggle = $row.find('.gdm-toggle-switch');
+        
+        if (!$toggle.length) {
+            return;
+        }
+
+        // Obtener estado del toggle
+        const currentStatus = $toggle.data('current-status');
+        const isEnabled = (currentStatus === 'habilitada');
+
+        // Actualizar checkbox en Quick Edit
+        const $quickEditRow = $('.inline-edit-row');
+        const $quickToggle = $quickEditRow.find('input[name="gdm_quick_toggle"]');
+        
+        if ($quickToggle.length) {
+            $quickToggle.prop('checked', isEnabled);
+        }
+
+        // Si quieres cargar más datos vía AJAX, puedes hacerlo aquí
+        loadAdditionalData(post_id, $quickEditRow);
     }
 
-    if ($error_msgs) {
-        add_action('admin_notices', function() use ($error_msgs) {
-            echo '<div class="notice notice-error"><p><b>Reglas de Contenido para WooCommerce:</b> Requiere: '
-                . implode(', ', $error_msgs) . '.</p></div>';
+    /**
+     * Cargar datos adicionales vía AJAX
+     */
+    function loadAdditionalData(post_id, $quickEditRow) {
+        if (!gdmQuickEdit || !gdmQuickEdit.ajaxUrl) {
+            return;
+        }
+
+        $.ajax({
+            url: gdmQuickEdit.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'gdm_get_regla_data',
+                nonce: gdmQuickEdit.nonce,
+                post_id: post_id
+            },
+            success: function(response) {
+                if (response.success && response.data) {
+                    // Aquí puedes popular más campos si los agregas
+                    // Por ejemplo, checkbox de programación
+                    const $programar = $quickEditRow.find('input[name="gdm_quick_programar"]');
+                    if ($programar.length && response.data.programar) {
+                        $programar.prop('checked', response.data.programar === '1');
+                    }
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Quick Edit AJAX Error:', error);
+            }
         });
-        return false;
     }
-    return true;
-}
 
-add_action('plugins_loaded', function() {
-    if (!gdm_check_plugin_compat()) return;
+    // =========================================================================
+    // OCULTAR CAMPOS NO DESEADOS
+    // =========================================================================
 
-    /** --- Constantes globales --- */
-    define('GDM_VERSION', '5.0.2');
-    define('GDM_PLUGIN_DIR', plugin_dir_path(__FILE__));
-    define('GDM_PLUGIN_URL', plugin_dir_url(__FILE__));
+    /**
+     * Ocultar opciones de visibilidad en Quick Edit
+     */
+    function hideUnwantedFields() {
+        // Ocultar después de un pequeño delay para asegurar que el DOM esté listo
+        setTimeout(function() {
+            $('.inline-edit-row .inline-edit-password-input').hide();
+            $('.inline-edit-row .inline-edit-private').hide();
+            
+            // También ocultar en el selector de estado si existe
+            const $statusSelect = $('.inline-edit-row select[name="post_status"]');
+            if ($statusSelect.length) {
+                $statusSelect.find('option[value="private"]').remove();
+                $statusSelect.find('option[value="pending"]').remove();
+            }
+        }, 100);
+    }
 
-    /** --- Compatibilidad HPOS --- */
-    add_action('before_woocommerce_init', function() {
-        if (class_exists(\Automattic\WooCommerce\Utilities\FeaturesUtil::class)) {
-            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
+    // Ejecutar cuando se abre Quick Edit
+    $(document).on('click', '.editinline', function() {
+        hideUnwantedFields();
+    });
+
+    // =========================================================================
+    // BULK EDIT
+    // =========================================================================
+
+    /**
+     * Manejar Bulk Edit
+     */
+    function handleBulkEdit() {
+        const $bulkEditRow = $('.inline-edit-row.bulk-edit-row');
+        
+        if (!$bulkEditRow.length) {
+            return;
+        }
+
+        // Agregar toggle para bulk edit si no existe
+        if ($bulkEditRow.find('input[name="gdm_bulk_toggle"]').length === 0) {
+            const $statusField = $bulkEditRow.find('select[name="gdm_bulk_status"]');
+            
+            if ($statusField.length) {
+                $statusField.on('change', function() {
+                    const value = $(this).val();
+                    
+                    if (value === '-1') {
+                        // Sin cambios
+                        return;
+                    }
+                    
+                    // Aquí puedes agregar lógica adicional para bulk edit
+                    console.log('Bulk status change:', value);
+                });
+            }
+        }
+    }
+
+    // Ejecutar cuando se abre Bulk Edit
+    $(document).on('click', '.editinline', function() {
+        setTimeout(handleBulkEdit, 150);
+    });
+
+    // =========================================================================
+    // ESTILOS ADICIONALES
+    // =========================================================================
+
+    /**
+     * Agregar estilos CSS para Quick Edit
+     */
+    function addQuickEditStyles() {
+        if ($('#gdm-quick-edit-styles').length > 0) {
+            return;
+        }
+
+        const styles = `
+            <style id="gdm-quick-edit-styles">
+                /* Ocultar campos no deseados */
+                .post-type-gdm_regla .inline-edit-password-input,
+                .post-type-gdm_regla .inline-edit-private {
+                    display: none !important;
+                }
+                
+                /* Mejorar aspecto del checkbox de Quick Edit */
+                .inline-edit-row input[name="gdm_quick_toggle"] {
+                    margin-right: 6px;
+                }
+                
+                .inline-edit-row .checkbox-title {
+                    font-weight: 500;
+                }
+                
+                /* Highlight cuando se actualiza */
+                .gdm-row-updated {
+                    animation: gdm-highlight 2s ease-out;
+                }
+                
+                @keyframes gdm-highlight {
+                    0% { background-color: #d4edda; }
+                    100% { background-color: transparent; }
+                }
+            </style>
+        `;
+
+        $('head').append(styles);
+    }
+
+    // =========================================================================
+    // INIT
+    // =========================================================================
+
+    $(document).ready(function() {
+        if ($('body').hasClass('post-type-gdm_regla')) {
+            addQuickEditStyles();
+            console.log('✅ GDM Quick Edit: Initialized');
         }
     });
 
-    /** --- Inicialización global --- */
-    require_once GDM_PLUGIN_DIR . 'includes/core/class-plugin-init.php';
-    require_once GDM_PLUGIN_DIR . 'includes/core/class-cpt.php';
-
-    /** --- Carga según contexto --- */
-    if (is_admin()) {
-        require_once GDM_PLUGIN_DIR . 'includes/admin/class-admin-helpers.php';
-        require_once GDM_PLUGIN_DIR . 'includes/admin/class-fields-admin.php';
-        require_once GDM_PLUGIN_DIR . 'includes/admin/class-rules-admin.php';
-        require_once GDM_PLUGIN_DIR . 'includes/admin/class-meta-boxes.php';
-        require_once GDM_PLUGIN_DIR . 'includes/admin/class-opciones-metabox.php';
-        require_once GDM_PLUGIN_DIR . 'includes/admin/class-regla-status-manager.php';
-    } else {
-        require_once GDM_PLUGIN_DIR . 'includes/frontend/class-rules-frontend.php';
-        require_once GDM_PLUGIN_DIR . 'includes/frontend/class-fields-frontend.php';
-        require_once GDM_PLUGIN_DIR . 'includes/frontend/class-shortcodes.php';
-    }
-    
-    /** --- Configurar cron para verificar programaciones --- */
-    if (!wp_next_scheduled('gdm_check_regla_schedules')) {
-        wp_schedule_event(time(), 'hourly', 'gdm_check_regla_schedules');
-    }
-}, 20);
-
-/**
- * Desactivar cron al desactivar el plugin
- */
-register_deactivation_hook(__FILE__, function() {
-    wp_clear_scheduled_hook('gdm_check_regla_schedules');
-});
+})(jQuery);

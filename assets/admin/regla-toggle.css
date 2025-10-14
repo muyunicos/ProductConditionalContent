@@ -1,0 +1,309 @@
+/**
+ * Toggle Switch Styles
+ * Diseño moderno inspirado en iOS/Android
+ * Compatible con WordPress 6.8.3
+ * 
+ * @package ProductConditionalContent
+ * @since 5.0.3
+ */
+
+/* ========================================================================
+   TOGGLE SWITCH
+   ======================================================================== */
+
+.gdm-toggle-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gdm-toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.gdm-toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.gdm-toggle-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #999;
+    border-radius: 24px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gdm-toggle-slider:before {
+    content: '';
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Estado checked (ON) */
+.gdm-toggle-switch input:checked + .gdm-toggle-slider {
+    background-color: #46b450;
+}
+
+.gdm-toggle-switch input:checked + .gdm-toggle-slider:before {
+    transform: translateX(20px);
+}
+
+/* Hover */
+.gdm-toggle-switch:hover .gdm-toggle-slider {
+    box-shadow: 0 0 0 4px rgba(70, 180, 80, 0.1);
+}
+
+.gdm-toggle-switch input:checked:hover + .gdm-toggle-slider {
+    background-color: #3a9943;
+}
+
+/* Loading state */
+.gdm-toggle-switch.loading {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.gdm-toggle-switch.loading .gdm-toggle-slider:before {
+    animation: gdm-toggle-pulse 1s infinite;
+}
+
+@keyframes gdm-toggle-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(0.9); }
+}
+
+/* Disabled */
+.gdm-toggle-switch.disabled {
+    pointer-events: none;
+    opacity: 0.4;
+}
+
+/* ========================================================================
+   STATUS BADGES
+   ======================================================================== */
+
+.gdm-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: #fff;
+}
+
+.gdm-status-badge.status-active {
+    background-color: #46b450;
+}
+
+.gdm-status-badge.status-scheduled {
+    background-color: #00a0d2;
+}
+
+.gdm-status-badge.status-expiring {
+    background-color: #f0b849;
+}
+
+.gdm-status-badge.status-expired {
+    background-color: #dc3232;
+}
+
+.gdm-status-badge.status-disabled {
+    background-color: #999;
+}
+
+/* Icono de estado */
+.gdm-status-icon {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: currentColor;
+}
+
+/* ========================================================================
+   COLUMNAS DE LA TABLA
+   ======================================================================== */
+
+.column-gdm_toggle {
+    width: 100px;
+}
+
+.column-gdm_estado {
+    width: 220px;
+}
+
+/* Estado con descripción */
+.gdm-status-with-description {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.gdm-status-description {
+    font-size: 11px;
+    color: #666;
+    font-weight: normal;
+}
+
+/* ========================================================================
+   METABOX PUBLISH
+   ======================================================================== */
+
+.gdm-status-section {
+    border-top: 1px solid #dcdcde;
+    padding: 12px;
+}
+
+.gdm-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 10px;
+    background: #f6f7f7;
+    border-radius: 4px;
+    border-left: 3px solid #46b450;
+}
+
+.gdm-status-indicator.status-disabled {
+    border-left-color: #999;
+    background: #f0f0f1;
+}
+
+.gdm-status-indicator.status-scheduled {
+    border-left-color: #00a0d2;
+}
+
+.gdm-status-indicator.status-expiring {
+    border-left-color: #f0b849;
+}
+
+.gdm-status-indicator.status-expired {
+    border-left-color: #dc3232;
+}
+
+/* Toggle grande en metabox */
+.gdm-toggle-metabox {
+    width: 52px;
+    height: 28px;
+}
+
+.gdm-toggle-metabox .gdm-toggle-slider:before {
+    height: 22px;
+    width: 22px;
+}
+
+.gdm-toggle-metabox input:checked + .gdm-toggle-slider:before {
+    transform: translateX(24px);
+}
+
+/* ========================================================================
+   NOTIFICACIONES DE TOGGLE
+   ======================================================================== */
+
+.gdm-toggle-notification {
+    position: fixed;
+    top: 32px;
+    right: 20px;
+    max-width: 300px;
+    padding: 12px 16px;
+    background: #fff;
+    border-left: 4px solid #46b450;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+    z-index: 100000;
+    animation: gdm-slide-in 0.3s ease-out;
+}
+
+.gdm-toggle-notification.error {
+    border-left-color: #dc3232;
+}
+
+.gdm-toggle-notification.success {
+    border-left-color: #46b450;
+}
+
+@keyframes gdm-slide-in {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.gdm-toggle-notification.hiding {
+    animation: gdm-slide-out 0.3s ease-out forwards;
+}
+
+@keyframes gdm-slide-out {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+}
+
+/* ========================================================================
+   RESPONSIVE
+   ======================================================================== */
+
+@media screen and (max-width: 782px) {
+    .gdm-toggle-wrapper {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+    
+    .column-gdm_toggle,
+    .column-gdm_estado {
+        width: auto;
+    }
+    
+    .gdm-status-badge {
+        font-size: 11px;
+        padding: 3px 8px;
+    }
+}
+
+/* ========================================================================
+   ACCESSIBILITY
+   ======================================================================== */
+
+.gdm-toggle-switch:focus-within .gdm-toggle-slider {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
+}
+
+/* Prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .gdm-toggle-slider,
+    .gdm-toggle-slider:before {
+        transition: none;
+    }
+}
