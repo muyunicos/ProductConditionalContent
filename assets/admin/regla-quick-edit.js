@@ -1,71 +1,91 @@
+<?php
 /**
- * Quick Edit para Reglas
- * Compatible con WordPress 6.8.3
- * 
- * @package ProductConditionalContent
- * @since 5.0.2
+ * Plugin Name:       Reglas de Contenido para WooCommerce
+ * Description:       Aplica contenido dinámico a productos basado en reglas y opciones personalizadas condicionales.
+ * Version:           5.0.2
+ * Author:            Muy Únicos
+ * Requires at least: 6
+ * Requires PHP:      8.2
+ * WC requires at least: 10
+ * WC tested up to:   10.2.2
+ * License:           GPLv3
+ * Text Domain:       product-conditional-content
  */
 
-jQuery(document).ready(function($) {
-    
-    // Copiar datos al Quick Edit
-    const $wp_inline_edit = inlineEditPost.edit;
-    
-    inlineEditPost.edit = function(id) {
-        // Llamar función original
-        $wp_inline_edit.apply(this, arguments);
-        
-        const post_id = 0;
-        if (typeof(id) === 'object') {
-            post_id = parseInt(this.getId(id));
+if (!defined('ABSPATH')) exit;
+
+/** --- Compatibilidad y declaración de requisitos --- */
+function gdm_check_plugin_compat() {
+    global $wp_version;
+    $min_wp     = '6';
+    $min_php    = '8.2';
+    $min_wc     = '10.0.0';
+    $error_msgs = [];
+
+    if (version_compare($wp_version, $min_wp, '<')) {
+        $error_msgs[] = "WordPress $min_wp+";
+    }
+    if (version_compare(PHP_VERSION, $min_php, '<')) {
+        $error_msgs[] = "PHP $min_php+";
+    }
+    if (!defined('WC_VERSION')) {
+        $error_msgs[] = "WooCommerce $min_wc+ (WooCommerce no está activo)";
+    } elseif (version_compare(WC_VERSION, $min_wc, '<')) {
+        $error_msgs[] = "WooCommerce $min_wc+";
+    }
+
+    if ($error_msgs) {
+        add_action('admin_notices', function() use ($error_msgs) {
+            echo '<div class="notice notice-error"><p><b>Reglas de Contenido para WooCommerce:</b> Requiere: '
+                . implode(', ', $error_msgs) . '.</p></div>';
+        });
+        return false;
+    }
+    return true;
+}
+
+add_action('plugins_loaded', function() {
+    if (!gdm_check_plugin_compat()) return;
+
+    /** --- Constantes globales --- */
+    define('GDM_VERSION', '5.0.2');
+    define('GDM_PLUGIN_DIR', plugin_dir_path(__FILE__));
+    define('GDM_PLUGIN_URL', plugin_dir_url(__FILE__));
+
+    /** --- Compatibilidad HPOS --- */
+    add_action('before_woocommerce_init', function() {
+        if (class_exists(\Automattic\WooCommerce\Utilities\FeaturesUtil::class)) {
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
         }
-        
-        if (post_id > 0) {
-            // Obtener datos vía AJAX
-            $.ajax({
-                url: gdmQuickEdit.ajaxUrl,
-                type: 'POST',
-                data: {
-                    action: 'gdm_get_regla_data',
-                    nonce: gdmQuickEdit.nonce,
-                    post_id: post_id
-                },
-                success: function(response) {
-                    if (response.success && response.data) {
-                        const data = response.data;
-                        
-                        // Setear estado
-                        if (data.status) {
-                            let status = data.status;
-                            // Mapear 'publish' a 'habilitada'
-                            if (status === 'publish') {
-                                status = 'habilitada';
-                            }
-                            $('select[name="gdm_regla_status"]').val(status);
-                        }
-                        
-                        // Setear fecha inicio
-                        if (data.fecha_inicio) {
-                            const fechaInicio = data.fecha_inicio.replace(' ', 'T').substring(0, 16);
-                            $('input[name="gdm_fecha_inicio"]').val(fechaInicio);
-                        }
-                        
-                        // Setear habilitar fecha fin
-                        if (data.habilitar_fin === '1') {
-                            $('input[name="gdm_habilitar_fecha_fin"]').prop('checked', true);
-                        }
-                        
-                        // Setear fecha fin
-                        if (data.fecha_fin) {
-                            const fechaFin = data.fecha_fin.replace(' ', 'T').substring(0, 16);
-                            $('input[name="gdm_fecha_fin"]').val(fechaFin);
-                        }
-                    }
-                }
-            });
-        }
-    };
+    });
+
+    /** --- Inicialización global --- */
+    require_once GDM_PLUGIN_DIR . 'includes/core/class-plugin-init.php';
+    require_once GDM_PLUGIN_DIR . 'includes/core/class-cpt.php';
+
+    /** --- Carga según contexto --- */
+    if (is_admin()) {
+        require_once GDM_PLUGIN_DIR . 'includes/admin/class-admin-helpers.php';
+        require_once GDM_PLUGIN_DIR . 'includes/admin/class-fields-admin.php';
+        require_once GDM_PLUGIN_DIR . 'includes/admin/class-rules-admin.php';
+        require_once GDM_PLUGIN_DIR . 'includes/admin/class-meta-boxes.php';
+        require_once GDM_PLUGIN_DIR . 'includes/admin/class-opciones-metabox.php';
+        require_once GDM_PLUGIN_DIR . 'includes/admin/class-regla-status-manager.php';
+    } else {
+        require_once GDM_PLUGIN_DIR . 'includes/frontend/class-rules-frontend.php';
+        require_once GDM_PLUGIN_DIR . 'includes/frontend/class-fields-frontend.php';
+        require_once GDM_PLUGIN_DIR . 'includes/frontend/class-shortcodes.php';
+    }
     
-    // Ocultar campos de visibilidad
-    $('.inline-edit-row .inline-edit-password-input, .inline-edit-row .inline-edit-private').hide();
+    /** --- Configurar cron para verificar programaciones --- */
+    if (!wp_next_scheduled('gdm_check_regla_schedules')) {
+        wp_schedule_event(time(), 'hourly', 'gdm_check_regla_schedules');
+    }
+}, 20);
+
+/**
+ * Desactivar cron al desactivar el plugin
+ */
+register_deactivation_hook(__FILE__, function() {
+    wp_clear_scheduled_hook('gdm_check_regla_schedules');
 });
