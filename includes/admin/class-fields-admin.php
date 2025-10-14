@@ -5,10 +5,10 @@ if (!defined('ABSPATH')) exit;
  * Clase para gestionar campos personalizados condicionales desde el admin.
  *
  * Responsabilidad SOLA: UI y gestión de campos personalizados en el admin.
- * - Añade el submenú "Campos Personalizados" bajo "Reglas de Contenido" (no frontend).
  * - Permite agregar, editar (con modal), borrar y guardar campos personalizados vía AJAX.
  * - Carga JS/CSS solo en la página correspondiente.
  * - Sanitiza y valida los datos antes de guardar.
+ * - NO debe registrar submenús (lo hace class-admin-menu.php).
  */
 final class GDM_Fields_Admin {
     const OPTION_KEY = 'gdm_product_custom_fields';
@@ -91,13 +91,11 @@ final class GDM_Fields_Admin {
      * Guarda los campos personalizados vía AJAX
      */
     public static function ajax_save_fields() {
-        // Solo admins
         if (!current_user_can('manage_options')) wp_send_json_error('Sin permisos');
         check_ajax_referer('gdm_fields_admin_nonce', 'nonce');
         $fields = isset($_POST['fields']) ? json_decode(stripslashes($_POST['fields']), true) : [];
         if (!is_array($fields)) wp_send_json_error('Formato inválido');
 
-        // Sanitización básica por campo
         $sanitized = [];
         foreach ($fields as $f) {
             $sanitized[] = [
@@ -106,7 +104,6 @@ final class GDM_Fields_Admin {
                 'type'      => in_array($f['type'] ?? '', ['text','textarea','select','checkbox','radio']) ? $f['type'] : 'text',
                 'price'     => is_numeric($f['price'] ?? '') ? floatval($f['price']) : '',
                 'required'  => !empty($f['required']),
-                // Opciones y condicionales si existen
                 'options'   => isset($f['options']) && is_array($f['options']) ? array_map(function($opt){
                     return [
                         'value' => sanitize_key($opt['value'] ?? ''),

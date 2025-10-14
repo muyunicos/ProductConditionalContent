@@ -5,10 +5,10 @@ if (!defined('ABSPATH')) exit;
  * Clase para gestionar reglas de contenido en el admin.
  *
  * Responsabilidad SOLA: UI y gestión de reglas de contenido en el admin.
- * - Añade el submenú "Reglas de Contenido" bajo el menú principal.
  * - Permite agregar, editar, borrar y guardar reglas y variantes condicionales vía AJAX.
  * - Carga JS/CSS solo en la página correspondiente.
  * - Sanitiza y valida los datos antes de guardar.
+ * - NO debe registrar submenús (lo hace class-admin-menu.php).
  */
 final class GDM_Rules_Admin {
     const OPTION_KEY = 'gdm_content_rules';
@@ -91,13 +91,11 @@ final class GDM_Rules_Admin {
      * Guarda las reglas por AJAX
      */
     public static function ajax_save_rules() {
-        // Solo admins
         if (!current_user_can('manage_options')) wp_send_json_error('Sin permisos');
         check_ajax_referer('gdm_rules_admin_nonce', 'nonce');
         $rules = isset($_POST['rules']) ? json_decode(stripslashes($_POST['rules']), true) : [];
         if (!is_array($rules)) wp_send_json_error('Formato inválido');
 
-        // Sanitización básica por regla
         $sanitized = [];
         foreach ($rules as $r) {
             $sanitized[] = [
@@ -106,7 +104,6 @@ final class GDM_Rules_Admin {
                 'priority'  => isset($r['priority']) ? intval($r['priority']) : 10,
                 'conditions'=> sanitize_text_field($r['conditions'] ?? ''),
                 'enabled'   => !empty($r['enabled']),
-                // Aquí puedes añadir más campos (variantes, acciones, etc.) según tu UI/UX
             ];
         }
         update_option(self::OPTION_KEY, $sanitized);
