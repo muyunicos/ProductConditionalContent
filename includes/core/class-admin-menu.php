@@ -2,7 +2,6 @@
 /**
  * Clase para declarar el menú y submenús del plugin en el admin de WordPress
  */
-
 if (!defined('ABSPATH')) exit;
 
 final class GDM_Admin_Menu {
@@ -14,31 +13,21 @@ final class GDM_Admin_Menu {
      * Registrar menú y submenús, usando filtros para que otros módulos puedan agregar más
      */
     public static function register_menu() {
-        // Menú principal (puedes cambiar el 'menu_slug' en el futuro si lo deseas)
+        // Menú principal
         $main_slug = 'gdm_content_rules';
 
-        // Menú principal
         add_menu_page(
-            __('Reglas de Contenido', 'product-conditional-content'), // Título página
-            __('Reglas de Contenido', 'product-conditional-content'), // Título menú
-            'manage_options',                                         // Capability
-            $main_slug,                                               // Slug
-            '',                                                       // Callback (puede quedar vacío si solo submenús)
-            'dashicons-filter',                                       // Icono
-            25                                                        // Posición
+            __('Reglas de Contenido', 'product-conditional-content'),
+            __('Reglas de Contenido', 'product-conditional-content'),
+            'manage_options',
+            $main_slug,
+            '', // <--- No agregues callback aquí, ni como submenú (WordPress lo crea solo)
+            'dashicons-filter',
+            25
         );
 
-        // Submenús básicos, puedes añadir más desde otros módulos usando el filtro
+        // Solo los submenús secundarios, NO repitas el slug principal aquí
         $submenus = [
-            [
-                'parent_slug' => $main_slug,
-                'page_title'  => __('Reglas de Contenido', 'product-conditional-content'),
-                'menu_title'  => __('Reglas de Contenido', 'product-conditional-content'),
-                'capability'  => 'manage_options',
-                'menu_slug'   => 'gdm_content_rules_list',
-                'callback'    => [self::class, 'submenu_placeholder'],
-                'position'    => 1,
-            ],
             [
                 'parent_slug' => $main_slug,
                 'page_title'  => __('Campos Personalizados', 'product-conditional-content'),
@@ -51,14 +40,13 @@ final class GDM_Admin_Menu {
             // Puedes añadir más submenús aquí si lo necesitas
         ];
 
-        /**
-         * Permite que otros módulos o plugins añadan/quiten submenús fácilmente
-         * Cada entrada debe ser igual a la estructura de $submenus[]
-         */
+        // Permite que otros módulos o plugins añadan/quiten submenús fácilmente
         $submenus = apply_filters('gdm_admin_submenus', $submenus);
 
-        // Añadir todos los submenús
+        // Añadir todos los submenús (excepto el principal)
         foreach ($submenus as $submenu) {
+            // Evitar agregar el submenú con el mismo slug que el principal
+            if ($submenu['menu_slug'] === $main_slug) continue;
             add_submenu_page(
                 $submenu['parent_slug'],
                 $submenu['page_title'],
