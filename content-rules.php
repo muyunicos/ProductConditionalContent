@@ -61,7 +61,6 @@ add_action('plugins_loaded', function() {
 
     /** --- Inicialización global --- */
     require_once GDM_PLUGIN_DIR . 'includes/core/class-plugin-init.php';
-    require_once GDM_PLUGIN_DIR . 'includes/core/class-admin-menu.php';
     require_once GDM_PLUGIN_DIR . 'includes/core/class-cpt.php';
 
     /** --- Carga según contexto --- */
@@ -69,29 +68,9 @@ add_action('plugins_loaded', function() {
         require_once GDM_PLUGIN_DIR . 'includes/admin/class-fields-admin.php';
         require_once GDM_PLUGIN_DIR . 'includes/admin/class-rules-admin.php';
         require_once GDM_PLUGIN_DIR . 'includes/admin/class-meta-boxes.php';
-        require_once GDM_PLUGIN_DIR . 'includes/admin/class-opciones-metabox.php'; // NUEVO
+        require_once GDM_PLUGIN_DIR . 'includes/admin/class-opciones-metabox.php';
     } else {
-        add_action('wp', function() {
-            if (is_product()) {
-                $product_id = get_the_ID();
-                $has_rules  = apply_filters('gdm_product_has_rules', false, $product_id);
-                $has_fields = apply_filters('gdm_product_has_custom_fields', false, $product_id);
-                
-                if ($has_rules) {
-                    require_once GDM_PLUGIN_DIR . 'includes/frontend/class-rules-frontend.php';
-                }
-                if ($has_fields) {
-                    require_once GDM_PLUGIN_DIR . 'includes/frontend/class-fields-frontend.php';
-                }
-                if ($has_rules || $has_fields) {
-                    require_once GDM_PLUGIN_DIR . 'includes/frontend/class-shortcodes.php';
-                }
-            }
-        });
+        require_once GDM_PLUGIN_DIR . 'includes/frontend/class-display.php';
+        require_once GDM_PLUGIN_DIR . 'includes/frontend/class-frontend-fields.php';
     }
-
-    /** --- Compatibilidad adicional --- */
-    if (file_exists(GDM_PLUGIN_DIR . 'includes/compatibility/class-compat-check.php')) {
-        require_once GDM_PLUGIN_DIR . 'includes/compatibility/class-compat-check.php';
-    }
-});
+}, 20);
