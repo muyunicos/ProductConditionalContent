@@ -107,6 +107,7 @@ if (is_admin()) {
     require_once GDM_PLUGIN_DIR . 'includes/admin/class-fields-admin.php';
     require_once GDM_PLUGIN_DIR . 'includes/admin/class-rules-admin.php';
     require_once GDM_PLUGIN_DIR . 'includes/admin/class-meta-boxes.php';
+    require_once GDM_PLUGIN_DIR . 'includes/admin/class-opciones-metabox.php';
 } else {
     // Frontend: carga selectiva solo si el producto necesita reglas o campos personalizados
     add_action('wp', function() {

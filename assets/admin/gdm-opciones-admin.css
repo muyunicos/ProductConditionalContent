@@ -1,0 +1,290 @@
+/**
+ * Estilos para Admin de Opciones de Producto
+ * Versión: 1.0.0
+ * Compatible con WordPress 6.8.3
+ */
+
+/* =============================================================================
+   CONTENEDOR PRINCIPAL
+   ========================================================================== */
+
+.gdm-opcion-container {
+    background: #fff;
+    padding: 0;
+}
+
+.gdm-section {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.gdm-section h3 {
+    margin: -20px -20px 15px -20px;
+    padding: 15px 20px;
+    background: #f6f7f7;
+    border-bottom: 1px solid #ccd0d4;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+
+.gdm-section h3:hover {
+    background: #e9ecef;
+}
+
+.gdm-section h3::after {
+    content: '\f142';
+    font-family: dashicons;
+    float: right;
+    transition: transform 0.2s;
+}
+
+.gdm-section h3.collapsed::after {
+    transform: rotate(-180deg);
+}
+
+/* =============================================================================
+   FORMULARIOS
+   ========================================================================== */
+
+.gdm-section .form-table {
+    margin-top: 0;
+}
+
+.gdm-section .form-table th {
+    width: 200px;
+    padding: 15px 10px 15px 0;
+}
+
+.gdm-section .form-table td {
+    padding: 15px 10px;
+}
+
+.gdm-section .required {
+    color: #d63638;
+    font-weight: bold;
+}
+
+.gdm-section .description {
+    color: #646970;
+    font-style: italic;
+    margin-top: 5px;
+}
+
+.gdm-opcion-tipo-select {
+    min-width: 300px;
+}
+
+.currency-symbol {
+    margin-left: 5px;
+    color: #646970;
+    font-weight: 500;
+}
+
+/* =============================================================================
+   TABLA DE OPCIONES DE SELECCIÓN (Choices)
+   ========================================================================== */
+
+.gdm-choices-table {
+    margin-top: 15px;
+    margin-bottom: 15px;
+    border: 1px solid #c3c4c7;
+    background: #fff;
+}
+
+.gdm-choices-table thead th {
+    background: #f6f7f7;
+    border-bottom: 1px solid #c3c4c7;
+    padding: 10px;
+    font-weight: 600;
+}
+
+.gdm-choices-table tbody tr {
+    border-bottom: 1px solid #dcdcde;
+}
+
+.gdm-choices-table tbody tr:hover {
+    background: #f6f7f7;
+}
+
+.gdm-choices-table td {
+    padding: 10px;
+    vertical-align: middle;
+}
+
+.gdm-choices-table .handle-col {
+    width: 30px;
+    text-align: center;
+}
+
+.gdm-choices-table .actions-col {
+    width: 60px;
+    text-align: center;
+}
+
+.gdm-sort-handle {
+    cursor: move;
+    color: #787c82;
+    display: inline-block;
+}
+
+.gdm-sort-handle:hover {
+    color: #2271b1;
+}
+
+.gdm-choice-row input[type="text"] {
+    width: 100%;
+}
+
+.gdm-remove-choice {
+    color: #d63638;
+}
+
+.gdm-remove-choice:hover {
+    background: #d63638;
+    border-color: #d63638;
+    color: #fff;
+}
+
+/* Placeholder para sortable */
+.gdm-sortable-placeholder {
+    background: #f0f0f1;
+    border: 2px dashed #2271b1;
+    height: 60px;
+}
+
+/* =============================================================================
+   BOTONES Y ACCIONES
+   ========================================================================== */
+
+#gdm-add-choice {
+    margin-top: 10px;
+}
+
+#gdm-add-choice .dashicons {
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+.button .dashicons {
+    line-height: 1.6;
+}
+
+/* =============================================================================
+   ESTADOS Y CONDICIONES
+   ========================================================================== */
+
+.gdm-tipo-config {
+    transition: all 0.3s ease;
+}
+
+.gdm-tipo-config:not([style*="display: none"]) {
+    animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Select2 personalizado (si se usa) */
+.gdm-select2 {
+    min-height: 36px;
+}
+
+/* =============================================================================
+   RESPONSIVE
+   ========================================================================== */
+
+@media screen and (max-width: 782px) {
+    .gdm-section .form-table th {
+        width: 100%;
+        display: block;
+        padding: 10px 0 5px 0;
+    }
+    
+    .gdm-section .form-table td {
+        width: 100%;
+        display: block;
+        padding: 5px 0 15px 0;
+    }
+    
+    .gdm-choices-table {
+        font-size: 13px;
+    }
+    
+    .gdm-choices-table input[type="text"] {
+        min-width: 80px;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .gdm-choices-table .handle-col,
+    .gdm-choices-table .actions-col {
+        width: auto;
+    }
+    
+    .gdm-choices-table td {
+        padding: 8px;
+    }
+}
+
+/* =============================================================================
+   UTILIDADES
+   ========================================================================== */
+
+.gdm-hidden {
+    display: none !important;
+}
+
+.gdm-text-muted {
+    color: #646970;
+}
+
+.gdm-text-success {
+    color: #00a32a;
+}
+
+.gdm-text-danger {
+    color: #d63638;
+}
+
+.gdm-text-warning {
+    color: #dba617;
+}
+
+/* Separador visual */
+.gdm-separator {
+    height: 1px;
+    background: #dcdcde;
+    margin: 20px 0;
+}
+
+/* Ayuda contextual */
+.gdm-help-tip {
+    color: #787c82;
+    cursor: help;
+    vertical-align: middle;
+}
+
+.gdm-help-tip:hover {
+    color: #2271b1;
+}
+
+/* Campo de código */
+code {
+    background: #f0f0f1;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+}
