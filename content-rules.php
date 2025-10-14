@@ -70,7 +70,7 @@ add_action('plugins_loaded', function() {
         require_once GDM_PLUGIN_DIR . 'includes/admin/class-meta-boxes.php';
         require_once GDM_PLUGIN_DIR . 'includes/admin/class-opciones-metabox.php';
     } else {
-        require_once GDM_PLUGIN_DIR . 'includes/frontend/class-display.php';
+        require_once GDM_PLUGIN_DIR . 'includes/frontend/class-rules-frontend.php';
         require_once GDM_PLUGIN_DIR . 'includes/frontend/class-frontend-fields.php';
     }
 }, 20);

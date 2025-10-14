@@ -23,7 +23,7 @@ final class GDM_Reglas_Metabox {
      */
     public static function enqueue_assets($hook) {
         $screen = get_current_screen();
-        if (!in_array($screen->id, ['gdm_regla', 'gdm_campo'])) {
+        if (!in_array($screen->id, ['gdm_regla', 'gdm_opcion'])) {
             return;
         }
 
