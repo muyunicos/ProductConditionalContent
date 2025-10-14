@@ -26,11 +26,10 @@ add_action('before_woocommerce_init', function() {
 
 // Cargar solo lo necesario según el contexto
 if (is_admin()) {
-    // SOLO en admin - cargar clase de administración
     require_once GDM_PLUGIN_DIR . 'includes/class-gdm-admin.php';
+    require_once GDM_PLUGIN_DIR . 'includes/class-gdm-fields-admin.php'; // <--- AGREGAR ESTA LINEA
     GDM_Admin::instance();
 } else {
-    // SOLO en frontend - cargar clase de frontend
     require_once GDM_PLUGIN_DIR . 'includes/class-gdm-frontend.php';
     GDM_Frontend::instance();
 }

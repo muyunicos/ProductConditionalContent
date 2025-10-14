@@ -15,41 +15,7 @@ final class GDM_Product_Fields
 
     private function __construct() {
         // Define fields structure here or load from DB/options
-        $this->fields = [
-            [
-                'id' => 'engraving',
-                'type' => 'text',
-                'label' => 'Texto para grabado',
-                'placeholder' => 'Ingresa el texto',
-                'required' => false,
-                'conditional' => [
-                  // 'show_if' => ['option_color' => 'rojo']
-                ],
-                'price' => 0
-            ],
-            [
-                'id' => 'gift_wrap',
-                'type' => 'checkbox',
-                'label' => '¿Envolver para regalo?',
-                'price' => 50, // precio extra
-                'conditional' => []
-            ],
-            [
-                'id' => 'option_color',
-                'type' => 'select',
-                'label' => 'Color',
-                'options' => [
-                    'rojo' => 'Rojo',
-                    'azul' => 'Azul',
-                ],
-                'price' => [
-                    'rojo' => 0,
-                    'azul' => 20 // azul cuesta extra
-                ],
-                'conditional' => []
-            ]
-        ];
-
+        $this->fields = get_option('gdm_product_custom_fields', []);
         add_action('woocommerce_before_add_to_cart_button', [$this, 'display_fields']);
         add_filter('woocommerce_add_cart_item_data', [$this, 'save_field_values'], 10, 3);
         add_filter('woocommerce_get_item_data', [$this, 'display_field_values_in_cart'], 10, 2);
