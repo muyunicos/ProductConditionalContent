@@ -1,4 +1,8 @@
 <?php
+/**
+ * ARCHIVO: includes/class-gdm-frontend.php
+ * Frontend optimizado con soporte para reglas reutilizables
+ */
 if (!defined('ABSPATH')) exit;
 
 final class GDM_Frontend
@@ -16,7 +20,6 @@ final class GDM_Frontend
     }
 
     private function __construct() {
-        // Solo hooks de frontend
         add_filter('the_content', [$this, 'run_engine_for_long_desc'], 20);
         add_filter('woocommerce_short_description', [$this, 'run_engine_for_short_desc'], 20);
     }
@@ -120,8 +123,8 @@ final class GDM_Frontend
             return $initial_content;
         }
 
-        $matching_rules = array_filter($all_rules, function($rule) use ($product) {
-            return $this->is_rule_in_scope($rule->ID, $product);
+        $matching_rules = array_filter($all_rules, function($rule) use ($product, $type) {
+            return $this->is_rule_applicable($rule->ID, $product, $type);
         });
 
         if (empty($matching_rules)) {
@@ -139,10 +142,6 @@ final class GDM_Frontend
             $rule_data = $this->get_rule_data($rule->ID);
             
             if (!$rule_data) {
-                continue;
-            }
-
-            if (empty($rule_data['aplicar_a']) || !in_array($type, $rule_data['aplicar_a'], true)) {
                 continue;
             }
 
@@ -177,6 +176,38 @@ final class GDM_Frontend
         return do_shortcode(wpautop($current_content));
     }
 
+    /**
+     * Verifica si una regla es aplicable al producto y tipo de descripción
+     */
+    private function is_rule_applicable($rule_id, $product, $type) {
+        if (!is_a($product, 'WC_Product')) {
+            return false;
+        }
+        
+        $data = $this->get_rule_data($rule_id);
+        
+        if (!$data) {
+            return false;
+        }
+        
+        // Si la regla es SOLO reutilizable, no aplicar automáticamente
+        if (in_array('reutilizable', $data['aplicar_a']) && 
+            count($data['aplicar_a']) === 1) {
+            return false;
+        }
+        
+        // Verificar si aplica al tipo de descripción (larga/corta)
+        if (empty($data['aplicar_a']) || !in_array($type, $data['aplicar_a'], true)) {
+            return false;
+        }
+        
+        // Validar scope (categorías y tags)
+        return $this->is_rule_in_scope($rule_id, $product);
+    }
+
+    /**
+     * Verifica si una regla está en el ámbito del producto
+     */
     private function is_rule_in_scope($rule_id, $product) {
         if (!is_a($product, 'WC_Product')) {
             return false;
@@ -197,6 +228,9 @@ final class GDM_Frontend
         return $category_match && $tag_match;
     }
 
+    /**
+     * Procesa el contenido de una regla aplicando variantes
+     */
     private function process_rule_content($rule_data, $product) {
         if (!is_a($product, 'WC_Product')) {
             return '';

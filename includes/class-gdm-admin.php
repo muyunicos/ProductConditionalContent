@@ -1,4 +1,8 @@
 <?php
+/**
+ * ARCHIVO: includes/class-gdm-admin.php
+ * Administración con UX mejorada
+ */
 if (!defined('ABSPATH')) exit;
 
 final class GDM_Admin
@@ -17,6 +21,8 @@ final class GDM_Admin
         add_action('add_meta_boxes', [$this, 'add_meta_boxes']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_scripts']);
         add_action('save_post_descripcion_regla', [$this, 'save_rule_data'], 10, 2);
+        // AJAX para obtener lista de reglas reutilizables
+        add_action('wp_ajax_gdm_get_reusable_rules', [$this, 'ajax_get_reusable_rules']);
     }
     
     public function register_cpt() {
@@ -62,7 +68,6 @@ final class GDM_Admin
     }
 
     public function enqueue_admin_scripts($hook) {
-        // Solo cargar en páginas de edición de reglas
         if (('post.php' === $hook || 'post-new.php' === $hook) && get_post_type() === 'descripcion_regla') {
             wp_enqueue_script('jquery-ui-sortable');
             
@@ -80,6 +85,13 @@ final class GDM_Admin
                 [],
                 GDM_VERSION
             );
+            
+            // Pasar datos al JS
+            wp_localize_script('gdm-admin-script', 'gdmAdmin', [
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('gdm_admin_nonce'),
+                'currentPostId' => get_the_ID(),
+            ]);
         }
     }
 
@@ -99,9 +111,10 @@ final class GDM_Admin
                     <label><strong>Aplicar a:</strong></label>
                     <fieldset>
                         <label><input type="checkbox" name="gdm_aplicar_a[]" value="larga" <?php checked(in_array('larga', $data['aplicar_a'])); ?>> Descripción Larga</label><br>
-                        <label><input type="checkbox" name="gdm_aplicar_a[]" value="corta" <?php checked(in_array('corta', $data['aplicar_a'])); ?>> Descripción Corta</label>
+                        <label><input type="checkbox" name="gdm_aplicar_a[]" value="corta" <?php checked(in_array('corta', $data['aplicar_a'])); ?>> Descripción Corta</label><br>
+                        <label><input type="checkbox" name="gdm_aplicar_a[]" value="reutilizable" <?php checked(in_array('reutilizable', $data['aplicar_a'])); ?>> Regla Reutilizable</label>
                     </fieldset>
-                    <p class="description">Si no se marca nada, la regla solo funcionará con el comodín <code>[rule-id]</code>.</p>
+                    <p class="description">Las reglas reutilizables solo se activan mediante <code>[rule-id]</code>.</p>
                 </fieldset>
 
                 <fieldset class="gdm-fieldset">
@@ -123,28 +136,42 @@ final class GDM_Admin
                     <legend>Ámbito de Aplicación (Scope)</legend>
                     <strong>Categoría Objetivo:</strong><br>
                     <label><input type="checkbox" id="gdm_todas_categorias" name="gdm_todas_categorias" value="1" <?php checked($data['todas_categorias'], '1'); ?>> Aplicar a Todas las Categorías</label>
-                    <div id="gdm_category_list_wrapper" class="gdm-scroll-list">
-                        <?php
-                        $product_cats = get_terms(['taxonomy' => 'product_cat', 'hide_empty' => false]);
-                        if (!is_wp_error($product_cats)) {
-                            foreach ($product_cats as $cat) {
-                                echo '<label><input type="checkbox" name="gdm_categorias_objetivo[]" value="' . esc_attr($cat->term_id) . '" ' . checked(in_array((int)$cat->term_id, $data['categorias_objetivo']), true, false) . '> ' . esc_html($cat->name) . '</label><br>';
+                    
+                    <div id="gdm_category_list_wrapper">
+                        <input type="text" id="gdm_category_filter" class="gdm-filter-input" placeholder="🔍 Filtrar categorías..." />
+                        <div class="gdm-scroll-list">
+                            <?php
+                            $product_cats = get_terms(['taxonomy' => 'product_cat', 'hide_empty' => false]);
+                            if (!is_wp_error($product_cats)) {
+                                foreach ($product_cats as $cat) {
+                                    echo '<label class="gdm-filterable-item" data-name="' . esc_attr(strtolower($cat->name)) . '">';
+                                    echo '<input type="checkbox" name="gdm_categorias_objetivo[]" value="' . esc_attr($cat->term_id) . '" ' . checked(in_array((int)$cat->term_id, $data['categorias_objetivo']), true, false) . '> ';
+                                    echo esc_html($cat->name);
+                                    echo '</label><br>';
+                                }
                             }
-                        }
-                        ?>
+                            ?>
+                        </div>
                     </div>
                     <hr>
                     <strong>Tag Objetivo:</strong><br>
                     <label><input type="checkbox" id="gdm_cualquier_tag" name="gdm_cualquier_tag" value="1" <?php checked($data['cualquier_tag'], '1'); ?>> Aplicar con Cualquier Tag (o sin ninguno)</label>
-                    <div id="gdm_tag_list_wrapper" class="gdm-scroll-list">
-                        <?php
-                        $product_tags = get_terms(['taxonomy' => 'product_tag', 'hide_empty' => false]);
-                        if (!is_wp_error($product_tags)) {
-                            foreach ($product_tags as $tag) {
-                                echo '<label><input type="checkbox" name="gdm_tags_objetivo[]" value="' . esc_attr($tag->term_id) . '" ' . checked(in_array((int)$tag->term_id, $data['tags_objetivo']), true, false) . '> ' . esc_html($tag->name) . '</label><br>';
+                    
+                    <div id="gdm_tag_list_wrapper">
+                        <input type="text" id="gdm_tag_filter" class="gdm-filter-input" placeholder="🔍 Filtrar tags..." />
+                        <div class="gdm-scroll-list">
+                            <?php
+                            $product_tags = get_terms(['taxonomy' => 'product_tag', 'hide_empty' => false]);
+                            if (!is_wp_error($product_tags)) {
+                                foreach ($product_tags as $tag) {
+                                    echo '<label class="gdm-filterable-item" data-name="' . esc_attr(strtolower($tag->name)) . '">';
+                                    echo '<input type="checkbox" name="gdm_tags_objetivo[]" value="' . esc_attr($tag->term_id) . '" ' . checked(in_array((int)$tag->term_id, $data['tags_objetivo']), true, false) . '> ';
+                                    echo esc_html($tag->name);
+                                    echo '</label><br>';
+                                }
                             }
-                        }
-                        ?>
+                            ?>
+                        </div>
                     </div>
                 </fieldset>
             </div>
@@ -153,7 +180,18 @@ final class GDM_Admin
         <div class="gdm-full-width-container">
             <fieldset class="gdm-fieldset">
                 <legend>Contenido Principal</legend>
-                <p class="description">Comodines: <code>[slug-prod]</code>, <code>[var-cond]</code>, <code>[rule-id id="..."]</code></p>
+                <div class="gdm-shortcode-buttons">
+                    <p class="description" style="margin-bottom: 10px;">Haz clic para insertar comodines:</p>
+                    <button type="button" class="button gdm-insert-shortcode" data-shortcode="[slug-prod]">
+                        <span class="dashicons dashicons-tag"></span> [slug-prod]
+                    </button>
+                    <button type="button" class="button gdm-insert-shortcode" data-shortcode="[var-cond]">
+                        <span class="dashicons dashicons-admin-settings"></span> [var-cond]
+                    </button>
+                    <button type="button" class="button gdm-insert-rule-id">
+                        <span class="dashicons dashicons-admin-links"></span> [rule-id]
+                    </button>
+                </div>
                 <?php 
                 wp_editor($data['descripcion'], 'gdm_descripcion', [
                     'textarea_name' => 'gdm_descripcion',
@@ -168,16 +206,19 @@ final class GDM_Admin
             <fieldset class="gdm-fieldset">
                 <legend>Variantes por Condición</legend>
                 <p class="description">Se aplicará la primera condición verdadera. Arrastra las filas para reordenar.</p>
+                
                 <table id="gdm-repeater-table" class="wp-list-table widefat striped">
                     <thead>
                         <tr>
+                            <th class="check-col">
+                                <input type="checkbox" id="gdm-select-all-variants" title="Seleccionar todo">
+                            </th>
                             <th class="sort-col"></th>
                             <th class="cond-type-col">Condición</th>
                             <th class="cond-key-col">Clave / Tag</th>
-                            <th class="cond-value-col">Valor (Opcional)</th>
+                            <th class="cond-value-col">Valor</th>
                             <th class="action-col">Acción</th>
                             <th class="text-col">Texto</th>
-                            <th class="actions-col"></th>
                         </tr>
                     </thead>
                     <tbody id="gdm-repeater-tbody">
@@ -190,7 +231,16 @@ final class GDM_Admin
                         ?>
                     </tbody>
                 </table>
-                <button type="button" class="button" id="gdm-add-repeater-row" style="margin-top:10px;">Añadir Variante</button>
+                
+                <div class="gdm-repeater-actions">
+                    <button type="button" class="button" id="gdm-add-repeater-row">
+                        <span class="dashicons dashicons-plus-alt"></span> Añadir Variante
+                    </button>
+                    <button type="button" class="button button-secondary" id="gdm-delete-selected" disabled>
+                        <span class="dashicons dashicons-trash"></span> Eliminar Seleccionadas
+                    </button>
+                    <span id="gdm-variant-counter" style="margin-left: 15px; font-weight: bold;"></span>
+                </div>
                 
                 <script type="text/html" id="gdm-repeater-template">
                     <?php $this->render_variant_row('__INDEX__', []); ?>
@@ -206,21 +256,40 @@ final class GDM_Admin
         $cond_value = $data['cond_value'] ?? '';
         $action = $data['action'] ?? 'placeholder';
         $text = $data['text'] ?? '';
+        
+        // Determinar estados disabled
+        $key_disabled = ($cond_type === 'default') ? 'disabled' : '';
+        $value_disabled = ($cond_type === 'tag' || $cond_type === 'default') ? 'disabled' : '';
         ?>
-        <tr class="gdm-repeater-row">
+        <tr class="gdm-repeater-row" data-index="<?php echo esc_attr($index); ?>">
+            <td class="check-cell">
+                <input type="checkbox" class="gdm-row-checkbox">
+            </td>
             <td class="sort-handle"><span class="dashicons dashicons-menu"></span></td>
             <td>
                 <select name="gdm_variantes[<?php echo esc_attr($index); ?>][cond_type]" class="gdm-cond-type">
-                    <option value="tag" <?php selected($cond_type, 'tag'); ?>>Producto tiene Tag</option>
-                    <option value="meta" <?php selected($cond_type, 'meta'); ?>>Campo Personalizado</option>
-                    <option value="default" <?php selected($cond_type, 'default'); ?>>Por Defecto</option>
+                    <option value="tag" <?php selected($cond_type, 'tag'); ?>>Tag</option>
+                    <option value="meta" <?php selected($cond_type, 'meta'); ?>>Clave</option>
+                    <option value="default" <?php selected($cond_type, 'default'); ?>>Defecto</option>
                 </select>
             </td>
             <td class="gdm-cond-key-cell">
-                <input type="text" class="gdm-cond-key" name="gdm_variantes[<?php echo esc_attr($index); ?>][cond_key]" value="<?php echo esc_attr($cond_key); ?>" placeholder="slug-del-tag" style="width: 100%;">
+                <input type="text" 
+                       class="gdm-cond-key" 
+                       name="gdm_variantes[<?php echo esc_attr($index); ?>][cond_key]" 
+                       value="<?php echo esc_attr($cond_key); ?>" 
+                       placeholder="slug-del-tag" 
+                       style="width: 100%;"
+                       <?php echo $key_disabled; ?>>
             </td>
             <td class="gdm-cond-value-cell">
-                <input type="text" class="gdm-cond-value" name="gdm_variantes[<?php echo esc_attr($index); ?>][cond_value]" value="<?php echo esc_attr($cond_value); ?>" placeholder="valor" style="width: 100%;">
+                <input type="text" 
+                       class="gdm-cond-value" 
+                       name="gdm_variantes[<?php echo esc_attr($index); ?>][cond_value]" 
+                       value="<?php echo esc_attr($cond_value); ?>" 
+                       placeholder="valor" 
+                       style="width: 100%;"
+                       <?php echo $value_disabled; ?>>
             </td>
             <td>
                 <select name="gdm_variantes[<?php echo esc_attr($index); ?>][action]">
@@ -229,7 +298,6 @@ final class GDM_Admin
                 </select>
             </td>
             <td><textarea name="gdm_variantes[<?php echo esc_attr($index); ?>][text]" rows="2" style="width: 100%;"><?php echo esc_textarea($text); ?></textarea></td>
-            <td class="actions-cell"><button type="button" class="button gdm-remove-repeater-row">Eliminar</button></td>
         </tr>
         <?php
     }
@@ -301,6 +369,37 @@ final class GDM_Admin
             }
         }
         update_post_meta($post_id, '_gdm_variantes', $variantes_sanitizadas);
+    }
+    
+    /**
+     * AJAX: Obtener lista de reglas reutilizables
+     */
+    public function ajax_get_reusable_rules() {
+        check_ajax_referer('gdm_admin_nonce', 'nonce');
+        
+        $current_post_id = isset($_POST['current_post_id']) ? intval($_POST['current_post_id']) : 0;
+        
+        $rules = get_posts([
+            'post_type'      => 'descripcion_regla',
+            'posts_per_page' => -1,
+            'post_status'    => 'publish',
+            'exclude'        => [$current_post_id], // Excluir regla actual
+            'orderby'        => 'title',
+            'order'          => 'ASC',
+        ]);
+        
+        $reusable_rules = [];
+        foreach ($rules as $rule) {
+            $aplicar_a = get_post_meta($rule->ID, '_gdm_aplicar_a', true) ?: [];
+            if (in_array('reutilizable', $aplicar_a)) {
+                $reusable_rules[] = [
+                    'id'    => $rule->ID,
+                    'title' => $rule->post_title,
+                ];
+            }
+        }
+        
+        wp_send_json_success($reusable_rules);
     }
     
     private function get_rule_data($rule_id) {

@@ -1,14 +1,84 @@
-/* --- Contenedores Principales --- */
-.gdm-container { display: flex; gap: 20px; margin-bottom: 20px; }
-.gdm-column { flex: 1; min-width: 0; }
-.gdm-full-width-container { margin-top: 20px; }
+/**
+ * Admin Styles para Motor de Reglas MuyUnicos
+ * Versión: 4.1.0
+ */
 
-/* --- Fieldsets y Listas --- */
-.gdm-fieldset { border: 1px solid #ccd0d4; padding: 15px; margin-bottom: 20px; }
-.gdm-fieldset legend { font-weight: bold; padding: 0 5px; margin-left: 10px; }
-.gdm-scroll-list { max-height: 200px; overflow-y: auto; border: 1px solid #ccd0d4; padding: 10px; background-color: #fff; margin-top: 5px;}
+/* ========================================================================
+   CONTENEDORES PRINCIPALES
+   ======================================================================== */
+.gdm-container { 
+    display: flex; 
+    gap: 20px; 
+    margin-bottom: 20px; 
+}
 
-/* --- Tabla Repetidora de Variantes --- */
+.gdm-column { 
+    flex: 1; 
+    min-width: 0; 
+}
+
+.gdm-full-width-container { 
+    margin-top: 20px; 
+}
+
+/* ========================================================================
+   FIELDSETS Y LISTAS
+   ======================================================================== */
+.gdm-fieldset { 
+    border: 1px solid #ccd0d4; 
+    padding: 15px; 
+    margin-bottom: 20px; 
+    border-radius: 4px;
+}
+
+.gdm-fieldset legend { 
+    font-weight: bold; 
+    padding: 0 5px; 
+    margin-left: 10px; 
+}
+
+.gdm-scroll-list { 
+    max-height: 200px; 
+    overflow-y: auto; 
+    border: 1px solid #ccd0d4; 
+    padding: 10px; 
+    background-color: #fff; 
+    margin-top: 5px;
+    border-radius: 3px;
+}
+
+/* ========================================================================
+   FILTROS
+   ======================================================================== */
+.gdm-filter-input {
+    width: 100%;
+    padding: 8px 10px;
+    margin-top: 8px;
+    margin-bottom: 5px;
+    border: 1px solid #8c8f94;
+    border-radius: 3px;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+.gdm-filter-input:focus {
+    border-color: #2271b1;
+    outline: none;
+    box-shadow: 0 0 0 1px #2271b1;
+}
+
+.gdm-filterable-item {
+    display: block;
+    transition: opacity 0.2s ease;
+}
+
+.gdm-filterable-item:not([style*="display: none"]) {
+    opacity: 1;
+}
+
+/* ========================================================================
+   TABLA REPETIDORA DE VARIANTES
+   ======================================================================== */
 #gdm-repeater-table { 
     width: 100%; 
     border-collapse: collapse; 
@@ -23,14 +93,204 @@
     text-align: left;
 }
 
-/* --- Anchos de Columna Específicos --- */
-#gdm-repeater-table .sort-col { width: 4%; text-align: center; }
-#gdm-repeater-table .cond-type-col { width: 15%; }
-#gdm-repeater-table .cond-key-col { width: 20%; }
-#gdm-repeater-table .cond-value-col { width: 20%; }
-#gdm-repeater-table .action-col { width: 15%; }
-#gdm-repeater-table .text-col { width: 22%; }
-#gdm-repeater-table .actions-col { width: 4%; text-align: right; }
+/* Anchos de Columna */
+#gdm-repeater-table .check-col { 
+    width: 3%; 
+    text-align: center; 
+}
 
-#gdm-repeater-table .sort-handle { cursor: move; color: #888; }
-#gdm-repeater-table .actions-cell { text-align: right; }
+#gdm-repeater-table .sort-col { 
+    width: 3%; 
+    text-align: center; 
+}
+
+#gdm-repeater-table .cond-type-col { 
+    width: 12%; 
+}
+
+#gdm-repeater-table .cond-key-col { 
+    width: 18%; 
+}
+
+#gdm-repeater-table .cond-value-col { 
+    width: 15%; 
+}
+
+#gdm-repeater-table .action-col { 
+    width: 18%; 
+}
+
+#gdm-repeater-table .text-col { 
+    width: 31%; 
+}
+
+/* ========================================================================
+   ESTILOS DE FILAS
+   ======================================================================== */
+.gdm-repeater-row {
+    transition: background-color 0.2s ease;
+}
+
+.gdm-repeater-row.gdm-row-selected {
+    background-color: #e3f2fd !important;
+}
+
+.gdm-repeater-row .check-cell {
+    text-align: center;
+}
+
+.gdm-repeater-row .gdm-row-checkbox {
+    cursor: pointer;
+    margin: 0;
+}
+
+.gdm-repeater-row .sort-handle { 
+    cursor: move; 
+    color: #888;
+    font-size: 18px;
+}
+
+.gdm-repeater-row .sort-handle:hover {
+    color: #2271b1;
+}
+
+/* Placeholder para sortable */
+.gdm-sortable-placeholder {
+    background-color: #f0f0f1;
+    border: 2px dashed #8c8f94;
+    visibility: visible !important;
+    height: 50px;
+}
+
+/* ========================================================================
+   ACCIONES DE REPEATER
+   ======================================================================== */
+.gdm-repeater-actions {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#gdm-variant-counter {
+    color: #50575e;
+    font-size: 13px;
+}
+
+#gdm-delete-selected:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ========================================================================
+   BOTONES DE SHORTCODE
+   ======================================================================== */
+.gdm-shortcode-buttons {
+    margin-bottom: 15px;
+    padding: 15px;
+    background: #f6f7f7;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+}
+
+.gdm-shortcode-buttons .button {
+    margin-right: 8px;
+    margin-bottom: 5px;
+}
+
+.gdm-shortcode-buttons .button .dashicons {
+    font-size: 16px;
+    height: 16px;
+    width: 16px;
+    vertical-align: middle;
+    margin-right: 4px;
+}
+
+.gdm-shortcode-buttons .description {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #646970;
+}
+
+/* ========================================================================
+   CAMPOS DESHABILITADOS
+   ======================================================================== */
+input:disabled,
+select:disabled,
+textarea:disabled {
+    background-color: #f6f7f7;
+    color: #a7aaad;
+    cursor: not-allowed;
+}
+
+/* ========================================================================
+   MODAL DE SELECCIÓN DE REGLAS
+   ======================================================================== */
+#gdm-rule-modal-overlay label {
+    transition: all 0.2s ease;
+}
+
+#gdm-rule-modal-overlay label:hover {
+    background: #e9ecef !important;
+}
+
+#gdm-rule-modal-overlay input[type="radio"] {
+    cursor: pointer;
+}
+
+/* ========================================================================
+   RESPONSIVE
+   ======================================================================== */
+@media screen and (max-width: 782px) {
+    .gdm-container {
+        flex-direction: column;
+    }
+    
+    #gdm-repeater-table {
+        font-size: 12px;
+    }
+    
+    #gdm-repeater-table th,
+    #gdm-repeater-table td {
+        padding: 5px;
+    }
+    
+    .gdm-shortcode-buttons .button {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+}
+
+/* ========================================================================
+   ANIMACIONES
+   ======================================================================== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.gdm-repeater-row {
+    animation: fadeIn 0.3s ease;
+}
+
+/* ========================================================================
+   UTILIDADES
+   ======================================================================== */
+.dashicons-spin {
+    animation: rotation 1s infinite linear;
+}
+
+@keyframes rotation {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(359deg);
+    }
+}
