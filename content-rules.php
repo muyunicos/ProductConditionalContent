@@ -4,12 +4,12 @@
  * Description:       Aplica contenido dinámico a productos basado en reglas y campos personalizados condicionales.
  * Version:           5.0.0
  * Author:            Muy Únicos
- * Requires at least: 6.8.3
+ * Requires at least: 6
  * Requires PHP:      8.2
- * WC requires at least: 10.2.2
+ * WC requires at least: 10
  * WC tested up to:   10.2.2
  * License:           GPLv3
- * Text Domain:       product-conditional-content
+ * Text Domain:       wc-content-rules
  */
 
 if (!defined('ABSPATH')) exit;
@@ -55,9 +55,9 @@ if (!defined('ABSPATH')) exit;
 /** --- Compatibilidad y declaración de requisitos --- */
 function gdm_check_plugin_compat() {
     global $wp_version;
-    $min_wp     = '6.8.3';
-    $min_php    = '8.2';
-    $min_wc     = '10.2.2';
+    $min_wp     = '6';
+    $min_php    = '8';
+    $min_wc     = '10';
     $error_msgs = [];
 
     if (version_compare($wp_version, $min_wp, '<')) {
@@ -71,7 +71,7 @@ function gdm_check_plugin_compat() {
     }
     if ($error_msgs) {
         add_action('admin_notices', function() use ($error_msgs) {
-            echo '<div class="notice notice-error"><p><b>Motor de Reglas MuyUnicos:</b> Requiere: '
+            echo '<div class="notice notice-error"><p><b>Reglas de Contenido para WooCommerce:</b> Requiere: '
                 . implode(', ', $error_msgs) . '.</p></div>';
         });
         return false;
