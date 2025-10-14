@@ -1,15 +1,26 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-/**
- * Metabox avanzado para el CPT Regla de Contenido
- * Reutiliza la interfaz JS/HTML de la versión 4.1.0
- */
 final class GDM_Reglas_Metabox {
     public static function init() {
         add_action('add_meta_boxes', [__CLASS__, 'add_metabox']);
         add_action('save_post_gdm_regla', [__CLASS__, 'save_metabox']);
         add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
+    }
+
+    public static function enqueue_assets($hook) {
+        $screen = get_current_screen();
+        // Solo en pantallas relevantes (gdm_regla, gdm_campo)
+        if (in_array($screen->id, ['gdm_regla', 'gdm_campo'])) {
+            wp_enqueue_script('gdm-admin', GDM_PLUGIN_URL . 'assets/admin/gdm-admin.js', ['jquery', 'jquery-ui-sortable'], GDM_VERSION, true);
+            wp_enqueue_style('gdm-admin', GDM_PLUGIN_URL . 'assets/admin/gdm-admin.css', [], GDM_VERSION);
+            // shared-styles.css ya se encola globalmente vía plugin-init.php
+            wp_localize_script('gdm-admin', 'gdmAdmin', [
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('gdm_admin_nonce'),
+                'currentPostId' => get_the_ID(),
+            ]);
+        }
     }
 
     public static function add_metabox() {
@@ -103,19 +114,6 @@ final class GDM_Reglas_Metabox {
         // Guardar variantes (ejemplo básico, puedes mejorar la sanitización)
         $condiciones = $_POST['gdm_condiciones'] ?? [];
         update_post_meta($post_id, '_gdm_regla_condiciones', $condiciones);
-    }
-
-    public static function enqueue_assets($hook) {
-        $screen = get_current_screen();
-        if ($screen->id === 'gdm_regla') {
-            wp_enqueue_script('gdm-admin', GDM_PLUGIN_URL . 'assets/admin/gdm-admin.js', ['jquery', 'jquery-ui-sortable'], GDM_VERSION, true);
-            wp_enqueue_style('gdm-admin', GDM_PLUGIN_URL . 'assets/admin/gdm-admin.css', [], GDM_VERSION);
-            wp_localize_script('gdm-admin', 'gdmAdmin', [
-                'ajaxUrl' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('gdm_admin_nonce'),
-                'currentPostId' => get_the_ID(),
-            ]);
-        }
     }
 }
 

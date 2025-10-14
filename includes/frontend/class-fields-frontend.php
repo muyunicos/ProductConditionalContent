@@ -1,15 +1,6 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-/**
- * Renderizado y procesamiento de campos personalizados en el frontend de productos WooCommerce.
- * 
- * Responsabilidad SOLA: Renderizar y procesar campos personalizados (NO reglas, NO shortcodes).
- * - Muestra los campos personalizados según configuración guardada.
- * - Procesa guardado y visualización en carrito/checkout.
- * - Aplica precios extra según los valores seleccionados.
- * - Carga JS/CSS solo en productos que usan campos personalizados.
- */
 final class GDM_Fields_Frontend {
     private static $instance = null;
     private $fields = [];
@@ -22,7 +13,7 @@ final class GDM_Fields_Frontend {
     }
 
     private function __construct() {
-        // Cargar configuración de campos personalizados (guardada por el admin)
+        // Cargar configuración de campos personalizados
         $this->fields = get_option('gdm_product_custom_fields', []);
 
         // Mostrar campos en la página de producto
@@ -41,6 +32,26 @@ final class GDM_Fields_Frontend {
         add_action('wp_enqueue_scripts', [$this, 'enqueue_scripts']);
     }
 
+    public function enqueue_scripts() {
+        if (!is_product() || empty($this->fields)) return;
+        wp_enqueue_script(
+            'gdm-fields-frontend',
+            GDM_PLUGIN_URL . 'assets/frontend/fields-frontend.js',
+            ['jquery'],
+            GDM_VERSION,
+            true
+        );
+        wp_enqueue_style(
+            'gdm-fields-frontend',
+            GDM_PLUGIN_URL . 'assets/frontend/fields-frontend.css',
+            [],
+            GDM_VERSION
+        );
+        // Pasar config al JS
+        wp_localize_script('gdm-fields-frontend', 'gdmFieldsFrontend', [
+            'fields' => $this->fields
+        ]);
+    }
     /**
      * Renderiza los campos personalizados en el producto.
      */
@@ -170,30 +181,6 @@ final class GDM_Fields_Frontend {
                 }
             }
         }
-    }
-
-    /**
-     * Cargar JS/CSS solo si hay campos personalizados en el producto.
-     */
-    public function enqueue_scripts() {
-        if (!is_product() || empty($this->fields)) return;
-        wp_enqueue_script(
-            'gdm-fields-frontend',
-            GDM_PLUGIN_URL . 'assets/frontend/fields-frontend.js',
-            ['jquery'],
-            GDM_VERSION,
-            true
-        );
-        wp_enqueue_style(
-            'gdm-fields-frontend',
-            GDM_PLUGIN_URL . 'assets/frontend/fields-frontend.css',
-            [],
-            GDM_VERSION
-        );
-        // Pasar config al JS (si lo necesitas)
-        wp_localize_script('gdm-fields-frontend', 'gdmFieldsFrontend', [
-            'fields' => $this->fields
-        ]);
     }
 }
 

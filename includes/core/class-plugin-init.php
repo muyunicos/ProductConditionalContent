@@ -12,12 +12,12 @@ final class GDM_Plugin_Init {
     }
 
     private function __construct() {
-        // Registro de hooks y filtros globales
+        // Hooks y filtros globales
         add_action('init', [$this, 'load_textdomain']);
         add_filter('gdm_product_has_rules', [$this, 'default_has_rules'], 10, 2);
         add_filter('gdm_product_has_custom_fields', [$this, 'default_has_fields'], 10, 2);
 
-        // Encolar shared-styles.css en admin y frontend
+        // Encolar estilos compartidos
         add_action('admin_enqueue_scripts', [$this, 'enqueue_shared_styles_admin']);
         add_action('wp_enqueue_scripts', [$this, 'enqueue_shared_styles_frontend']);
     }
@@ -41,7 +41,7 @@ final class GDM_Plugin_Init {
         wp_enqueue_style('gdm-shared-styles', GDM_PLUGIN_URL . 'assets/shared/shared-styles.css', [], GDM_VERSION);
     }
 
-    // Encolar shared-styles.css en frontend si es producto o página relevante
+    // Encolar shared-styles.css en frontend solo en páginas Woo relevantes
     public function enqueue_shared_styles_frontend() {
         if (is_product() || is_cart() || is_checkout()) {
             wp_enqueue_style('gdm-shared-styles', GDM_PLUGIN_URL . 'assets/shared/shared-styles.css', [], GDM_VERSION);
