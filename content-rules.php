@@ -81,7 +81,8 @@ function gdm_check_plugin_compat() {
     }
     return true;
 }
-if (!gdm_check_plugin_compat()) return;
+add_action('plugins_loaded', function() {
+    if (!gdm_check_plugin_compat()) return;
 
 /** --- Constantes globales --- */
 define('GDM_VERSION', '5.0.0');
@@ -129,3 +130,4 @@ if (is_admin()) {
 if (file_exists(GDM_PLUGIN_DIR . 'includes/compatibility/class-compat-check.php')) {
     require_once GDM_PLUGIN_DIR . 'includes/compatibility/class-compat-check.php';
 }
+});
