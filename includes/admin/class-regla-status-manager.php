@@ -27,7 +27,7 @@ final class GDM_Regla_Status_Manager {
         add_action('manage_gdm_regla_posts_custom_column', [__CLASS__, 'custom_column_content'], 10, 2);
         add_filter('manage_edit-gdm_regla_sortable_columns', [__CLASS__, 'sortable_columns']);
         
-        // NUEVO: Modificar metabox nativo sin duplicar elementos
+        // Modificar metabox nativo sin duplicar elementos
         add_action('post_submitbox_start', [__CLASS__, 'remove_native_elements']);
         add_action('post_submitbox_misc_actions', [__CLASS__, 'add_custom_sections']);
         add_filter('gettext', [__CLASS__, 'change_publish_button_text'], 10, 2);
@@ -199,7 +199,7 @@ final class GDM_Regla_Status_Manager {
     }
     
     /**
-     * NUEVO: Remover elementos nativos innecesarios
+     * Remover elementos nativos innecesarios
      */
     public static function remove_native_elements() {
         global $post, $current_screen;
@@ -208,22 +208,20 @@ final class GDM_Regla_Status_Manager {
             return;
         }
         
-        // JavaScript para remover elementos del DOM en lugar de ocultarlos
         ?>
         <script>
         jQuery(document).ready(function($) {
-            // Remover completamente elementos innecesarios
-            $('#save-action').remove();              // Botón "Solo guardar"
-            $('#visibility').remove();               // Sección de visibilidad
-            $('.misc-pub-curtime').remove();        // "Publicar el:"
-            $('.misc-pub-post-status').remove();    // Selector de estado nativo
+            $('#save-action').remove();
+            $('#visibility').remove();
+            $('.misc-pub-curtime').remove();
+            $('.misc-pub-post-status').remove();
         });
         </script>
         <?php
     }
     
     /**
-     * NUEVO: Agregar secciones personalizadas
+     * Agregar secciones personalizadas
      */
     public static function add_custom_sections() {
         global $post, $current_screen;
@@ -243,7 +241,6 @@ final class GDM_Regla_Status_Manager {
         $fecha_fin = get_post_meta($post->ID, '_gdm_fecha_fin', true);
         $habilitar_fin = get_post_meta($post->ID, '_gdm_habilitar_fecha_fin', true);
         
-        // Calcular mensajes según tu nueva lógica
         $estado_info = self::get_estado_info($is_enabled, $programar, $fecha_inicio, $fecha_fin, $habilitar_fin);
         
         wp_nonce_field('gdm_regla_schedule_nonce', 'gdm_regla_schedule_nonce');
@@ -266,11 +263,9 @@ final class GDM_Regla_Status_Manager {
                     <span class="gdm-status-display">
                         <?php echo esc_html($estado_info['titulo']); ?>
                     </span>
-                    <?php if (!empty($estado_info['descripcion'])): ?>
-                        <p class="description" style="margin: 4px 0 0 0;">
-                            <?php echo esc_html($estado_info['descripcion']); ?>
-                        </p>
-                    <?php endif; ?>
+                    <p class="description gdm-status-description" style="margin: 4px 0 0 0;">
+                        <?php echo esc_html($estado_info['descripcion']); ?>
+                    </p>
                 </div>
             </div>
         </div>
@@ -282,8 +277,7 @@ final class GDM_Regla_Status_Manager {
                        name="gdm_programar" 
                        id="gdm_programar" 
                        value="1" 
-                       <?php checked($programar, '1'); ?>
-                       <?php disabled(!$is_enabled); ?>>
+                       <?php checked($programar, '1'); ?>>
                 <strong><?php _e('Programar activación', 'product-conditional-content'); ?></strong>
             </label>
             
@@ -297,8 +291,21 @@ final class GDM_Regla_Status_Manager {
                            id="gdm_fecha_inicio" 
                            value="<?php echo $fecha_inicio ? esc_attr(date('Y-m-d\TH:i', strtotime($fecha_inicio))) : ''; ?>" 
                            style="width: 100%;">
-                    <p class="description" style="margin: 4px 0 0 0; font-size: 11px;">
-                        <?php _e('La regla se activará automáticamente', 'product-conditional-content'); ?>
+                    
+                    <div class="gdm-quick-dates" style="margin-top: 8px;">
+                        <button type="button" class="button button-small gdm-quick-date" data-type="tomorrow">
+                            <?php _e('Mañana 00:00', 'product-conditional-content'); ?>
+                        </button>
+                        <button type="button" class="button button-small gdm-quick-date" data-type="monday">
+                            <?php _e('Próximo lunes', 'product-conditional-content'); ?>
+                        </button>
+                        <button type="button" class="button button-small gdm-quick-date" data-type="month">
+                            <?php _e('Próximo mes', 'product-conditional-content'); ?>
+                        </button>
+                    </div>
+                    
+                    <p class="description gdm-inicio-description" style="margin: 8px 0 0 0; font-size: 11px;">
+                        <?php echo self::get_inicio_description($fecha_inicio); ?>
                     </p>
                 </div>
                 
@@ -320,8 +327,24 @@ final class GDM_Regla_Status_Manager {
                            id="gdm_fecha_fin" 
                            value="<?php echo $fecha_fin ? esc_attr(date('Y-m-d\TH:i', strtotime($fecha_fin))) : ''; ?>" 
                            style="width: 100%;">
-                    <p class="description" style="margin: 4px 0 0 0; font-size: 11px;">
-                        <?php _e('Se desactivará automáticamente', 'product-conditional-content'); ?>
+                    
+                    <div class="gdm-quick-durations" style="margin-top: 8px;">
+                        <button type="button" class="button button-small gdm-quick-duration" data-hours="24">
+                            <?php _e('24hs', 'product-conditional-content'); ?>
+                        </button>
+                        <button type="button" class="button button-small gdm-quick-duration" data-hours="72">
+                            <?php _e('72hs', 'product-conditional-content'); ?>
+                        </button>
+                        <button type="button" class="button button-small gdm-quick-duration" data-days="7">
+                            <?php _e('Semana', 'product-conditional-content'); ?>
+                        </button>
+                        <button type="button" class="button button-small gdm-quick-duration" data-days="30">
+                            <?php _e('Mes', 'product-conditional-content'); ?>
+                        </button>
+                    </div>
+                    
+                    <p class="description gdm-fin-description" style="margin: 8px 0 0 0; font-size: 11px;">
+                        <?php echo self::get_fin_description($fecha_inicio, $fecha_fin); ?>
                     </p>
                 </div>
             </div>
@@ -334,7 +357,82 @@ final class GDM_Regla_Status_Manager {
     }
     
     /**
-     * NUEVA LÓGICA: Obtener información de estado según tu especificación
+     * Obtener descripción para fecha de inicio
+     */
+    private static function get_inicio_description($fecha_inicio) {
+        if (!$fecha_inicio) {
+            return __('La regla se activará automáticamente', 'product-conditional-content');
+        }
+        
+        $now = current_time('timestamp');
+        $inicio = strtotime($fecha_inicio);
+        $diff = $inicio - $now;
+        
+        if ($diff <= 0) {
+            return __('La regla se activará inmediatamente', 'product-conditional-content');
+        }
+        
+        $tiempo = self::calcular_tiempo_legible($diff);
+        $fecha_formatted = date_i18n('j \d\e F \d\e Y', $inicio);
+        
+        return sprintf(
+            __('La regla se activará automáticamente en %s, el día %s', 'product-conditional-content'),
+            $tiempo,
+            $fecha_formatted
+        );
+    }
+    
+    /**
+     * Obtener descripción para fecha de fin
+     */
+    private static function get_fin_description($fecha_inicio, $fecha_fin) {
+        if (!$fecha_fin) {
+            return __('La regla se desactivará automáticamente', 'product-conditional-content');
+        }
+        
+        $now = current_time('timestamp');
+        $fin = strtotime($fecha_fin);
+        $diff = $fin - $now;
+        
+        if ($diff <= 0) {
+            return __('La regla se desactivará inmediatamente', 'product-conditional-content');
+        }
+        
+        $tiempo = self::calcular_tiempo_legible($diff);
+        $fecha_formatted = date_i18n('j \d\e F \d\e Y', $fin);
+        
+        return sprintf(
+            __('La regla se desactivará automáticamente en %s, el día %s', 'product-conditional-content'),
+            $tiempo,
+            $fecha_formatted
+        );
+    }
+    
+    /**
+     * Calcular tiempo legible (minutos, horas, días, semanas, meses)
+     */
+    private static function calcular_tiempo_legible($segundos) {
+        $minutos = round($segundos / 60);
+        $horas = round($segundos / 3600);
+        $dias = round($segundos / 86400);
+        $semanas = round($segundos / 604800);
+        $meses = round($segundos / 2592000);
+        
+        if ($minutos < 60) {
+            return sprintf(_n('%d minuto', '%d minutos', $minutos, 'product-conditional-content'), $minutos);
+        } elseif ($horas < 24) {
+            return sprintf(_n('%d hora', '%d horas', $horas, 'product-conditional-content'), $horas);
+        } elseif ($dias < 7) {
+            return sprintf(_n('%d día', '%d días', $dias, 'product-conditional-content'), $dias);
+        } elseif ($semanas < 4) {
+            return sprintf(_n('%d semana', '%d semanas', $semanas, 'product-conditional-content'), $semanas);
+        } else {
+            return sprintf(_n('%d mes', '%d meses', $meses, 'product-conditional-content'), $meses);
+        }
+    }
+    
+    /**
+     * Obtener información de estado según tu especificación
      */
     private static function get_estado_info($is_enabled, $programar, $fecha_inicio, $fecha_fin, $habilitar_fin) {
         $now = current_time('mysql');
@@ -371,21 +469,25 @@ final class GDM_Regla_Status_Manager {
         if ($programar !== '1' || !$fecha_inicio) {
             return [
                 'class' => 'status-active',
-                'texto' => __('Activa actualmente', 'product-conditional-content'),
+                'texto' => __('Activa', 'product-conditional-content'),
             ];
         }
         
+        $inicio_timestamp = strtotime($fecha_inicio);
+        $now_timestamp = strtotime($now);
+        
         // Programada (aún no inicia)
-        if ($fecha_inicio > $now) {
-            $diff = strtotime($fecha_inicio) - strtotime($now);
-            $tiempo_texto = self::calcular_tiempo_restante($diff);
+        if ($inicio_timestamp > $now_timestamp) {
+            $diff = $inicio_timestamp - $now_timestamp;
+            $tiempo_texto = self::calcular_tiempo_legible($diff);
             
             $texto = sprintf(__('Programada, inicia en %s', 'product-conditional-content'), $tiempo_texto);
             
             // Si tiene fecha fin, agregar info
             if ($habilitar_fin === '1' && $fecha_fin) {
-                $diff_fin = strtotime($fecha_fin) - strtotime($now);
-                $tiempo_fin = self::calcular_tiempo_restante($diff_fin);
+                $fin_timestamp = strtotime($fecha_fin);
+                $diff_fin = $fin_timestamp - $now_timestamp;
+                $tiempo_fin = self::calcular_tiempo_legible($diff_fin);
                 $texto .= sprintf(__(', termina en %s', 'product-conditional-content'), $tiempo_fin);
             }
             
@@ -399,8 +501,10 @@ final class GDM_Regla_Status_Manager {
         
         // Si tiene fecha fin
         if ($habilitar_fin === '1' && $fecha_fin) {
+            $fin_timestamp = strtotime($fecha_fin);
+            
             // Ya terminó
-            if ($fecha_fin < $now) {
+            if ($fin_timestamp < $now_timestamp) {
                 return [
                     'class' => 'status-expired',
                     'texto' => __('Inactiva, ya terminó', 'product-conditional-content'),
@@ -408,8 +512,8 @@ final class GDM_Regla_Status_Manager {
             }
             
             // Activa con fin próximo
-            $diff_fin = strtotime($fecha_fin) - strtotime($now);
-            $tiempo_fin = self::calcular_tiempo_restante($diff_fin);
+            $diff_fin = $fin_timestamp - $now_timestamp;
+            $tiempo_fin = self::calcular_tiempo_legible($diff_fin);
             
             return [
                 'class' => 'status-active',
@@ -420,41 +524,12 @@ final class GDM_Regla_Status_Manager {
         // Activa sin fin
         return [
             'class' => 'status-active',
-            'texto' => __('Activa actualmente', 'product-conditional-content'),
+            'texto' => __('Activa', 'product-conditional-content'),
         ];
     }
     
     /**
-     * Calcular tiempo restante en formato legible
-     */
-    private static function calcular_tiempo_restante($segundos) {
-        if ($segundos < 0) {
-            return __('ya pasó', 'product-conditional-content');
-        }
-        
-        $dias = floor($segundos / 86400);
-        $horas = floor(($segundos % 86400) / 3600);
-        $minutos = floor(($segundos % 3600) / 60);
-        
-        $partes = [];
-        
-        if ($dias > 0) {
-            $partes[] = sprintf(_n('%d día', '%d días', $dias, 'product-conditional-content'), $dias);
-        }
-        
-        if ($horas > 0 && $dias < 7) { // Solo mostrar horas si es menos de una semana
-            $partes[] = sprintf(_n('%d hora', '%d horas', $horas, 'product-conditional-content'), $horas);
-        }
-        
-        if ($dias === 0 && $horas === 0 && $minutos > 0) {
-            $partes[] = sprintf(_n('%d minuto', '%d minutos', $minutos, 'product-conditional-content'), $minutos);
-        }
-        
-        return implode(' y ', $partes);
-    }
-    
-    /**
-     * NUEVO: Cambiar texto del botón Publicar dinámicamente
+     * Cambiar texto del botón Publicar dinámicamente
      */
     public static function change_publish_button_text($translation, $text) {
         global $post, $pagenow;
@@ -463,20 +538,7 @@ final class GDM_Regla_Status_Manager {
             return $translation;
         }
         
-        // Cambiar el texto del botón según el estado
         if ($text === 'Publicar' || $text === 'Publish') {
-            $current_status = $post->post_status;
-            if ($current_status === 'publish' || $current_status === 'auto-draft') {
-                $current_status = 'habilitada';
-            }
-            
-            $is_enabled = ($current_status === 'habilitada');
-            
-            // Leer el valor del toggle (puede haber cambiado)
-            if (isset($_POST['gdm_regla_enabled'])) {
-                $is_enabled = ($_POST['gdm_regla_enabled'] === '1');
-            }
-            
             return __('Guardar', 'product-conditional-content');
         }
         
@@ -746,10 +808,12 @@ final class GDM_Regla_Status_Manager {
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('gdm_publish_metabox_nonce'),
                 'i18n' => [
-                    'enabled' => __('Habilitada', 'product-conditional-content'),
-                    'disabled' => __('Deshabilitada', 'product-conditional-content'),
+                    'habilitada' => __('Habilitada', 'product-conditional-content'),
+                    'deshabilitada' => __('Deshabilitada', 'product-conditional-content'),
                     'habilitar' => __('Habilitar', 'product-conditional-content'),
                     'deshabilitar' => __('Deshabilitar', 'product-conditional-content'),
+                    'guardar' => __('Guardar', 'product-conditional-content'),
+                    'laReglaSeDesactivara' => __('La regla se desactivará', 'product-conditional-content'),
                 ],
             ]);
         }
@@ -769,9 +833,6 @@ final class GDM_Regla_Status_Manager {
             ]);
         }
     }
-    
-    // ... Continúa con los métodos restantes (Quick Edit, AJAX, Cron, etc.)
-    // Los dejé igual que antes, solo actualicé la parte del metabox
     
     /**
      * Quick Edit

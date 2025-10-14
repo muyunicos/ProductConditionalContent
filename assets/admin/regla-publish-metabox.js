@@ -16,6 +16,7 @@
 
     let validationTimeout = null;
     let updateStatusTimeout = null;
+    let isTogglingState = false;
 
     // =========================================================================
     // INIT
@@ -30,6 +31,7 @@
         initScheduleFields();
         initQuickDates();
         initValidation();
+        initPublishButton();
 
         console.log('✅ GDM Publish Metabox: Initialized');
     });
@@ -49,13 +51,23 @@
         }
 
         $toggle.off('change.gdm').on('change.gdm', function() {
+            if (isTogglingState) return;
+            
+            isTogglingState = true;
             const isEnabled = $(this).is(':checked');
+            
             updateMetaboxUI(isEnabled);
             updateStatusMessage();
+            updatePublishButton();
+            
+            setTimeout(function() {
+                isTogglingState = false;
+            }, 100);
         });
 
         // Estado inicial
         updateMetaboxUI($toggle.is(':checked'));
+        updatePublishButton();
     }
 
     /**
@@ -80,14 +92,71 @@
             
             // Ocultar campos de programación si estaban visibles
             if ($programarCheckbox.is(':checked')) {
-                $programarCheckbox.prop('checked', false);
                 $scheduleFields.slideUp(200);
             }
         } else {
             // Habilitar programación
             $programarCheckbox.prop('disabled', false);
             $scheduleSection.css('opacity', '1');
+            
+            // Si la programación está activada, mostrar campos
+            if ($programarCheckbox.is(':checked')) {
+                $scheduleFields.slideDown(200);
+            }
         }
+    }
+
+    // =========================================================================
+    // BOTÓN PUBLICAR DINÁMICO
+    // =========================================================================
+
+    /**
+     * Inicializar comportamiento del botón publicar
+     */
+    function initPublishButton() {
+        // Actualizar el botón cada vez que cambia algo
+        $('#post').on('change', 'input, select, textarea', function() {
+            updatePublishButton();
+        });
+    }
+
+    /**
+     * Actualizar texto y comportamiento del botón publicar
+     */
+    function updatePublishButton() {
+        const $toggle = $('#gdm-metabox-toggle');
+        const $publishButton = $('#publish');
+        const currentStatus = $('#gdm-current-status').val();
+        
+        if (!$publishButton.length) return;
+        
+        const isEnabled = $toggle.is(':checked');
+        const wasEnabled = (currentStatus === 'habilitada' || currentStatus === 'publish');
+        
+        let buttonText = '';
+        
+        // CASO: REGLA HABILITADA
+        if (wasEnabled) {
+            if (isEnabled) {
+                // Toggle activado -> Guardar
+                buttonText = gdmPublishMetabox.i18n.guardar;
+            } else {
+                // Toggle desactivado -> Deshabilitar
+                buttonText = gdmPublishMetabox.i18n.deshabilitar;
+            }
+        }
+        // CASO: REGLA DESHABILITADA
+        else {
+            if (isEnabled) {
+                // Toggle activado -> Habilitar
+                buttonText = gdmPublishMetabox.i18n.habilitar;
+            } else {
+                // Toggle desactivado -> Guardar
+                buttonText = gdmPublishMetabox.i18n.guardar;
+            }
+        }
+        
+        $publishButton.val(buttonText);
     }
 
     // =========================================================================
@@ -101,7 +170,6 @@
         const $programarCheckbox = $('#gdm_programar');
         const $scheduleFields = $('#gdm-schedule-fields');
         
-        // IMPORTANTE: Usar namespace para evitar eventos duplicados
         $programarCheckbox.off('change.gdm').on('change.gdm', function() {
             const isChecked = $(this).is(':checked');
             
@@ -117,8 +185,8 @@
                 $scheduleFields.slideUp(200);
             }
             
-            // Actualizar mensaje de estado
             updateStatusMessage();
+            updateDescriptions();
         });
 
         // Toggle de "Fecha Fin"
@@ -131,34 +199,33 @@
                 $wrapper.slideUp(200);
             }
             
-            // Actualizar mensaje de estado
             updateStatusMessage();
+            updateDescriptions();
         });
 
         // Validar y actualizar cuando cambian las fechas
         $('#gdm_fecha_inicio, #gdm_fecha_fin').off('change.gdm blur.gdm').on('change.gdm blur.gdm', function() {
             validateDates();
             updateStatusMessage();
+            updateDescriptions();
         });
     }
 
     /**
-     * Establecer fecha de inicio por defecto
+     * Establecer fecha de inicio por defecto (mañana 00:00)
      */
     function setDefaultStartDate() {
         const $input = $('#gdm_fecha_inicio');
-        const now = new Date();
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
         
-        // Redondear a la siguiente hora
-        now.setHours(now.getHours() + 1);
-        now.setMinutes(0);
-        now.setSeconds(0);
-        
-        const formatted = formatDateForInput(now);
+        const formatted = formatDateForInput(tomorrow);
         $input.val(formatted);
         
         validateDates();
         updateStatusMessage();
+        updateDescriptions();
     }
 
     /**
@@ -172,6 +239,109 @@
         const minutes = String(date.getMinutes()).padStart(2, '0');
         
         return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
+    // =========================================================================
+    // ACTUALIZAR DESCRIPCIONES DINÁMICAS
+    // =========================================================================
+
+    /**
+     * Actualizar todas las descripciones
+     */
+    function updateDescriptions() {
+        updateInicioDescription();
+        updateFinDescription();
+    }
+
+    /**
+     * Actualizar descripción de fecha de inicio
+     */
+    function updateInicioDescription() {
+        const $fechaInicio = $('#gdm_fecha_inicio');
+        const $description = $('.gdm-inicio-description');
+        
+        if (!$fechaInicio.val()) {
+            $description.text('La regla se activará automáticamente');
+            return;
+        }
+        
+        const now = new Date();
+        const inicio = new Date($fechaInicio.val());
+        const diff = inicio - now;
+        
+        if (diff <= 0) {
+            $description.text('La regla se activará inmediatamente');
+            return;
+        }
+        
+        const tiempo = calcularTiempoLegible(diff / 1000);
+        const fechaFormatted = formatDateForDisplay(inicio);
+        
+        $description.text(`La regla se activará automáticamente en ${tiempo}, el día ${fechaFormatted}`);
+    }
+
+    /**
+     * Actualizar descripción de fecha de fin
+     */
+    function updateFinDescription() {
+        const $fechaFin = $('#gdm_fecha_fin');
+        const $description = $('.gdm-fin-description');
+        
+        if (!$fechaFin.val()) {
+            $description.text('La regla se desactivará automáticamente');
+            return;
+        }
+        
+        const now = new Date();
+        const fin = new Date($fechaFin.val());
+        const diff = fin - now;
+        
+        if (diff <= 0) {
+            $description.text('La regla se desactivará inmediatamente');
+            return;
+        }
+        
+        const tiempo = calcularTiempoLegible(diff / 1000);
+        const fechaFormatted = formatDateForDisplay(fin);
+        
+        $description.text(`La regla se desactivará automáticamente en ${tiempo}, el día ${fechaFormatted}`);
+    }
+
+    /**
+     * Formatear fecha para mostrar
+     */
+    function formatDateForDisplay(date) {
+        const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
+                       'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        
+        const dia = date.getDate();
+        const mes = meses[date.getMonth()];
+        const anio = date.getFullYear();
+        
+        return `${dia} de ${mes} de ${anio}`;
+    }
+
+    /**
+     * Calcular tiempo legible (minutos, horas, días, semanas, meses)
+     */
+    function calcularTiempoLegible(segundos) {
+        const minutos = Math.round(segundos / 60);
+        const horas = Math.round(segundos / 3600);
+        const dias = Math.round(segundos / 86400);
+        const semanas = Math.round(segundos / 604800);
+        const meses = Math.round(segundos / 2592000);
+        
+        if (minutos < 60) {
+            return minutos === 1 ? '1 minuto' : `${minutos} minutos`;
+        } else if (horas < 24) {
+            return horas === 1 ? '1 hora' : `${horas} horas`;
+        } else if (dias < 7) {
+            return dias === 1 ? '1 día' : `${dias} días`;
+        } else if (semanas < 4) {
+            return semanas === 1 ? '1 semana' : `${semanas} semanas`;
+        } else {
+            return meses === 1 ? '1 mes' : `${meses} meses`;
+        }
     }
 
     // =========================================================================
@@ -191,10 +361,12 @@
             const $fechaFin = $('#gdm_fecha_fin');
             const $habilitarFin = $('#gdm_habilitar_fecha_fin');
             const $statusDisplay = $('.gdm-status-display');
-            const $statusDescription = $('.gdm-status-indicator .description');
+            const $statusDescription = $('.gdm-status-description');
             const $indicator = $('.gdm-status-indicator');
+            const currentStatus = $('#gdm-current-status').val();
             
             const isEnabled = $toggle.is(':checked');
+            const wasEnabled = (currentStatus === 'habilitada' || currentStatus === 'publish');
             const tieneProgramacion = $programar.is(':checked');
             const fechaInicio = $fechaInicio.val();
             const fechaFin = $fechaFin.val();
@@ -204,117 +376,110 @@
             let descripcion = '';
             let clase = '';
             
-            // CASO: DESHABILITADA
-            if (!isEnabled) {
-                titulo = 'Deshabilitada';
-                descripcion = 'La regla está desactivada';
-                clase = 'status-disabled';
-            }
-            // CASO: HABILITADA
-            else {
-                // Sin programación = activa
-                if (!tieneProgramacion || !fechaInicio) {
+            // CASO: REGLA HABILITADA
+            if (wasEnabled) {
+                if (isEnabled) {
+                    // Toggle activado -> Habilitada con estado dinámico
                     titulo = 'Habilitada';
-                    descripcion = 'Activa actualmente';
-                    clase = 'status-active';
+                    const estadoDinamico = calcularEstadoDinamico(tieneProgramacion, fechaInicio, fechaFin, habilitarFin);
+                    descripcion = estadoDinamico.texto;
+                    clase = estadoDinamico.clase;
+                } else {
+                    // Toggle desactivado -> Se deshabilitará
+                    titulo = 'Deshabilitar';
+                    descripcion = 'La regla se desactivará';
+                    clase = 'status-disabled';
                 }
-                // Con programación
-                else {
-                    const now = new Date();
-                    const inicio = new Date(fechaInicio);
-                    
-                    // Programada (aún no inicia)
-                    if (inicio > now) {
-                        const tiempoRestante = calcularTiempoRestante(inicio - now);
-                        titulo = 'Habilitada';
-                        descripcion = 'Programada, inicia en ' + tiempoRestante;
-                        clase = 'status-scheduled';
-                        
-                        // Si tiene fecha fin, agregar info
-                        if (habilitarFin && fechaFin) {
-                            const fin = new Date(fechaFin);
-                            const tiempoFin = calcularTiempoRestante(fin - now);
-                            descripcion += ', termina en ' + tiempoFin;
-                        }
-                    }
-                    // Ya inició
-                    else {
-                        // Con fecha fin
-                        if (habilitarFin && fechaFin) {
-                            const fin = new Date(fechaFin);
-                            
-                            // Ya terminó
-                            if (fin < now) {
-                                titulo = 'Habilitada';
-                                descripcion = 'Inactiva, ya terminó';
-                                clase = 'status-expired';
-                            }
-                            // Activa con fin próximo
-                            else {
-                                const tiempoFin = calcularTiempoRestante(fin - now);
-                                titulo = 'Habilitada';
-                                descripcion = 'Activa, termina en ' + tiempoFin;
-                                clase = 'status-active';
-                            }
-                        }
-                        // Sin fecha fin
-                        else {
-                            titulo = 'Habilitada';
-                            descripcion = 'Activa actualmente';
-                            clase = 'status-active';
-                        }
-                    }
+            }
+            // CASO: REGLA DESHABILITADA
+            else {
+                if (isEnabled) {
+                    // Toggle activado -> Se habilitará con estado dinámico
+                    titulo = 'Habilitar';
+                    const estadoDinamico = calcularEstadoDinamico(tieneProgramacion, fechaInicio, fechaFin, habilitarFin);
+                    descripcion = estadoDinamico.texto;
+                    clase = estadoDinamico.clase;
+                } else {
+                    // Toggle desactivado -> Deshabilitada
+                    titulo = 'Deshabilitada';
+                    descripcion = 'La regla está desactivada';
+                    clase = 'status-disabled';
                 }
             }
             
             // Actualizar UI
             $statusDisplay.text(titulo);
-            
-            // Actualizar o crear descripción
-            if ($statusDescription.length) {
-                $statusDescription.text(descripcion);
-            } else {
-                $('.gdm-status-indicator > div').append(
-                    '<p class="description" style="margin: 4px 0 0 0;">' + descripcion + '</p>'
-                );
-            }
+            $statusDescription.text(descripcion);
             
             // Actualizar clases del indicador
             $indicator
                 .removeClass('status-disabled status-active status-scheduled status-expiring status-expired')
                 .addClass(clase);
             
-        }, 100); // Pequeño delay para evitar múltiples llamadas
+        }, 100);
     }
 
     /**
-     * Calcular tiempo restante en formato legible
+     * Calcular estado dinámico
      */
-    function calcularTiempoRestante(milisegundos) {
-        if (milisegundos < 0) {
-            return 'ya pasó';
+    function calcularEstadoDinamico(tieneProgramacion, fechaInicio, fechaFin, habilitarFin) {
+        // Sin programación = activa
+        if (!tieneProgramacion || !fechaInicio) {
+            return {
+                clase: 'status-active',
+                texto: 'Activa'
+            };
         }
         
-        const segundos = Math.floor(milisegundos / 1000);
-        const dias = Math.floor(segundos / 86400);
-        const horas = Math.floor((segundos % 86400) / 3600);
-        const minutos = Math.floor((segundos % 3600) / 60);
+        const now = new Date();
+        const inicio = new Date(fechaInicio);
         
-        const partes = [];
-        
-        if (dias > 0) {
-            partes.push(dias + (dias === 1 ? ' día' : ' días'));
+        // Programada (aún no inicia)
+        if (inicio > now) {
+            const tiempoRestante = calcularTiempoLegible((inicio - now) / 1000);
+            let texto = `Programada, inicia en ${tiempoRestante}`;
+            
+            // Si tiene fecha fin, agregar info
+            if (habilitarFin && fechaFin) {
+                const fin = new Date(fechaFin);
+                const tiempoFin = calcularTiempoLegible((fin - now) / 1000);
+                texto += `, termina en ${tiempoFin}`;
+            }
+            
+            return {
+                clase: 'status-scheduled',
+                texto: texto
+            };
         }
         
-        if (horas > 0 && dias < 7) {
-            partes.push(horas + (horas === 1 ? ' hora' : ' horas'));
+        // Ya inició
+        
+        // Con fecha fin
+        if (habilitarFin && fechaFin) {
+            const fin = new Date(fechaFin);
+            
+            // Ya terminó
+            if (fin < now) {
+                return {
+                    clase: 'status-expired',
+                    texto: 'Inactiva, ya terminó'
+                };
+            }
+            
+            // Activa con fin próximo
+            const tiempoFin = calcularTiempoLegible((fin - now) / 1000);
+            
+            return {
+                clase: 'status-active',
+                texto: `Activa, termina en ${tiempoFin}`
+            };
         }
         
-        if (dias === 0 && horas === 0 && minutos > 0) {
-            partes.push(minutos + (minutos === 1 ? ' minuto' : ' minutos'));
-        }
-        
-        return partes.join(' y ') || '1 minuto';
+        // Activa sin fin
+        return {
+            clase: 'status-active',
+            texto: 'Activa'
+        };
     }
 
     // =========================================================================
@@ -325,54 +490,6 @@
      * Inicializar botones de fechas rápidas
      */
     function initQuickDates() {
-        // Solo crear si no existen
-        if ($('.gdm-quick-dates').length === 0) {
-            const $quickDates = $('<div class="gdm-quick-dates" style="margin-top: 8px;"></div>');
-            
-            const shortcuts = [
-                { label: 'En 1 hora', type: 'hours', value: 1 },
-                { label: 'Mañana 9:00', type: 'tomorrow' },
-                { label: 'Próximo lunes 9:00', type: 'monday' }
-            ];
-            
-            shortcuts.forEach(function(shortcut) {
-                const $btn = $('<button>', {
-                    type: 'button',
-                    class: 'button button-small gdm-quick-date',
-                    text: shortcut.label,
-                    'data-type': shortcut.type,
-                    'data-value': shortcut.value || 0
-                });
-                
-                $quickDates.append($btn);
-            });
-            
-            $('#gdm_fecha_inicio').after($quickDates);
-        }
-
-        if ($('.gdm-quick-durations').length === 0) {
-            const $quickDurations = $('<div class="gdm-quick-durations" style="margin-top: 8px;"></div>');
-            
-            const durations = [
-                { label: '7 días', days: 7 },
-                { label: '30 días', days: 30 },
-                { label: '90 días', days: 90 }
-            ];
-            
-            durations.forEach(function(duration) {
-                const $btn = $('<button>', {
-                    type: 'button',
-                    class: 'button button-small gdm-quick-duration',
-                    text: duration.label,
-                    'data-days': duration.days
-                });
-                
-                $quickDurations.append($btn);
-            });
-            
-            $('#gdm_fecha_fin').after($quickDurations);
-        }
-
         // Bind eventos (solo una vez)
         $(document).off('click.gdm', '.gdm-quick-date').on('click.gdm', '.gdm-quick-date', function(e) {
             e.preventDefault();
@@ -390,28 +507,28 @@
      */
     function handleQuickDate($btn) {
         const type = $btn.data('type');
-        const value = $btn.data('value');
         const now = new Date();
         let targetDate;
 
         switch (type) {
-            case 'hours':
-                targetDate = new Date(now.getTime() + (value * 60 * 60 * 1000));
-                targetDate.setMinutes(0);
-                targetDate.setSeconds(0);
-                break;
-
             case 'tomorrow':
                 targetDate = new Date(now);
                 targetDate.setDate(targetDate.getDate() + 1);
-                targetDate.setHours(9, 0, 0, 0);
+                targetDate.setHours(0, 0, 0, 0);
                 break;
 
             case 'monday':
                 targetDate = new Date(now);
                 const daysUntilMonday = (8 - targetDate.getDay()) % 7 || 7;
                 targetDate.setDate(targetDate.getDate() + daysUntilMonday);
-                targetDate.setHours(9, 0, 0, 0);
+                targetDate.setHours(0, 0, 0, 0);
+                break;
+
+            case 'month':
+                targetDate = new Date(now);
+                targetDate.setMonth(targetDate.getMonth() + 1);
+                targetDate.setDate(1);
+                targetDate.setHours(0, 0, 0, 0);
                 break;
 
             default:
@@ -421,6 +538,7 @@
         $('#gdm_fecha_inicio').val(formatDateForInput(targetDate));
         validateDates();
         updateStatusMessage();
+        updateDescriptions();
 
         // Feedback visual
         $btn.addClass('button-primary');
@@ -433,7 +551,8 @@
      * Manejar clic en duración rápida
      */
     function handleQuickDuration($btn) {
-        const days = parseInt($btn.data('days'));
+        const hours = parseInt($btn.data('hours')) || 0;
+        const days = parseInt($btn.data('days')) || 0;
         const $fechaInicio = $('#gdm_fecha_inicio');
         
         if (!$fechaInicio.val()) {
@@ -442,13 +561,18 @@
         }
 
         const startDate = new Date($fechaInicio.val());
-        const endDate = new Date(startDate.getTime() + (days * 24 * 60 * 60 * 1000));
+        const endDate = new Date(startDate);
         
-        endDate.setHours(23, 59, 0, 0);
+        if (hours > 0) {
+            endDate.setHours(endDate.getHours() + hours);
+        } else if (days > 0) {
+            endDate.setDate(endDate.getDate() + days);
+        }
 
         $('#gdm_fecha_fin').val(formatDateForInput(endDate));
         validateDates();
         updateStatusMessage();
+        updateDescriptions();
 
         // Feedback visual
         $btn.addClass('button-primary');
