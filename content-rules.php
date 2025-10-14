@@ -56,8 +56,8 @@ if (!defined('ABSPATH')) exit;
 function gdm_check_plugin_compat() {
     global $wp_version;
     $min_wp     = '6';
-    $min_php    = '8';
-    $min_wc     = '10';
+    $min_php    = '8.2'; // Mejor usar la misma versión que el plugin requiere
+    $min_wc     = '10.0.0';
     $error_msgs = [];
 
     if (version_compare($wp_version, $min_wp, '<')) {
@@ -66,9 +66,12 @@ function gdm_check_plugin_compat() {
     if (version_compare(PHP_VERSION, $min_php, '<')) {
         $error_msgs[] = "PHP $min_php+";
     }
-    if (!defined('WC_VERSION') || version_compare(WC_VERSION, $min_wc, '<')) {
+    if (!defined('WC_VERSION')) {
+        $error_msgs[] = "WooCommerce $min_wc+ (WooCommerce no está activo)";
+    } elseif (version_compare(WC_VERSION, $min_wc, '<')) {
         $error_msgs[] = "WooCommerce $min_wc+";
     }
+
     if ($error_msgs) {
         add_action('admin_notices', function() use ($error_msgs) {
             echo '<div class="notice notice-error"><p><b>Reglas de Contenido para WooCommerce:</b> Requiere: '
