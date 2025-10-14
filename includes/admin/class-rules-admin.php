@@ -14,24 +14,8 @@ final class GDM_Rules_Admin {
     const OPTION_KEY = 'gdm_content_rules';
 
     public static function init() {
-        add_action('admin_menu', [__CLASS__, 'add_admin_menu']);
         add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_scripts']);
         add_action('wp_ajax_gdm_save_rules', [__CLASS__, 'ajax_save_rules']);
-    }
-
-    /**
-     * Añade el submenú en "Reglas de Contenido"
-     */
-    public static function add_admin_menu() {
-        add_submenu_page(
-            'gdm_content_rules', // Slug del menú principal
-            __('Reglas de Contenido', 'product-conditional-content'),
-            __('Reglas de Contenido', 'product-conditional-content'),
-            'manage_options',
-            'gdm_content_rules_list',
-            [__CLASS__, 'admin_page'],
-            1 // Posición
-        );
     }
 
     /**

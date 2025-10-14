@@ -14,24 +14,8 @@ final class GDM_Fields_Admin {
     const OPTION_KEY = 'gdm_product_custom_fields';
 
     public static function init() {
-        add_action('admin_menu', [__CLASS__, 'add_admin_menu']);
         add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_scripts']);
         add_action('wp_ajax_gdm_save_fields', [__CLASS__, 'ajax_save_fields']);
-    }
-
-    /**
-     * Añade el submenú en "Reglas de Contenido"
-     */
-    public static function add_admin_menu() {
-        add_submenu_page(
-            'gdm_content_rules', // Slug del menú principal
-            __('Campos Personalizados', 'product-conditional-content'),
-            __('Campos Personalizados', 'product-conditional-content'),
-            'manage_options',
-            'gdm_product_fields',
-            [__CLASS__, 'admin_page'],
-            2 // Posición
-        );
     }
 
     /**
