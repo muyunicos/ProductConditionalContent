@@ -1,0 +1,36 @@
+/* --- Contenedores Principales --- */
+.gdm-container { display: flex; gap: 20px; margin-bottom: 20px; }
+.gdm-column { flex: 1; min-width: 0; }
+.gdm-full-width-container { margin-top: 20px; }
+
+/* --- Fieldsets y Listas --- */
+.gdm-fieldset { border: 1px solid #ccd0d4; padding: 15px; margin-bottom: 20px; }
+.gdm-fieldset legend { font-weight: bold; padding: 0 5px; margin-left: 10px; }
+.gdm-scroll-list { max-height: 200px; overflow-y: auto; border: 1px solid #ccd0d4; padding: 10px; background-color: #fff; margin-top: 5px;}
+
+/* --- Tabla Repetidora de Variantes --- */
+#gdm-repeater-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    margin-top: 10px; 
+    table-layout: fixed; 
+}
+
+#gdm-repeater-table th, 
+#gdm-repeater-table td {
+    padding: 8px;
+    vertical-align: middle;
+    text-align: left;
+}
+
+/* --- Anchos de Columna Específicos --- */
+#gdm-repeater-table .sort-col { width: 4%; text-align: center; }
+#gdm-repeater-table .cond-type-col { width: 15%; }
+#gdm-repeater-table .cond-key-col { width: 20%; }
+#gdm-repeater-table .cond-value-col { width: 20%; }
+#gdm-repeater-table .action-col { width: 15%; }
+#gdm-repeater-table .text-col { width: 22%; }
+#gdm-repeater-table .actions-col { width: 4%; text-align: right; }
+
+#gdm-repeater-table .sort-handle { cursor: move; color: #888; }
+#gdm-repeater-table .actions-cell { text-align: right; }
