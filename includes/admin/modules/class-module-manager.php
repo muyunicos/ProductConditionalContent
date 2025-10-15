@@ -215,7 +215,7 @@ final class GDM_Module_Manager {
      * Obtener módulos con íconos para selector
      * ✅ Este método es llamado por el metabox
      */
-    public function get_modules_with_icons() {
+    public function get_modules_ordered() {
         $modules = [];
         
         foreach ($this->modules as $id => $config) {
