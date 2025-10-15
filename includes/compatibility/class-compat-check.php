@@ -194,4 +194,17 @@ final class GDM_Compat_Check {
             echo '</div>';
         });
     }
+    
+    /**
+     * Declarar compatibilidad con HPOS (High-Performance Order Storage)
+     * 
+     * @param string $plugin_file Ruta del archivo principal del plugin
+     */
+    public static function declare_hpos_compatibility($plugin_file) {
+        add_action('before_woocommerce_init', function() use ($plugin_file) {
+            if (class_exists(\Automattic\WooCommerce\Utilities\FeaturesUtil::class)) {
+                \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', $plugin_file, true);
+            }
+        });
+    }
 }

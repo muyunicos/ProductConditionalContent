@@ -17,19 +17,15 @@
 
 if (!defined('ABSPATH')) exit;
 
-/**
- * Cargar verificación de compatibilidad
- */
+/** --- Cargar clase de compatibilidad --- */
 require_once plugin_dir_path(__FILE__) . 'includes/compatibility/class-compat-check.php';
 
 add_action('plugins_loaded', function() {
-    $compat = GDM_Compat_Check::check();
+    /** --- Verificar compatibilidad antes de cargar --- */
+    $compat_result = GDM_Compat_Check::check();
     
-    if (!$compat['compatible']) {
-        add_action('admin_notices', function() use ($compat) {
-            echo '<div class="notice notice-error"><p><b>Reglas de Contenido para WooCommerce:</b> ' 
-                . implode(' ', $compat['messages']) . '</p></div>';
-        });
+    if (!$compat_result['compatible']) {
+        GDM_Compat_Check::show_admin_notice($compat_result['messages']);
         return;
     }
 
@@ -38,12 +34,8 @@ add_action('plugins_loaded', function() {
     define('GDM_PLUGIN_DIR', plugin_dir_path(__FILE__));
     define('GDM_PLUGIN_URL', plugin_dir_url(__FILE__));
 
-    /** --- Compatibilidad HPOS --- */
-    add_action('before_woocommerce_init', function() {
-        if (class_exists(\Automattic\WooCommerce\Utilities\FeaturesUtil::class)) {
-            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
-        }
-    });
+    /** --- Declarar compatibilidad HPOS --- */
+    GDM_Compat_Check::declare_hpos_compatibility(__FILE__);
 
     /** --- Inicialización Core --- */
     require_once GDM_PLUGIN_DIR . 'includes/core/class-plugin-bootstrap.php';
