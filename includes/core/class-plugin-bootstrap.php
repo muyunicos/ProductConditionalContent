@@ -1,7 +1,7 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-final class GDM_Plugin_Init {
+final class GDM_Plugin_Bootstrap {
     private static $instance = null;
 
     public static function instance() {
@@ -49,4 +49,4 @@ final class GDM_Plugin_Init {
     }
 }
 
-GDM_Plugin_Init::instance();
+GDM_Plugin_Bootstrap::instance();

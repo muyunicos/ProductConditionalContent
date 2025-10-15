@@ -64,7 +64,7 @@ add_action('plugins_loaded', function() {
     });
 
     /** --- Inicialización Core --- */
-    require_once GDM_PLUGIN_DIR . 'includes/core/class-plugin-init.php';
+    require_once GDM_PLUGIN_DIR . 'includes/core/class-plugin-bootstrap.php';
     require_once GDM_PLUGIN_DIR . 'includes/core/class-cpt.php';
 
     /** --- Sistema Modular --- */
