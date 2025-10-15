@@ -34,6 +34,14 @@ final class GDM_Reglas_Metabox {
             GDM_VERSION,
             true
         );
+
+        wp_enqueue_script(
+            'gdm-modules-toggle-handler',
+            GDM_PLUGIN_URL . 'assets/admin/js/modules/modules-toggle-handler.js',
+            ['jquery'],
+            GDM_VERSION,
+            true
+        );
         
         wp_enqueue_style(
             'gdm-reglas-metabox',
@@ -200,7 +208,7 @@ final class GDM_Reglas_Metabox {
         </div>
         <?php
     }
-    
+
     /**
      * Guardar datos
      */

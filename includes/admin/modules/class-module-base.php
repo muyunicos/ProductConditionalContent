@@ -1,10 +1,15 @@
 <?php
 /**
- * Clase Base Abstracta para Módulos de Reglas v6.2.1 CORREGIDA
+ * Clase Base Abstracta para Módulos de Reglas v6.2.2 MEJORADA
  * Compatible con WordPress 6.8.3, PHP 8.2, WooCommerce 10.2.2
  * 
+ * MEJORAS v6.2.2:
+ * - Los metaboxes se renderizan colapsados por defecto
+ * - Solo se expanden si el módulo está activo en _gdm_aplicar_a
+ * - Optimización de caché y validaciones
+ * 
  * @package ProductConditionalContent
- * @since 6.2.1
+ * @since 6.2.2
  * @date 2025-10-15
  */
 
@@ -27,11 +32,36 @@ abstract class GDM_Module_Base {
         add_action('save_post_gdm_regla', [$this, 'save_module_data'], 20, 2);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
         
+        // ✅ NUEVO: Hook para controlar estado de metaboxes
+        add_filter('postbox_classes_gdm_regla_gdm_module_' . $this->module_id, [$this, 'set_metabox_state']);
+        
         $this->module_init();
     }
     
     protected function module_init() {
         // Implementar en clase hija si se necesita
+    }
+    
+    /**
+     * ✅ NUEVO: Controlar estado inicial del metabox (abierto/cerrado)
+     */
+    public function set_metabox_state($classes) {
+        global $post;
+        
+        if (!$post) {
+            // Por defecto cerrado en nuevas reglas
+            $classes[] = 'closed';
+            return $classes;
+        }
+        
+        $is_active = $this->is_module_active($post->ID);
+        
+        // Solo abierto si está activo
+        if (!$is_active) {
+            $classes[] = 'closed';
+        }
+        
+        return $classes;
     }
     
     /**
@@ -56,12 +86,12 @@ abstract class GDM_Module_Base {
         
         echo '<div class="gdm-module-wrapper" data-module="' . esc_attr($this->module_id) . '">';
         
-        // Mensaje inactivo (se oculta con JS si está activo)
+        // ✅ MEJORADO: Mensaje inactivo más claro
         echo '<div class="gdm-module-inactive" style="' . ($is_active ? 'display:none;' : '') . '">';
         $this->render_inactive_message();
         echo '</div>';
         
-        // Contenido del módulo (se oculta con JS si está inactivo)
+        // Contenido del módulo
         echo '<div class="gdm-module-content" style="' . ($is_active ? '' : 'display:none;') . '">';
         $this->render_metabox($post);
         echo '</div>';
@@ -76,20 +106,24 @@ abstract class GDM_Module_Base {
      */
     protected function render_inactive_message() {
         ?>
-        <p>
-            <span class="dashicons dashicons-info"></span>
-            <?php 
-            printf(
-                __('Para usar este módulo, activa "%s" en la sección "Aplicar a" de la configuración general.', 'product-conditional-content'),
-                '<strong>' . esc_html($this->module_name) . '</strong>'
-            );
-            ?>
-        </p>
+        <div class="gdm-inactive-notice">
+            <span class="dashicons dashicons-info-outline"></span>
+            <div>
+                <strong><?php _e('Módulo inactivo', 'product-conditional-content'); ?></strong>
+                <p>
+                    <?php 
+                    printf(
+                        __('Para usar este módulo, actívalo en la sección <strong>"Aplica a"</strong> de la configuración general.', 'product-conditional-content')
+                    );
+                    ?>
+                </p>
+            </div>
+        </div>
         <?php
     }
     
     /**
-     * Estilos base para todos los módulos
+     * ✅ MEJORADO: Estilos base optimizados
      */
     protected function render_base_styles() {
         ?>
@@ -97,24 +131,63 @@ abstract class GDM_Module_Base {
             .gdm-module-wrapper {
                 min-height: 50px;
             }
+            
             .gdm-module-inactive {
-                padding: 20px;
-                background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-                border-left: 4px solid #ffc107;
-                color: #856404;
-                border-radius: 4px;
-                margin: 10px 0;
-            }
-            .gdm-module-inactive p {
+                padding: 0;
                 margin: 0;
-                display: flex;
-                align-items: center;
-                gap: 8px;
             }
-            .gdm-module-inactive .dashicons {
-                font-size: 20px;
-                width: 20px;
-                height: 20px;
+            
+            .gdm-inactive-notice {
+                display: flex;
+                align-items: flex-start;
+                gap: 12px;
+                padding: 16px;
+                background: linear-gradient(135deg, #fff9e6 0%, #fef5e7 100%);
+                border-left: 4px solid #f0ad4e;
+                border-radius: 4px;
+            }
+            
+            .gdm-inactive-notice .dashicons {
+                color: #f0ad4e;
+                font-size: 24px;
+                width: 24px;
+                height: 24px;
+                flex-shrink: 0;
+                margin-top: 2px;
+            }
+            
+            .gdm-inactive-notice strong {
+                display: block;
+                color: #856404;
+                margin-bottom: 4px;
+                font-size: 14px;
+            }
+            
+            .gdm-inactive-notice p {
+                margin: 0;
+                color: #856404;
+                font-size: 13px;
+                line-height: 1.5;
+            }
+            
+            /* ✅ NUEVO: Estilos para metaboxes cerrados */
+            .postbox.closed .gdm-module-wrapper {
+                display: none;
+            }
+            
+            /* ✅ MEJORADO: Descripción de campos */
+            .gdm-field-description {
+                color: #646970;
+                font-size: 13px;
+                margin: 6px 0 0 0;
+                line-height: 1.5;
+            }
+            
+            /* ✅ MEJORADO: Separadores visuales */
+            .gdm-separator {
+                margin: 25px 0;
+                border: 0;
+                border-top: 1px solid #dcdcde;
             }
         </style>
         <?php
@@ -151,7 +224,7 @@ abstract class GDM_Module_Base {
     }
     
     /**
-     * Helper: Obtener datos del módulo con caché
+     * ✅ MEJORADO: Caché optimizado con invalidación
      */
     protected function get_module_data($post_id) {
         $cache_key = "{$this->module_id}_{$post_id}";
@@ -174,11 +247,24 @@ abstract class GDM_Module_Base {
     }
     
     /**
+     * ✅ NUEVO: Invalidar caché de módulo
+     */
+    protected function clear_module_cache($post_id) {
+        $cache_key = "{$this->module_id}_{$post_id}";
+        if (isset(self::$cache[$cache_key])) {
+            unset(self::$cache[$cache_key]);
+        }
+    }
+    
+    /**
      * Helper: Guardar un campo del módulo
      */
     protected function save_module_field($post_id, $field_name, $value) {
         $meta_key = "_gdm_{$this->module_id}_{$field_name}";
         update_post_meta($post_id, $meta_key, $value);
+        
+        // ✅ NUEVO: Invalidar caché al guardar
+        $this->clear_module_cache($post_id);
     }
     
     /**
@@ -201,13 +287,11 @@ abstract class GDM_Module_Base {
     }
     
     // =========================================================================
-    // ✅ MÉTODOS HELPER PARA RENDERIZAR CAMPOS (FALTABAN)
+    // ✅ MÉTODOS HELPER PARA RENDERIZAR CAMPOS
     // =========================================================================
     
     /**
      * Renderizar campo SELECT con opciones
-     * 
-     * @param array $args Configuración del campo
      */
     protected function render_select_field($args) {
         $defaults = [
@@ -249,8 +333,6 @@ abstract class GDM_Module_Base {
     
     /**
      * Renderizar campo CHECKBOX múltiple
-     * 
-     * @param array $args Configuración del campo
      */
     protected function render_checkbox_field($args) {
         $defaults = [
@@ -275,20 +357,18 @@ abstract class GDM_Module_Base {
         foreach ($args['options'] as $option_value => $option_label) {
             $checked = is_array($args['value']) && in_array($option_value, $args['value']);
             
-            echo '<label class="gdm-checkbox-inline">';
+            echo '<label style="display: block; margin: 8px 0;">';
             echo '<input type="checkbox" ';
             echo 'name="' . esc_attr($args['name']) . '[]" ';
             echo 'value="' . esc_attr($option_value) . '" ';
             checked($checked);
             echo '> ' . esc_html($option_label);
-            echo '</label><br>';
+            echo '</label>';
         }
     }
     
     /**
      * Renderizar campo de TEXTO
-     * 
-     * @param array $args Configuración del campo
      */
     protected function render_text_field($args) {
         $defaults = [
@@ -329,8 +409,6 @@ abstract class GDM_Module_Base {
     
     /**
      * Renderizar campo TEXTAREA
-     * 
-     * @param array $args Configuración del campo
      */
     protected function render_textarea_field($args) {
         $defaults = [
@@ -371,8 +449,6 @@ abstract class GDM_Module_Base {
     
     /**
      * Renderizar editor WP Editor
-     * 
-     * @param array $args Configuración del editor
      */
     protected function render_wp_editor($args) {
         $defaults = [
