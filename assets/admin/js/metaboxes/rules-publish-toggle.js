@@ -585,10 +585,10 @@
     // VALIDACIÓN
     // =========================================================================
 
-    /**
-     * Inicializar validación
-     */
-    function initValidation() {
+/**
+ * Inicializar validación
+ */
+function initValidation() {
     if ($('#gdm-date-validation').length === 0) {
         const $validation = $('<div>', {
             id: 'gdm-date-validation',
@@ -599,35 +599,116 @@
         $('#gdm-schedule-fields').append($validation);
     }
 
-    $('#post').off('submit.gdm').on('submit.gdm', function(e) {
+    // ✅ MODIFICACIÓN: Usar namespace específico y lógica más precisa
+    $('#post').off('submit.gdmValidation').on('submit.gdmValidation', function(e) {
         const $toggle = $('#gdm-metabox-toggle');
         const $programar = $('#gdm_programar');
         
-        // Solo validar si la regla está habilitada Y tiene programación
+        // ✅ SOLO interferir si es necesario validar fechas de programación
         if ($toggle.is(':checked') && $programar.is(':checked')) {
-            if (!validateDatesOnly()) {
+            if (!validateBeforePublish()) {
                 e.preventDefault();
+                e.stopImmediatePropagation(); // ✅ NUEVO: Detener propagación inmediata
                 return false;
             }
         }
         
+        // ✅ Para cualquier otro caso, permitir submit normal
         return true;
     });
 }
 
-/**
- * ✅ NUEVA: Validación solo de fechas (sin interferir con otros campos)
- */
-function validateDatesOnly() {
+    /**
+     * Validar fechas
+     */
+    function validateDates() {
+        clearTimeout(validationTimeout);
+        
+        validationTimeout = setTimeout(function() {
+            const $validation = $('#gdm-date-validation');
+            const $fechaInicio = $('#gdm_fecha_inicio');
+            const $fechaFin = $('#gdm_fecha_fin');
+            const $habilitarFin = $('#gdm_habilitar_fecha_fin');
+
+            if (!$fechaInicio.val()) {
+                $validation.hide();
+                return;
+            }
+
+            const now = new Date();
+            const inicio = new Date($fechaInicio.val());
+            const errors = [];
+            const warnings = [];
+
+            if (inicio < now) {
+                warnings.push('⚠️ La fecha de inicio ya pasó. Se activará inmediatamente.');
+            }
+
+            const diasHastaInicio = Math.ceil((inicio - now) / (1000 * 60 * 60 * 24));
+            if (diasHastaInicio > 90) {
+                warnings.push(`⚠️ La regla se activará en ${diasHastaInicio} días.`);
+            }
+
+            if ($habilitarFin.is(':checked') && $fechaFin.val()) {
+                const fin = new Date($fechaFin.val());
+
+                if (fin <= inicio) {
+                    errors.push('❌ La fecha de fin debe ser posterior a la de inicio.');
+                }
+
+                const duracion = Math.ceil((fin - inicio) / (1000 * 60 * 60 * 24));
+                if (duracion > 365) {
+                    warnings.push(`⚠️ La duración es de ${duracion} días (más de 1 año).`);
+                }
+            }
+
+            if (errors.length > 0) {
+                $validation
+                    .removeClass('success warning')
+                    .addClass('error')
+                    .html(errors.join('<br>'))
+                    .slideDown(200);
+            } else if (warnings.length > 0) {
+                $validation
+                    .removeClass('success error')
+                    .addClass('warning')
+                    .html(warnings.join('<br>'))
+                    .slideDown(200);
+            } else {
+                $validation
+                    .removeClass('error warning')
+                    .addClass('success')
+                    .html('✓ Las fechas son válidas')
+                    .slideDown(200);
+
+                setTimeout(function() {
+                    $validation.slideUp(200);
+                }, 2000);
+            }
+        }, 500);
+    }
+function validateBeforePublish() {
+    const $toggle = $('#gdm-metabox-toggle');
+    const $programar = $('#gdm_programar');
     const $fechaInicio = $('#gdm_fecha_inicio');
     const $fechaFin = $('#gdm_fecha_fin');
     const $habilitarFin = $('#gdm_habilitar_fecha_fin');
+
+    if (!$toggle.is(':checked')) {
+        return true; // Regla deshabilitada, no validar
+    }
+
+    if (!$programar.is(':checked')) {
+        return true; // Sin programación, no validar fechas
+    }
 
     if (!$fechaInicio.val()) {
         alert('Por favor establece una fecha de inicio para la programación.');
         $fechaInicio.focus();
         return false;
     }
+
+    const inicio = new Date($fechaInicio.val());
 
     if ($habilitarFin.is(':checked')) {
         if (!$fechaFin.val()) {
@@ -636,9 +717,8 @@ function validateDatesOnly() {
             return false;
         }
 
-        const inicio = new Date($fechaInicio.val());
         const fin = new Date($fechaFin.val());
-        
+
         if (fin <= inicio) {
             alert('La fecha de fin debe ser posterior a la fecha de inicio.');
             $fechaFin.focus();
