@@ -36,14 +36,14 @@ final class GDM_Fields_Frontend {
         if (!is_product() || empty($this->fields)) return;
         wp_enqueue_script(
             'gdm-fields-frontend',
-            GDM_PLUGIN_URL . 'assets/frontend/fields-frontend.js',
+            GDM_PLUGIN_URL . 'assets/frontend/js/options-renderer.js',
             ['jquery'],
             GDM_VERSION,
             true
         );
         wp_enqueue_style(
             'gdm-fields-frontend',
-            GDM_PLUGIN_URL . 'assets/frontend/fields-frontend.css',
+            GDM_PLUGIN_URL . 'assets/frontend/css/options-renderer.css',
             [],
             GDM_VERSION
         );
