@@ -261,30 +261,7 @@ class GDM_Module_Price extends GDM_Module_Base {
             'badge_descuento' => '0',
         ];
     }
-    
-    /**
-     * Obtener datos del módulo con caché
-     */
-    private function get_module_data($post_id) {
-        $cache_key = "price_{$post_id}";
         
-        if (isset(self::$cache[$cache_key])) {
-            return self::$cache[$cache_key];
-        }
-        
-        $data = [
-            'tipo' => get_post_meta($post_id, '_gdm_precio_tipo', true) ?: 'descuento_porcentaje',
-            'valor' => get_post_meta($post_id, '_gdm_precio_valor', true) ?: 0,
-            'aplicar_a' => get_post_meta($post_id, '_gdm_precio_aplicar_a', true) ?: 'activo',
-            'redondeo' => get_post_meta($post_id, '_gdm_precio_redondeo', true) ?: 'ninguno',
-            'mostrar_antes' => get_post_meta($post_id, '_gdm_precio_mostrar_antes', true),
-            'badge_descuento' => get_post_meta($post_id, '_gdm_precio_badge_descuento', true),
-        ];
-        
-        self::$cache[$cache_key] = $data;
-        return $data;
-    }
-    
     /**
      * Encolar assets
      */

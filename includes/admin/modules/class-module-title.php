@@ -244,32 +244,7 @@ class GDM_Module_Title extends GDM_Module_Base {
             'regex_reemplazo' => '',
         ];
     }
-    
-    /**
-     * Obtener datos del módulo con caché
-     */
-    private function get_module_data($post_id) {
-        $cache_key = "title_{$post_id}";
-        
-        if (isset(self::$cache[$cache_key])) {
-            return self::$cache[$cache_key];
-        }
-        
-        $data = [
-            'accion' => get_post_meta($post_id, '_gdm_titulo_accion', true) ?: 'agregar_final',
-            'texto_agregar' => get_post_meta($post_id, '_gdm_titulo_texto_agregar', true),
-            'texto_buscar' => get_post_meta($post_id, '_gdm_titulo_texto_buscar', true),
-            'texto_reemplazar' => get_post_meta($post_id, '_gdm_titulo_texto_reemplazar', true),
-            'case_sensitive' => get_post_meta($post_id, '_gdm_titulo_case_sensitive', true),
-            'nuevo_completo' => get_post_meta($post_id, '_gdm_titulo_nuevo_completo', true),
-            'regex_patron' => get_post_meta($post_id, '_gdm_titulo_regex_patron', true),
-            'regex_reemplazo' => get_post_meta($post_id, '_gdm_titulo_regex_reemplazo', true),
-        ];
-        
-        self::$cache[$cache_key] = $data;
-        return $data;
-    }
-    
+
     /**
      * Encolar assets
      */

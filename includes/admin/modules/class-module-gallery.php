@@ -321,32 +321,7 @@ class GDM_Module_Gallery extends GDM_Module_Base {
             'marca_agua_escala' => 100,
         ];
     }
-    
-    /**
-     * Obtener datos del módulo con caché
-     */
-    private function get_module_data($post_id) {
-        $cache_key = "gallery_{$post_id}";
-        
-        if (isset(self::$cache[$cache_key])) {
-            return self::$cache[$cache_key];
-        }
-        
-        $data = [
-            'imagenes' => get_post_meta($post_id, '_gdm_galeria_imagenes', true) ?: [],
-            'posicion' => get_post_meta($post_id, '_gdm_galeria_posicion', true) ?: 'final',
-            'posicion_numero' => get_post_meta($post_id, '_gdm_galeria_posicion_numero', true) ?: 1,
-            'marca_agua_enabled' => get_post_meta($post_id, '_gdm_galeria_marca_agua_enabled', true),
-            'marca_agua_imagen' => get_post_meta($post_id, '_gdm_galeria_marca_agua_imagen', true),
-            'marca_agua_posicion' => get_post_meta($post_id, '_gdm_galeria_marca_agua_posicion', true) ?: 'centro',
-            'marca_agua_opacidad' => get_post_meta($post_id, '_gdm_galeria_marca_agua_opacidad', true) ?: 50,
-            'marca_agua_escala' => get_post_meta($post_id, '_gdm_galeria_marca_agua_escala', true) ?: 100,
-        ];
-        
-        self::$cache[$cache_key] = $data;
-        return $data;
-    }
-    
+
     /**
      * Encolar assets
      */

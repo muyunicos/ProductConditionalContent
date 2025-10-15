@@ -285,33 +285,7 @@ class GDM_Module_Featured extends GDM_Module_Base {
             'badge_posicion' => 'superior-izquierda',
         ];
     }
-    
-    /**
-     * Obtener datos del módulo con caché
-     */
-    private function get_module_data($post_id) {
-        $cache_key = "featured_{$post_id}";
-        
-        if (isset(self::$cache[$cache_key])) {
-            return self::$cache[$cache_key];
-        }
-        
-        $data = [
-            'accion' => get_post_meta($post_id, '_gdm_destacado_accion', true) ?: 'marcar',
-            'exclusivo' => get_post_meta($post_id, '_gdm_destacado_exclusivo', true),
-            'limite' => get_post_meta($post_id, '_gdm_destacado_limite', true) ?: 0,
-            'variaciones' => get_post_meta($post_id, '_gdm_destacado_variaciones', true) ?: 'padre',
-            'prioridad' => get_post_meta($post_id, '_gdm_destacado_prioridad', true) ?: 10,
-            'badge_enabled' => get_post_meta($post_id, '_gdm_destacado_badge_enabled', true),
-            'badge_texto' => get_post_meta($post_id, '_gdm_destacado_badge_texto', true) ?: 'DESTACADO',
-            'badge_color' => get_post_meta($post_id, '_gdm_destacado_badge_color', true) ?: '#ff6b6b',
-            'badge_posicion' => get_post_meta($post_id, '_gdm_destacado_badge_posicion', true) ?: 'superior-izquierda',
-        ];
-        
-        self::$cache[$cache_key] = $data;
-        return $data;
-    }
-    
+
     /**
      * Encolar assets
      */
