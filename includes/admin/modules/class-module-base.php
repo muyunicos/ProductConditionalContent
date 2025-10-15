@@ -1,10 +1,10 @@
 <?php
 /**
- * Clase Base Abstracta para Módulos de Reglas
+ * Clase Base Abstracta para Módulos de Reglas v6.2.1 CORREGIDA
  * Compatible con WordPress 6.8.3, PHP 8.2, WooCommerce 10.2.2
  * 
  * @package ProductConditionalContent
- * @since 6.0.0
+ * @since 6.2.1
  * @date 2025-10-15
  */
 
@@ -50,19 +50,18 @@ abstract class GDM_Module_Base {
     
     /**
      * Wrapper del metabox con validación de activación
-     * ✅ CORREGIDO: Siempre muestra el metabox, controla visibilidad con clases
      */
     public function render_metabox_wrapper($post) {
         $is_active = $this->is_module_active($post->ID);
         
         echo '<div class="gdm-module-wrapper" data-module="' . esc_attr($this->module_id) . '">';
         
-        // ✅ Mensaje inactivo (se oculta con JS si está activo)
+        // Mensaje inactivo (se oculta con JS si está activo)
         echo '<div class="gdm-module-inactive" style="' . ($is_active ? 'display:none;' : '') . '">';
         $this->render_inactive_message();
         echo '</div>';
         
-        // ✅ Contenido del módulo (se oculta con JS si está inactivo)
+        // Contenido del módulo (se oculta con JS si está inactivo)
         echo '<div class="gdm-module-content" style="' . ($is_active ? '' : 'display:none;') . '">';
         $this->render_metabox($post);
         echo '</div>';
@@ -165,7 +164,7 @@ abstract class GDM_Module_Base {
         $data = [];
         
         foreach ($default_data as $key => $default_value) {
-            $meta_key = "_{$this->module_id}_{$key}";
+            $meta_key = "_gdm_{$this->module_id}_{$key}";
             $value = get_post_meta($post_id, $meta_key, true);
             $data[$key] = ($value !== '' && $value !== false) ? $value : $default_value;
         }
@@ -178,7 +177,7 @@ abstract class GDM_Module_Base {
      * Helper: Guardar un campo del módulo
      */
     protected function save_module_field($post_id, $field_name, $value) {
-        $meta_key = "_{$this->module_id}_{$field_name}";
+        $meta_key = "_gdm_{$this->module_id}_{$field_name}";
         update_post_meta($post_id, $meta_key, $value);
     }
     
@@ -199,5 +198,210 @@ abstract class GDM_Module_Base {
         }
         
         return true;
+    }
+    
+    // =========================================================================
+    // ✅ MÉTODOS HELPER PARA RENDERIZAR CAMPOS (FALTABAN)
+    // =========================================================================
+    
+    /**
+     * Renderizar campo SELECT con opciones
+     * 
+     * @param array $args Configuración del campo
+     */
+    protected function render_select_field($args) {
+        $defaults = [
+            'id' => '',
+            'name' => '',
+            'value' => '',
+            'options' => [],
+            'class' => 'regular-text',
+            'label' => '',
+            'description' => '',
+        ];
+        
+        $args = wp_parse_args($args, $defaults);
+        
+        if (!empty($args['label'])) {
+            echo '<label for="' . esc_attr($args['id']) . '">';
+            echo '<strong>' . esc_html($args['label']) . '</strong>';
+            echo '</label>';
+        }
+        
+        echo '<select id="' . esc_attr($args['id']) . '" ';
+        echo 'name="' . esc_attr($args['name']) . '" ';
+        echo 'class="' . esc_attr($args['class']) . '">';
+        
+        foreach ($args['options'] as $option_value => $option_label) {
+            echo '<option value="' . esc_attr($option_value) . '" ';
+            selected($args['value'], $option_value);
+            echo '>' . esc_html($option_label) . '</option>';
+        }
+        
+        echo '</select>';
+        
+        if (!empty($args['description'])) {
+            echo '<p class="gdm-field-description">';
+            echo esc_html($args['description']);
+            echo '</p>';
+        }
+    }
+    
+    /**
+     * Renderizar campo CHECKBOX múltiple
+     * 
+     * @param array $args Configuración del campo
+     */
+    protected function render_checkbox_field($args) {
+        $defaults = [
+            'id' => '',
+            'name' => '',
+            'value' => [],
+            'options' => [],
+            'label' => '',
+            'description' => '',
+        ];
+        
+        $args = wp_parse_args($args, $defaults);
+        
+        if (!empty($args['label'])) {
+            echo '<label><strong>' . esc_html($args['label']) . '</strong></label>';
+        }
+        
+        if (!empty($args['description'])) {
+            echo '<p class="gdm-field-description">' . esc_html($args['description']) . '</p>';
+        }
+        
+        foreach ($args['options'] as $option_value => $option_label) {
+            $checked = is_array($args['value']) && in_array($option_value, $args['value']);
+            
+            echo '<label class="gdm-checkbox-inline">';
+            echo '<input type="checkbox" ';
+            echo 'name="' . esc_attr($args['name']) . '[]" ';
+            echo 'value="' . esc_attr($option_value) . '" ';
+            checked($checked);
+            echo '> ' . esc_html($option_label);
+            echo '</label><br>';
+        }
+    }
+    
+    /**
+     * Renderizar campo de TEXTO
+     * 
+     * @param array $args Configuración del campo
+     */
+    protected function render_text_field($args) {
+        $defaults = [
+            'id' => '',
+            'name' => '',
+            'value' => '',
+            'class' => 'regular-text',
+            'placeholder' => '',
+            'label' => '',
+            'description' => '',
+            'type' => 'text',
+        ];
+        
+        $args = wp_parse_args($args, $defaults);
+        
+        if (!empty($args['label'])) {
+            echo '<label for="' . esc_attr($args['id']) . '">';
+            echo '<strong>' . esc_html($args['label']) . '</strong>';
+            echo '</label>';
+        }
+        
+        echo '<input type="' . esc_attr($args['type']) . '" ';
+        echo 'id="' . esc_attr($args['id']) . '" ';
+        echo 'name="' . esc_attr($args['name']) . '" ';
+        echo 'value="' . esc_attr($args['value']) . '" ';
+        echo 'class="' . esc_attr($args['class']) . '" ';
+        
+        if (!empty($args['placeholder'])) {
+            echo 'placeholder="' . esc_attr($args['placeholder']) . '" ';
+        }
+        
+        echo '>';
+        
+        if (!empty($args['description'])) {
+            echo '<p class="gdm-field-description">' . esc_html($args['description']) . '</p>';
+        }
+    }
+    
+    /**
+     * Renderizar campo TEXTAREA
+     * 
+     * @param array $args Configuración del campo
+     */
+    protected function render_textarea_field($args) {
+        $defaults = [
+            'id' => '',
+            'name' => '',
+            'value' => '',
+            'class' => 'large-text',
+            'rows' => 5,
+            'placeholder' => '',
+            'label' => '',
+            'description' => '',
+        ];
+        
+        $args = wp_parse_args($args, $defaults);
+        
+        if (!empty($args['label'])) {
+            echo '<label for="' . esc_attr($args['id']) . '">';
+            echo '<strong>' . esc_html($args['label']) . '</strong>';
+            echo '</label>';
+        }
+        
+        echo '<textarea ';
+        echo 'id="' . esc_attr($args['id']) . '" ';
+        echo 'name="' . esc_attr($args['name']) . '" ';
+        echo 'class="' . esc_attr($args['class']) . '" ';
+        echo 'rows="' . esc_attr($args['rows']) . '" ';
+        
+        if (!empty($args['placeholder'])) {
+            echo 'placeholder="' . esc_attr($args['placeholder']) . '" ';
+        }
+        
+        echo '>' . esc_textarea($args['value']) . '</textarea>';
+        
+        if (!empty($args['description'])) {
+            echo '<p class="gdm-field-description">' . esc_html($args['description']) . '</p>';
+        }
+    }
+    
+    /**
+     * Renderizar editor WP Editor
+     * 
+     * @param array $args Configuración del editor
+     */
+    protected function render_wp_editor($args) {
+        $defaults = [
+            'id' => '',
+            'name' => '',
+            'value' => '',
+            'settings' => [
+                'textarea_name' => '',
+                'textarea_rows' => 10,
+                'media_buttons' => true,
+                'teeny' => false,
+                'tinymce' => true,
+                'quicktags' => true,
+            ],
+            'label' => '',
+            'description' => '',
+        ];
+        
+        $args = wp_parse_args($args, $defaults);
+        $args['settings']['textarea_name'] = $args['name'];
+        
+        if (!empty($args['label'])) {
+            echo '<label><strong>' . esc_html($args['label']) . '</strong></label>';
+        }
+        
+        if (!empty($args['description'])) {
+            echo '<p class="gdm-field-description">' . esc_html($args['description']) . '</p>';
+        }
+        
+        wp_editor($args['value'], $args['id'], $args['settings']);
     }
 }
