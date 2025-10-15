@@ -363,59 +363,96 @@ final class GDM_Opciones_Metabox {
         <?php
     }
 
-    /**
-     * Guardar datos
-     */
-     public static function save_metabox($post_id, $post) {
-        if (!GDM_Admin_Helpers::validate_metabox_save(
-            $post_id, 
-            $post, 
-            'gdm_opcion_nonce', 
-            'gdm_save_opcion_data', 
-            'gdm_opcion'
-        )) {
-            return;
-        }
-
-        // Guardar campos
-        $fields = [
-            '_gdm_opcion_slug' => isset($_POST['gdm_opcion_slug']) ? sanitize_title($_POST['gdm_opcion_slug']) : '',
-            '_gdm_opcion_label' => isset($_POST['gdm_opcion_label']) ? sanitize_text_field($_POST['gdm_opcion_label']) : '',
-            '_gdm_opcion_descripcion' => isset($_POST['gdm_opcion_descripcion']) ? sanitize_textarea_field($_POST['gdm_opcion_descripcion']) : '',
-            '_gdm_opcion_tipo' => isset($_POST['gdm_opcion_tipo']) ? sanitize_text_field($_POST['gdm_opcion_tipo']) : 'text',
-            '_gdm_opcion_required' => isset($_POST['gdm_opcion_required']) ? '1' : '0',
-            '_gdm_opcion_precio_base' => isset($_POST['gdm_opcion_precio_base']) ? sanitize_text_field($_POST['gdm_opcion_precio_base']) : '',
-            '_gdm_opcion_css_class' => isset($_POST['gdm_opcion_css_class']) ? sanitize_html_class($_POST['gdm_opcion_css_class']) : '',
-            '_gdm_texto_placeholder' => isset($_POST['gdm_texto_placeholder']) ? sanitize_text_field($_POST['gdm_texto_placeholder']) : '',
-            '_gdm_texto_maxlength' => isset($_POST['gdm_texto_maxlength']) ? intval($_POST['gdm_texto_maxlength']) : '',
-            '_gdm_file_tipos' => isset($_POST['gdm_file_tipos']) ? sanitize_text_field($_POST['gdm_file_tipos']) : '',
-            '_gdm_file_max_size' => isset($_POST['gdm_file_max_size']) ? intval($_POST['gdm_file_max_size']) : 5,
-        ];
-        
-        foreach ($fields as $key => $value) {
-            update_post_meta($post_id, $key, $value);
-        }
-
-        // Guardar choices
-        $choices = [];
-        if (isset($_POST['gdm_choices']) && is_array($_POST['gdm_choices'])) {
-            foreach ($_POST['gdm_choices'] as $choice) {
-                if (empty($choice['valor']) || empty($choice['label'])) {
-                    continue;
-                }
-                $choices[] = [
-                    'valor' => sanitize_title($choice['valor']),
-                    'label' => sanitize_text_field($choice['label']),
-                    'precio' => sanitize_text_field($choice['precio'] ?? ''),
-                ];
-            }
-        }
-        update_post_meta($post_id, '_gdm_opcion_choices', $choices);
-
-        // ✅ USAR HELPER PARA SANITIZAR ARRAY
-        $condicion_categorias = GDM_Admin_Helpers::sanitize_int_array($_POST['gdm_condicion_categorias'] ?? []);
-        update_post_meta($post_id, '_gdm_condicion_categorias', $condicion_categorias);
+    public static function save_metabox($post_id, $post) {
+    // ✅ USAR HELPER CENTRALIZADO (con logging solo en debug)
+    if (!GDM_Admin_Helpers::validate_metabox_save(
+        $post_id, 
+        $post, 
+        'gdm_opcion_nonce', 
+        'gdm_save_opcion_data', 
+        'gdm_opcion'
+    )) {
+        return;
     }
+
+    // ✅ DEBUG (solo si WP_DEBUG está activo)
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('=== GDM OPCIONES SAVE START ===');
+        error_log('Post ID: ' . $post_id);
+    }
+
+    // Guardar campos básicos
+    $fields = [
+        '_gdm_opcion_slug' => isset($_POST['gdm_opcion_slug']) 
+            ? sanitize_title($_POST['gdm_opcion_slug']) 
+            : '',
+        '_gdm_opcion_label' => isset($_POST['gdm_opcion_label']) 
+            ? sanitize_text_field($_POST['gdm_opcion_label']) 
+            : '',
+        '_gdm_opcion_descripcion' => isset($_POST['gdm_opcion_descripcion']) 
+            ? sanitize_textarea_field($_POST['gdm_opcion_descripcion']) 
+            : '',
+        '_gdm_opcion_tipo' => isset($_POST['gdm_opcion_tipo']) 
+            ? sanitize_text_field($_POST['gdm_opcion_tipo']) 
+            : 'text',
+        '_gdm_opcion_required' => isset($_POST['gdm_opcion_required']) ? '1' : '0',
+        '_gdm_opcion_precio_base' => isset($_POST['gdm_opcion_precio_base']) 
+            ? sanitize_text_field($_POST['gdm_opcion_precio_base']) 
+            : '',
+        '_gdm_opcion_css_class' => isset($_POST['gdm_opcion_css_class']) 
+            ? sanitize_html_class($_POST['gdm_opcion_css_class']) 
+            : '',
+        '_gdm_texto_placeholder' => isset($_POST['gdm_texto_placeholder']) 
+            ? sanitize_text_field($_POST['gdm_texto_placeholder']) 
+            : '',
+        '_gdm_texto_maxlength' => isset($_POST['gdm_texto_maxlength']) 
+            ? absint($_POST['gdm_texto_maxlength']) 
+            : '',
+        '_gdm_file_tipos' => isset($_POST['gdm_file_tipos']) 
+            ? sanitize_text_field($_POST['gdm_file_tipos']) 
+            : '',
+        '_gdm_file_max_size' => isset($_POST['gdm_file_max_size']) 
+            ? absint($_POST['gdm_file_max_size']) 
+            : 5,
+    ];
+    
+    foreach ($fields as $key => $value) {
+        update_post_meta($post_id, $key, $value);
+    }
+
+    // Guardar choices
+    $choices = [];
+    if (isset($_POST['gdm_choices']) && is_array($_POST['gdm_choices'])) {
+        foreach ($_POST['gdm_choices'] as $choice) {
+            if (empty($choice['valor']) || empty($choice['label'])) {
+                continue;
+            }
+            $choices[] = [
+                'valor' => sanitize_title($choice['valor']),
+                'label' => sanitize_text_field($choice['label']),
+                'precio' => sanitize_text_field($choice['precio'] ?? ''),
+            ];
+        }
+    }
+    update_post_meta($post_id, '_gdm_opcion_choices', $choices);
+
+    // ✅ USAR HELPER PARA SANITIZAR ARRAY DE ENTEROS
+    $condicion_categorias = GDM_Admin_Helpers::sanitize_int_array(
+        $_POST['gdm_condicion_categorias'] ?? []
+    );
+    update_post_meta($post_id, '_gdm_condicion_categorias', $condicion_categorias);
+    
+    // ✅ DEBUG (solo si WP_DEBUG está activo)
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('✅ Opción guardada exitosamente');
+        error_log('Choices guardados: ' . count($choices));
+        error_log('Categorías guardadas: ' . count($condicion_categorias));
+        error_log('=== GDM OPCIONES SAVE END ===');
+    }
+    
+    // ✅ Limpiar caché
+    wp_cache_delete("gdm_opcion_{$post_id}", 'gdm_opciones');
+}
 
     /**
      * Obtener datos

@@ -1,10 +1,16 @@
 <?php
 /**
- * Funciones Helper para Admin
+ * Funciones Helper para Admin v6.2.3 MEJORADO
  * Compatible con WordPress 6.8.3, PHP 8.2, WooCommerce 10.2.2
  * 
+ * MEJORAS v6.2.3:
+ * - Método validate_metabox_save() centralizado
+ * - Debug configurable vía WP_DEBUG
+ * - Sanitización mejorada
+ * 
  * @package ProductConditionalContent
- * @since 5.0.1
+ * @since 6.2.3
+ * @date 2025-10-15
  */
 
 if (!defined('ABSPATH')) exit;
@@ -12,34 +18,99 @@ if (!defined('ABSPATH')) exit;
 final class GDM_Admin_Helpers {
     
     /**
-     * Validar nonce y permisos para guardar metabox
+     * ✅ NUEVO: Validación centralizada de guardado de metaboxes
      * 
      * @param int $post_id ID del post
      * @param WP_Post $post Objeto del post
      * @param string $nonce_field Nombre del campo nonce
      * @param string $nonce_action Acción del nonce
-     * @param string $post_type Tipo de post esperado
-     * @return bool True si la validación pasa, false si debe abortar
+     * @param string $post_type Post type esperado
+     * @param bool $log_errors Si debe registrar errores en log (default: true si WP_DEBUG está activo)
+     * @return bool True si todas las validaciones pasaron, false si debe abortar
      */
-    public static function validate_metabox_save($post_id, $post, $nonce_field, $nonce_action, $post_type) {
-        // Verificar nonce
-        if (!isset($_POST[$nonce_field]) || !wp_verify_nonce($_POST[$nonce_field], $nonce_action)) {
-            return false;
+    public static function validate_metabox_save($post_id, $post, $nonce_field, $nonce_action, $post_type, $log_errors = null) {
+        // Determinar si debe hacer logging (por defecto solo en debug)
+        if ($log_errors === null) {
+            $log_errors = defined('WP_DEBUG') && WP_DEBUG;
         }
         
-        // Verificar permisos
-        if (!current_user_can('edit_post', $post_id)) {
-            return false;
-        }
-        
-        // Verificar autosave
+        // ✅ VALIDACIÓN 1: Evitar autosave (PRIMERO)
         if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            if ($log_errors) {
+                error_log(sprintf(
+                    '⚠️ GDM: Autosave detectado, saltando guardado (post_id: %d, post_type: %s)',
+                    $post_id,
+                    $post_type
+                ));
+            }
             return false;
         }
         
-        // Verificar tipo de post
+        // ✅ VALIDACIÓN 2: Verificar que es el post type correcto
         if ($post->post_type !== $post_type) {
+            if ($log_errors) {
+                error_log(sprintf(
+                    '⚠️ GDM: Post type incorrecto (esperado: %s, recibido: %s, post_id: %d)',
+                    $post_type,
+                    $post->post_type,
+                    $post_id
+                ));
+            }
             return false;
+        }
+        
+        // ✅ VALIDACIÓN 3: Verificar que existe el nonce
+        if (!isset($_POST[$nonce_field])) {
+            if ($log_errors) {
+                error_log(sprintf(
+                    '❌ GDM: Campo nonce "%s" NO existe en $_POST (post_id: %d)',
+                    $nonce_field,
+                    $post_id
+                ));
+                
+                // Si es un heartbeat/ajax, es normal que no haya nonce
+                if (isset($_POST['action']) && in_array($_POST['action'], ['heartbeat', 'autosave'])) {
+                    error_log('ℹ️ GDM: Acción heartbeat/autosave detectada, esto es normal');
+                }
+            }
+            return false;
+        }
+        
+        // ✅ VALIDACIÓN 4: Verificar validez del nonce
+        $nonce_value = sanitize_text_field($_POST[$nonce_field]);
+        $nonce_valid = wp_verify_nonce($nonce_value, $nonce_action);
+        
+        if (!$nonce_valid) {
+            if ($log_errors) {
+                error_log(sprintf(
+                    '❌ GDM: Nonce inválido para "%s" (post_id: %d, acción: %s)',
+                    $nonce_field,
+                    $post_id,
+                    $nonce_action
+                ));
+            }
+            return false;
+        }
+        
+        // ✅ VALIDACIÓN 5: Verificar permisos del usuario
+        if (!current_user_can('edit_post', $post_id)) {
+            if ($log_errors) {
+                error_log(sprintf(
+                    '❌ GDM: Usuario sin permisos para editar (post_id: %d, usuario: %s)',
+                    $post_id,
+                    wp_get_current_user()->user_login
+                ));
+            }
+            return false;
+        }
+        
+        // ✅ Todas las validaciones pasadas
+        if ($log_errors) {
+            error_log(sprintf(
+                '✅ GDM: Validaciones OK para guardar %s (post_id: %d)',
+                $post_type,
+                $post_id
+            ));
         }
         
         return true;
@@ -55,7 +126,10 @@ final class GDM_Admin_Helpers {
         if (!is_array($array)) {
             return [];
         }
-        return array_map('intval', array_filter($array));
+        
+        return array_map('absint', array_filter($array, function($value) {
+            return is_numeric($value) && $value > 0;
+        }));
     }
     
     /**
@@ -68,7 +142,44 @@ final class GDM_Admin_Helpers {
         if (!is_array($array)) {
             return [];
         }
+        
         return array_map('sanitize_text_field', array_filter($array));
+    }
+    
+    /**
+     * ✅ NUEVO: Sanitizar array de slugs
+     * 
+     * @param array|mixed $array Array a sanitizar
+     * @return array Array sanitizado
+     */
+    public static function sanitize_slug_array($array) {
+        if (!is_array($array)) {
+            return [];
+        }
+        
+        return array_map('sanitize_title', array_filter($array, function($value) {
+            return !empty($value);
+        }));
+    }
+    
+    /**
+     * ✅ NUEVO: Validar y sanitizar fecha/hora
+     * 
+     * @param string $datetime_string Fecha en formato string
+     * @return string Fecha sanitizada en formato MySQL o vacío si inválido
+     */
+    public static function sanitize_datetime($datetime_string) {
+        if (empty($datetime_string)) {
+            return '';
+        }
+        
+        $timestamp = strtotime($datetime_string);
+        
+        if ($timestamp === false) {
+            return '';
+        }
+        
+        return date('Y-m-d H:i:s', $timestamp);
     }
     
     /**
@@ -107,7 +218,7 @@ final class GDM_Admin_Helpers {
         $args = [
             'post_type' => 'gdm_regla',
             'posts_per_page' => -1,
-            'post_status' => 'publish',
+            'post_status' => ['publish', 'habilitada', 'deshabilitada'],
             'orderby' => 'title',
             'order' => 'ASC',
             'suppress_filters' => true,
@@ -122,8 +233,8 @@ final class GDM_Admin_Helpers {
         // Filtrar solo reutilizables si se solicita
         if ($only_reusable) {
             $reglas = array_filter($reglas, function($regla) {
-                $aplicar_a = get_post_meta($regla->ID, '_gdm_aplicar_a', true) ?: [];
-                return in_array('reutilizable', $aplicar_a);
+                $reutilizable = get_post_meta($regla->ID, '_gdm_reutilizable', true);
+                return $reutilizable === '1';
             });
         }
         
