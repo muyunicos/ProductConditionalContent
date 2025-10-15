@@ -1,511 +1,675 @@
+<?php
 /**
- * JavaScript para Metabox Principal de Reglas v6.1
- * Sistema modular con ámbitos mejorados
- * Compatible con WordPress 6.8.3
+ * Metabox de Configuración General de Reglas v6.1
+ * Compatible con WordPress 6.8.3, PHP 8.2, WooCommerce 10.2.2
  * 
  * @package ProductConditionalContent
  * @since 6.1.0
- * @author MuyUnicos
  * @date 2025-10-15
  */
 
-jQuery(document).ready(function($) {
-    'use strict';
+if (!defined('ABSPATH')) exit;
 
-    // =========================================================================
-    // CONTROL DE MÓDULOS
-    // =========================================================================
-
-    /**
-     * Inicializar toggles de módulos
-     */
-    function initModuleToggles() {
-        $('.gdm-module-toggle').on('change', function() {
-            const moduleId = $(this).data('module');
-            const $checkbox = $(this);
-            const $label = $checkbox.closest('.gdm-module-checkbox');
-            const $metabox = $('#gdm_module_' + moduleId);
-            
-            if ($checkbox.is(':checked')) {
-                $label.addClass('active');
-                $metabox.show().addClass('gdm-fade-in');
-            } else {
-                $label.removeClass('active');
-                $metabox.hide().removeClass('gdm-fade-in');
-            }
-        }).trigger('change');
-    }
-
-    // =========================================================================
-    // ÁMBITO: CATEGORÍAS
-    // =========================================================================
-
-    /**
-     * Toggle de "Todas las categorías"
-     */
-    $('#gdm_todas_categorias').on('change', function() {
-        const $wrapper = $('#gdm-categorias-wrapper');
-        const $description = $('#gdm-categorias-description');
-        
-        if ($(this).is(':checked')) {
-            $wrapper.slideUp(200);
-            $description.slideUp(200);
-            $('.gdm-category-checkbox').prop('checked', false);
-            updateCategoryCounter();
-        } else {
-            $wrapper.slideDown(200);
-            $description.slideDown(200);
-        }
-    });
-
-    /**
-     * Filtro de búsqueda de categorías
-     */
-    $('#gdm_category_filter').on('keyup', function() {
-        const searchTerm = $(this).val().toLowerCase();
-        let visibleCount = 0;
-        
-        $('.gdm-category-list .gdm-checkbox-item').each(function() {
-            const categoryName = $(this).text().toLowerCase();
-            
-            if (categoryName.indexOf(searchTerm) > -1) {
-                $(this).show();
-                visibleCount++;
-            } else {
-                $(this).hide();
-            }
-        });
-
-        // Mostrar mensaje si no hay resultados
-        const $list = $('.gdm-category-list');
-        $list.find('.gdm-empty-state').remove();
-        
-        if (visibleCount === 0) {
-            $list.append(
-                '<div class="gdm-empty-state">' +
-                '<span class="dashicons dashicons-search"></span>' +
-                '<p>No se encontraron categorías</p>' +
-                '</div>'
-            );
-        }
-    });
-
-    /**
-     * Contador de categorías seleccionadas
-     */
-    $('.gdm-category-checkbox').on('change', function() {
-        updateCategoryCounter();
-        updateCategoryDescription();
-    });
-
-    function updateCategoryCounter() {
-        const count = $('.gdm-category-checkbox:checked').length;
-        const $counter = $('#gdm-category-counter');
-        
-        if (count > 0) {
-            $counter.text(count).show();
-        } else {
-            $counter.hide();
-        }
-    }
-
-    function updateCategoryDescription() {
-        const $description = $('#gdm-categorias-description');
-        const selectedCategories = [];
-        
-        $('.gdm-category-checkbox:checked').each(function() {
-            selectedCategories.push($(this).closest('.gdm-checkbox-item').find('span').text());
-        });
-
-        if (selectedCategories.length > 0) {
-            const categoriesText = selectedCategories.join(', ');
-            $description.find('.gdm-scope-selected-items').html(
-                '<strong>Solo categorías:</strong> ' + categoriesText
-            );
-            $description.addClass('active');
-        } else {
-            $description.removeClass('active');
-        }
-    }
-
-    /**
-     * Botón aplicar categorías
-     */
-    $('#gdm-categorias-apply').on('click', function() {
-        const $button = $(this);
-        const count = $('.gdm-category-checkbox:checked').length;
-        
-        if (count === 0) {
-            alert('Por favor selecciona al menos una categoría');
-            return;
-        }
-
-        // Animación de confirmación
-        const originalText = $button.html();
-        $button.html('✓ Aplicado').css('background', '#46b450');
-        
-        setTimeout(function() {
-            $button.html(originalText).css('background', '');
-        }, 1500);
-
-        updateCategoryDescription();
-    });
-
-    // =========================================================================
-    // ÁMBITO: TAGS
-    // =========================================================================
-
-    /**
-     * Toggle de "Cualquier Tag"
-     */
-    $('#gdm_cualquier_tag').on('change', function() {
-        const $wrapper = $('#gdm-tags-wrapper');
-        const $description = $('#gdm-tags-description');
-        
-        if ($(this).is(':checked')) {
-            $wrapper.slideUp(200);
-            $description.slideUp(200);
-            $('.gdm-tag-checkbox').prop('checked', false);
-            updateTagCounter();
-        } else {
-            $wrapper.slideDown(200);
-            $description.slideDown(200);
-        }
-    });
-
-    /**
-     * Filtro de búsqueda de tags
-     */
-    $('#gdm_tag_filter').on('keyup', function() {
-        const searchTerm = $(this).val().toLowerCase();
-        let visibleCount = 0;
-        
-        $('.gdm-tag-list .gdm-checkbox-item').each(function() {
-            const tagName = $(this).text().toLowerCase();
-            
-            if (tagName.indexOf(searchTerm) > -1) {
-                $(this).show();
-                visibleCount++;
-            } else {
-                $(this).hide();
-            }
-        });
-
-        // Mostrar mensaje si no hay resultados
-        const $list = $('.gdm-tag-list');
-        $list.find('.gdm-empty-state').remove();
-        
-        if (visibleCount === 0) {
-            $list.append(
-                '<div class="gdm-empty-state">' +
-                '<span class="dashicons dashicons-search"></span>' +
-                '<p>No se encontraron etiquetas</p>' +
-                '</div>'
-            );
-        }
-    });
-
-    /**
-     * Contador de tags seleccionados
-     */
-    $('.gdm-tag-checkbox').on('change', function() {
-        updateTagCounter();
-        updateTagDescription();
-    });
-
-    function updateTagCounter() {
-        const count = $('.gdm-tag-checkbox:checked').length;
-        const $counter = $('#gdm-tag-counter');
-        
-        if (count > 0) {
-            $counter.text(count).show();
-        } else {
-            $counter.hide();
-        }
-    }
-
-    function updateTagDescription() {
-        const $description = $('#gdm-tags-description');
-        const selectedTags = [];
-        
-        $('.gdm-tag-checkbox:checked').each(function() {
-            selectedTags.push($(this).closest('.gdm-checkbox-item').find('span').text());
-        });
-
-        if (selectedTags.length > 0) {
-            const tagsText = selectedTags.join(', ');
-            $description.find('.gdm-scope-selected-items').html(
-                '<strong>Solo etiquetas:</strong> ' + tagsText
-            );
-            $description.addClass('active');
-        } else {
-            $description.removeClass('active');
-        }
-    }
-
-    /**
-     * Botón aplicar tags
-     */
-    $('#gdm-tags-apply').on('click', function() {
-        const $button = $(this);
-        const count = $('.gdm-tag-checkbox:checked').length;
-        
-        if (count === 0) {
-            alert('Por favor selecciona al menos una etiqueta');
-            return;
-        }
-
-        // Animación de confirmación
-        const originalText = $button.html();
-        $button.html('✓ Aplicado').css('background', '#46b450');
-        
-        setTimeout(function() {
-            $button.html(originalText).css('background', '');
-        }, 1500);
-
-        updateTagDescription();
-    });
-
-    // =========================================================================
-    // ÁMBITO: PRODUCTOS ESPECÍFICOS
-    // =========================================================================
-
-    /**
-     * Toggle de productos específicos
-     */
-    $('#gdm_productos_especificos_enabled').on('change', function() {
-        const $wrapper = $('#gdm-productos-wrapper');
-        
-        if ($(this).is(':checked')) {
-            $wrapper.slideDown(200);
-        } else {
-            $wrapper.slideUp(200);
-        }
-    });
-
-    /**
-     * Búsqueda de productos con AJAX
-     */
-    let productSearchTimeout;
-    $('#gdm_product_search').on('keyup', function() {
-        clearTimeout(productSearchTimeout);
-        const searchTerm = $(this).val();
-        
-        if (searchTerm.length < 3) {
-            $('.gdm-product-list').html(
-                '<div class="gdm-empty-state">' +
-                '<p>Escribe al menos 3 caracteres para buscar</p>' +
-                '</div>'
-            );
-            return;
-        }
-
-        productSearchTimeout = setTimeout(function() {
-            searchProducts(searchTerm);
-        }, 500);
-    });
-
-    function searchProducts(searchTerm) {
-        const $list = $('.gdm-product-list');
-        
-        $list.html('<div class="gdm-empty-state"><p>Buscando productos...</p></div>');
-
-        $.ajax({
-            url: gdmReglasMetabox.ajaxUrl,
-            type: 'POST',
-            data: {
-                action: 'gdm_search_products',
-                nonce: gdmReglasMetabox.nonce,
-                search: searchTerm
-            },
-            success: function(response) {
-                if (response.success && response.data.products.length > 0) {
-                    let html = '';
-                    
-                    // Obtener productos ya seleccionados
-                    const selectedProducts = [];
-                    $('[name="gdm_productos_objetivo[]"]:checked').each(function() {
-                        selectedProducts.push($(this).val());
-                    });
-                    
-                    response.data.products.forEach(function(product) {
-                        const checked = selectedProducts.includes(product.id.toString()) ? 'checked' : '';
-                        html += `
-                            <label class="gdm-checkbox-item">
-                                <input type="checkbox" 
-                                       name="gdm_productos_objetivo[]" 
-                                       value="${product.id}"
-                                       class="gdm-product-checkbox"
-                                       ${checked}>
-                                <span>${product.title}</span>
-                            </label>
-                        `;
-                    });
-                    $list.html(html);
-                    
-                    // Reactivar eventos
-                    $('.gdm-product-checkbox').on('change', updateProductCounter);
-                    updateProductCounter();
-                } else {
-                    $list.html(
-                        '<div class="gdm-empty-state">' +
-                        '<span class="dashicons dashicons-search"></span>' +
-                        '<p>No se encontraron productos</p>' +
-                        '</div>'
-                    );
-                }
-            },
-            error: function() {
-                $list.html(
-                    '<div class="gdm-empty-state">' +
-                    '<p style="color:#dc3232;">Error al buscar productos</p>' +
-                    '</div>'
-                );
-            }
-        });
-    }
-
-    function updateProductCounter() {
-        const count = $('.gdm-product-checkbox:checked').length;
-        const $counter = $('#gdm-product-counter');
-        
-        if (count > 0) {
-            $counter.text(count).show();
-        } else {
-            $counter.hide();
-        }
-    }
-
-    // =========================================================================
-    // ÁMBITO: ATRIBUTOS
-    // =========================================================================
-
-    $('#gdm_atributos_enabled').on('change', function() {
-        const $wrapper = $('#gdm-atributos-wrapper');
-        
-        if ($(this).is(':checked')) {
-            $wrapper.slideDown(200);
-        } else {
-            $wrapper.slideUp(200);
-        }
-    });
-
-    // =========================================================================
-    // ÁMBITO: STOCK
-    // =========================================================================
-
-    $('#gdm_stock_enabled').on('change', function() {
-        const $wrapper = $('#gdm-stock-wrapper');
-        
-        if ($(this).is(':checked')) {
-            $wrapper.slideDown(200);
-        } else {
-            $wrapper.slideUp(200);
-        }
-    });
-
-    // =========================================================================
-    // ÁMBITO: PRECIO
-    // =========================================================================
-
-    $('#gdm_precio_enabled').on('change', function() {
-        const $wrapper = $('#gdm-precio-wrapper');
-        
-        if ($(this).is(':checked')) {
-            $wrapper.slideDown(200);
-        } else {
-            $wrapper.slideUp(200);
-        }
-    });
-
-    /**
-     * Toggle de precio "entre"
-     */
-    $('#gdm_precio_condicion').on('change', function() {
-        if ($(this).val() === 'entre') {
-            $('#gdm-precio-valor2-wrapper').slideDown(200);
-        } else {
-            $('#gdm-precio-valor2-wrapper').slideUp(200);
-        }
-    });
-
-    // =========================================================================
-    // ÁMBITO: TÍTULO
-    // =========================================================================
-
-    $('#gdm_titulo_enabled').on('change', function() {
-        const $wrapper = $('#gdm-titulo-wrapper');
-        
-        if ($(this).is(':checked')) {
-            $wrapper.slideDown(200);
-        } else {
-            $wrapper.slideUp(200);
-        }
-    });
-
-    // =========================================================================
-    // TOGGLE GENERAL DE SECCIONES DE ÁMBITO
-    // =========================================================================
-
-    /**
-     * Manejar toggle de todas las secciones de ámbito
-     */
-    $('.gdm-scope-toggle input[type="checkbox"]').each(function() {
-        const $checkbox = $(this);
-        const $content = $checkbox.closest('.gdm-scope-group').find('.gdm-scope-content');
-        
-        // Si el checkbox NO está marcado, mostrar el contenido
-        // Si está marcado (ej: "Todas las categorías"), ocultar el contenido
-        if (!$checkbox.is(':checked')) {
-            $content.show();
-        }
-    });
-
-    // =========================================================================
-    // UTILIDADES
-    // =========================================================================
-
-    /**
-     * Función para copiar al portapapeles
-     */
-    window.copyToClipboard = function(element) {
-        const text = $(element).text();
-        const $temp = $('<input>');
-        $('body').append($temp);
-        $temp.val(text).select();
-        document.execCommand('copy');
-        $temp.remove();
-        
-        // Feedback visual
-        const originalText = $(element).html();
-        $(element).html('✓ Copiado').css('background', '#46b450');
-        
-        setTimeout(function() {
-            $(element).html(originalText).css('background', '');
-        }, 1500);
-    };
-
-    // =========================================================================
-    // INICIALIZACIÓN
-    // =========================================================================
-
-    // Inicializar módulos
-    initModuleToggles();
+final class GDM_Reglas_Metabox {
     
-    // Cargar contadores al inicio
-    updateCategoryCounter();
-    updateCategoryDescription();
-    updateTagCounter();
-    updateTagDescription();
-    updateProductCounter();
-
-    // Debug
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        console.log('✅ GDM Metabox Principal v6.1: Inicializado');
-        console.log('Módulos disponibles:', $('.gdm-module-toggle').length);
-        console.log('Módulos activos:', $('.gdm-module-toggle:checked').length);
-        console.log('Categorías seleccionadas:', $('.gdm-category-checkbox:checked').length);
-        console.log('Tags seleccionados:', $('.gdm-tag-checkbox:checked').length);
-        console.log('Productos seleccionados:', $('.gdm-product-checkbox:checked').length);
+    public static function init() {
+        add_action('add_meta_boxes', [__CLASS__, 'add_metabox']);
+        add_action('save_post_gdm_regla', [__CLASS__, 'save_metabox'], 10, 2);
+        add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
+        
+        // AJAX para búsqueda de productos
+        add_action('wp_ajax_gdm_search_products', [__CLASS__, 'ajax_search_products']);
     }
-});
+
+    /**
+     * Encolar scripts y estilos
+     */
+    public static function enqueue_assets($hook) {
+        $screen = get_current_screen();
+        if ($screen->id !== 'gdm_regla') {
+            return;
+        }
+
+        wp_enqueue_script('jquery-ui-sortable');
+        
+        wp_enqueue_script(
+            'gdm-reglas-metabox',
+            GDM_PLUGIN_URL . 'assets/admin/js/metaboxes/rules-config-metabox.js',
+            ['jquery'],
+            GDM_VERSION,
+            true
+        );
+        
+        wp_enqueue_style(
+            'gdm-reglas-metabox',
+            GDM_PLUGIN_URL . 'assets/admin/css/rules-config-metabox.css',
+            [],
+            GDM_VERSION
+        );
+        
+        wp_localize_script('gdm-reglas-metabox', 'gdmReglasMetabox', [
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('gdm_admin_nonce'),
+            'i18n' => [
+                'selectModule' => __('Selecciona al menos un módulo en "Aplica a"', 'product-conditional-content'),
+                'moduleWarning' => __('Al desactivar un módulo, se ocultará su configuración pero no se perderán los datos.', 'product-conditional-content'),
+                'searching' => __('Buscando...', 'product-conditional-content'),
+                'noResults' => __('No se encontraron resultados', 'product-conditional-content'),
+            ]
+        ]);
+    }
+
+    /**
+     * Registrar metabox
+     */
+    public static function add_metabox() {
+        add_meta_box(
+            'gdm_regla_config',
+            __('⚙️ Configuración General de la Regla', 'product-conditional-content'),
+            [__CLASS__, 'render_metabox'],
+            'gdm_regla',
+            'normal',
+            'high'
+        );
+    }
+
+    /**
+     * Renderizar metabox
+     */
+    public static function render_metabox($post) {
+        wp_nonce_field('gdm_save_rule_data', 'gdm_nonce');
+        
+        $data = self::get_rule_data($post->ID);
+        
+        // ✅ CORRECCIÓN: Obtener módulos del manager
+        $available_modules = [];
+        if (class_exists('GDM_Module_Manager')) {
+            $module_manager = GDM_Module_Manager::instance();
+            $available_modules = $module_manager->get_modules_with_icons();
+        }
+        ?>
+        <div class="gdm-config-general">
+            
+            <!-- Información Básica -->
+            <div class="gdm-section">
+                <div class="gdm-section-header">
+                    <h3>
+                        <span class="dashicons dashicons-admin-generic"></span>
+                        <?php _e('Información Básica', 'product-conditional-content'); ?>
+                    </h3>
+                </div>
+                
+                <div class="gdm-row">
+                    <div class="gdm-col-6">
+                        <label for="gdm_prioridad">
+                            <strong><?php _e('🔢 Prioridad:', 'product-conditional-content'); ?></strong>
+                        </label>
+                        <input type="number" 
+                               id="gdm_prioridad" 
+                               name="gdm_prioridad" 
+                               value="<?php echo esc_attr($data['prioridad']); ?>" 
+                               min="1" 
+                               max="999" 
+                               class="small-text">
+                        <p class="description">
+                            <?php _e('Número más bajo = mayor prioridad (se aplica primero)', 'product-conditional-content'); ?>
+                        </p>
+                    </div>
+                    
+                    <div class="gdm-col-6">
+                        <label>
+                            <input type="checkbox" 
+                                   name="gdm_reutilizable" 
+                                   value="1" 
+                                   <?php checked($data['reutilizable'], '1'); ?>>
+                            <strong><?php _e('🔄 Regla Reutilizable', 'product-conditional-content'); ?></strong>
+                        </label>
+                        <p class="description">
+                            <?php _e('Las reglas reutilizables solo se activan mediante el shortcode ', 'product-conditional-content'); ?>
+                            <code class="gdm-click-to-copy" onclick="copyToClipboard(this)">[rule-<?php echo esc_attr($post->ID); ?>]</code>
+                            <?php _e(' en otras reglas.', 'product-conditional-content'); ?>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <hr class="gdm-separator">
+            
+            <!-- Aplica a (MÓDULOS) -->
+            <div class="gdm-section">
+                <div class="gdm-section-header">
+                    <h3>
+                        <span class="dashicons dashicons-admin-tools"></span>
+                        <?php _e('Aplica a', 'product-conditional-content'); ?>
+                    </h3>
+                </div>
+                
+                <p class="description">
+                    <?php _e('Selecciona los módulos que deseas activar para esta regla. Solo los módulos seleccionados aparecerán en la configuración.', 'product-conditional-content'); ?>
+                </p>
+                
+                <?php if (empty($available_modules)): ?>
+                    <div class="notice notice-warning inline">
+                        <p>
+                            <strong><?php _e('⚠️ No hay módulos disponibles', 'product-conditional-content'); ?></strong><br>
+                            <?php _e('Verifica que el Module Manager esté correctamente inicializado.', 'product-conditional-content'); ?>
+                        </p>
+                        <p style="font-size: 11px; color: #666;">
+                            <?php 
+                            if (class_exists('GDM_Module_Manager')) {
+                                $manager = GDM_Module_Manager::instance();
+                                $count = $manager->get_modules_count();
+                                printf(__('Módulos registrados: %d | Habilitados: %d', 'product-conditional-content'), $count['total'], $count['enabled']);
+                            } else {
+                                _e('Clase GDM_Module_Manager no encontrada', 'product-conditional-content');
+                            }
+                            ?>
+                        </p>
+                    </div>
+                <?php else: ?>
+                    <div class="gdm-modules-grid">
+                        <?php foreach ($available_modules as $module_id => $module): ?>
+                            <label class="gdm-module-checkbox <?php echo in_array($module_id, $data['aplicar_a']) ? 'active' : ''; ?>">
+                                <input type="checkbox" 
+                                       name="gdm_aplicar_a[]" 
+                                       value="<?php echo esc_attr($module_id); ?>" 
+                                       class="gdm-module-toggle"
+                                       data-module="<?php echo esc_attr($module_id); ?>"
+                                       <?php checked(in_array($module_id, $data['aplicar_a'])); ?>>
+                                <span class="gdm-module-icon"><?php echo esc_html($module['icon']); ?></span>
+                                <span class="gdm-module-label"><?php echo esc_html($module['label']); ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+            
+            <hr class="gdm-separator">
+            
+            <!-- Ámbito de Aplicación MEJORADO -->
+            <div class="gdm-section">
+                <div class="gdm-section-header">
+                    <h3>
+                        <span class="dashicons dashicons-category"></span>
+                        <?php _e('Ámbito de Aplicación', 'product-conditional-content'); ?>
+                    </h3>
+                </div>
+                
+                <p class="description">
+                    <?php _e('Define a qué productos se aplicará esta regla. Si no seleccionas ningún ámbito, la regla se aplicará a todos los productos.', 'product-conditional-content'); ?>
+                </p>
+                
+                <!-- CATEGORÍAS MEJORADAS -->
+                <div class="gdm-scope-group">
+                    <div class="gdm-scope-header">
+                        <label class="gdm-scope-toggle">
+                            <input type="checkbox" 
+                                   id="gdm_categorias_enabled" 
+                                   name="gdm_categorias_enabled" 
+                                   class="gdm-scope-checkbox"
+                                   value="1"
+                                   <?php checked(!empty($data['categorias_objetivo'])); ?>>
+                            <strong><?php _e('📂 Categorías Determinadas', 'product-conditional-content'); ?></strong>
+                        </label>
+                        
+                        <div class="gdm-scope-summary" id="gdm-categorias-summary" style="<?php echo empty($data['categorias_objetivo']) ? 'display:none;' : ''; ?>">
+                            <span class="gdm-summary-text" id="gdm-categorias-summary-text">
+                                <?php
+                                if (!empty($data['categorias_objetivo'])) {
+                                    $cat_names = [];
+                                    foreach ($data['categorias_objetivo'] as $cat_id) {
+                                        $cat = get_term($cat_id, 'product_cat');
+                                        if ($cat && !is_wp_error($cat)) {
+                                            $cat_names[] = $cat->name;
+                                        }
+                                    }
+                                    echo esc_html(implode(', ', $cat_names));
+                                }
+                                ?>
+                            </span>
+                            <button type="button" class="button button-small gdm-scope-edit" data-target="categorias">
+                                <?php _e('Editar', 'product-conditional-content'); ?>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="gdm-scope-content" id="gdm-categorias-content" style="display:none;">
+                        <input type="text" 
+                               id="gdm_category_filter" 
+                               class="gdm-filter-input" 
+                               placeholder="<?php esc_attr_e('🔍 Buscar categorías...', 'product-conditional-content'); ?>">
+                        
+                        <div class="gdm-category-list" id="gdm-category-list">
+                            <?php
+                            $categories = get_terms([
+                                'taxonomy' => 'product_cat',
+                                'hide_empty' => false,
+                                'orderby' => 'name',
+                                'order' => 'ASC'
+                            ]);
+                            
+                            if ($categories && !is_wp_error($categories)) {
+                                foreach ($categories as $cat) {
+                                    $checked = in_array($cat->term_id, $data['categorias_objetivo']);
+                                    printf(
+                                        '<label class="gdm-checkbox-item">
+                                            <input type="checkbox" 
+                                                   name="gdm_categorias_objetivo[]" 
+                                                   value="%d"
+                                                   class="gdm-category-checkbox"
+                                                   %s>
+                                            <span>%s</span>
+                                        </label>',
+                                        $cat->term_id,
+                                        checked($checked, true, false),
+                                        esc_html($cat->name)
+                                    );
+                                }
+                            }
+                            ?>
+                        </div>
+                        
+                        <div class="gdm-scope-actions">
+                            <button type="button" class="button button-primary gdm-scope-accept" data-target="categorias">
+                                <span class="dashicons dashicons-yes"></span>
+                                <?php _e('Aceptar', 'product-conditional-content'); ?>
+                            </button>
+                            <span class="gdm-selection-counter" id="gdm-category-counter">
+                                <?php echo count($data['categorias_objetivo']); ?> seleccionadas
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- TAGS MEJORADAS -->
+                <div class="gdm-scope-group">
+                    <div class="gdm-scope-header">
+                        <label class="gdm-scope-toggle">
+                            <input type="checkbox" 
+                                   id="gdm_tags_enabled" 
+                                   name="gdm_tags_enabled" 
+                                   class="gdm-scope-checkbox"
+                                   value="1"
+                                   <?php checked(!empty($data['tags_objetivo'])); ?>>
+                            <strong><?php _e('🏷️ Etiquetas Determinadas', 'product-conditional-content'); ?></strong>
+                        </label>
+                        
+                        <div class="gdm-scope-summary" id="gdm-tags-summary" style="<?php echo empty($data['tags_objetivo']) ? 'display:none;' : ''; ?>">
+                            <span class="gdm-summary-text" id="gdm-tags-summary-text">
+                                <?php
+                                if (!empty($data['tags_objetivo'])) {
+                                    $tag_names = [];
+                                    foreach ($data['tags_objetivo'] as $tag_id) {
+                                        $tag = get_term($tag_id, 'product_tag');
+                                        if ($tag && !is_wp_error($tag)) {
+                                            $tag_names[] = $tag->name;
+                                        }
+                                    }
+                                    echo esc_html(implode(', ', $tag_names));
+                                }
+                                ?>
+                            </span>
+                            <button type="button" class="button button-small gdm-scope-edit" data-target="tags">
+                                <?php _e('Editar', 'product-conditional-content'); ?>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="gdm-scope-content" id="gdm-tags-content" style="display:none;">
+                        <input type="text" 
+                               id="gdm_tag_filter" 
+                               class="gdm-filter-input" 
+                               placeholder="<?php esc_attr_e('🔍 Buscar etiquetas...', 'product-conditional-content'); ?>">
+                        
+                        <div class="gdm-tag-list" id="gdm-tag-list">
+                            <?php
+                            $tags = get_terms([
+                                'taxonomy' => 'product_tag',
+                                'hide_empty' => false,
+                                'orderby' => 'name',
+                                'order' => 'ASC'
+                            ]);
+                            
+                            if ($tags && !is_wp_error($tags)) {
+                                foreach ($tags as $tag) {
+                                    $checked = in_array($tag->term_id, $data['tags_objetivo']);
+                                    printf(
+                                        '<label class="gdm-checkbox-item">
+                                            <input type="checkbox" 
+                                                   name="gdm_tags_objetivo[]" 
+                                                   value="%d"
+                                                   class="gdm-tag-checkbox"
+                                                   %s>
+                                            <span>%s</span>
+                                        </label>',
+                                        $tag->term_id,
+                                        checked($checked, true, false),
+                                        esc_html($tag->name)
+                                    );
+                                }
+                            }
+                            ?>
+                        </div>
+                        
+                        <div class="gdm-scope-actions">
+                            <button type="button" class="button button-primary gdm-scope-accept" data-target="tags">
+                                <span class="dashicons dashicons-yes"></span>
+                                <?php _e('Aceptar', 'product-conditional-content'); ?>
+                            </button>
+                            <span class="gdm-selection-counter" id="gdm-tag-counter">
+                                <?php echo count($data['tags_objetivo']); ?> seleccionadas
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- PRODUCTOS ESPECÍFICOS -->
+                <div class="gdm-scope-group">
+                    <div class="gdm-scope-header">
+                        <label class="gdm-scope-toggle">
+                            <input type="checkbox" 
+                                   id="gdm_productos_enabled" 
+                                   name="gdm_productos_enabled" 
+                                   class="gdm-scope-checkbox"
+                                   value="1"
+                                   <?php checked(!empty($data['productos_objetivo'])); ?>>
+                            <strong><?php _e('🛍️ Productos Específicos', 'product-conditional-content'); ?></strong>
+                        </label>
+                        
+                        <div class="gdm-scope-summary" id="gdm-productos-summary" style="<?php echo empty($data['productos_objetivo']) ? 'display:none;' : ''; ?>">
+                            <span class="gdm-summary-text" id="gdm-productos-summary-text">
+                                <?php
+                                if (!empty($data['productos_objetivo'])) {
+                                    $prod_names = [];
+                                    foreach ($data['productos_objetivo'] as $prod_id) {
+                                        $product = wc_get_product($prod_id);
+                                        if ($product) {
+                                            $prod_names[] = $product->get_name();
+                                        }
+                                    }
+                                    echo esc_html(implode(', ', $prod_names));
+                                }
+                                ?>
+                            </span>
+                            <button type="button" class="button button-small gdm-scope-edit" data-target="productos">
+                                <?php _e('Editar', 'product-conditional-content'); ?>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="gdm-scope-content" id="gdm-productos-content" style="display:none;">
+                        <input type="text" 
+                               id="gdm_product_search" 
+                               class="gdm-filter-input" 
+                               placeholder="<?php esc_attr_e('🔍 Buscar productos (mín. 3 caracteres)...', 'product-conditional-content'); ?>">
+                        
+                        <div class="gdm-product-list" id="gdm-product-list">
+                            <?php if (!empty($data['productos_objetivo'])): ?>
+                                <?php foreach ($data['productos_objetivo'] as $product_id): 
+                                    $product = wc_get_product($product_id);
+                                    if ($product):
+                                ?>
+                                    <label class="gdm-checkbox-item">
+                                        <input type="checkbox" 
+                                               name="gdm_productos_objetivo[]" 
+                                               value="<?php echo esc_attr($product_id); ?>"
+                                               class="gdm-product-checkbox"
+                                               checked>
+                                        <span><?php echo esc_html($product->get_name()); ?></span>
+                                    </label>
+                                <?php 
+                                    endif;
+                                endforeach; ?>
+                            <?php else: ?>
+                                <div class="gdm-empty-state">
+                                    <p><?php _e('Busca productos para agregar', 'product-conditional-content'); ?></p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <div class="gdm-scope-actions">
+                            <button type="button" class="button button-primary gdm-scope-accept" data-target="productos">
+                                <span class="dashicons dashicons-yes"></span>
+                                <?php _e('Aceptar', 'product-conditional-content'); ?>
+                            </button>
+                            <span class="gdm-selection-counter" id="gdm-product-counter">
+                                <?php echo count($data['productos_objetivo']); ?> seleccionados
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- MÁS ÁMBITOS... (continúa con el mismo patrón) -->
+                
+            </div>
+            
+        </div>
+        
+        <?php self::render_scope_styles(); ?>
+        <?php
+    }
+    
+    /**
+     * Renderizar estilos de ámbitos
+     */
+    private static function render_scope_styles() {
+        ?>
+        <style>
+            /* Estilos para ámbitos mejorados */
+            .gdm-scope-group {
+                margin-bottom: 15px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                background: #fff;
+            }
+            
+            .gdm-scope-header {
+                padding: 12px 15px;
+                background: #f9f9f9;
+                border-bottom: 1px solid #ddd;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            
+            .gdm-scope-toggle {
+                display: flex;
+                align-items: center;
+                margin: 0;
+                cursor: pointer;
+            }
+            
+            .gdm-scope-toggle input[type="checkbox"] {
+                margin: 0 10px 0 0 !important;
+            }
+            
+            .gdm-scope-summary {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex: 1;
+                margin-left: 20px;
+            }
+            
+            .gdm-summary-text {
+                flex: 1;
+                font-size: 12px;
+                color: #666;
+                font-style: italic;
+            }
+            
+            .gdm-scope-edit {
+                padding: 4px 12px !important;
+                height: auto !important;
+                line-height: 1.4 !important;
+            }
+            
+            .gdm-scope-content {
+                padding: 15px;
+                display: none;
+            }
+            
+            .gdm-scope-content.active {
+                display: block;
+                animation: slideDown 0.3s ease;
+            }
+            
+            .gdm-scope-actions {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-top: 12px;
+                padding-top: 12px;
+                border-top: 1px solid #e0e0e0;
+            }
+            
+            .gdm-selection-counter {
+                font-size: 12px;
+                color: #666;
+                font-weight: 600;
+            }
+            
+            @keyframes slideDown {
+                from {
+                    opacity: 0;
+                    transform: translateY(-10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            
+            /* Reutilizar estilos existentes para listas */
+            .gdm-category-list,
+            .gdm-tag-list,
+            .gdm-product-list {
+                max-height: 250px;
+                overflow-y: auto;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                padding: 8px;
+                background: #fafafa;
+                margin-bottom: 12px;
+            }
+        </style>
+        <?php
+    }
+
+    /**
+     * Guardar datos del metabox
+     */
+    public static function save_metabox($post_id, $post) {
+        if (!isset($_POST['gdm_nonce']) || !wp_verify_nonce($_POST['gdm_nonce'], 'gdm_save_rule_data')) {
+            return;
+        }
+
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            return;
+        }
+
+        if (!current_user_can('edit_post', $post_id)) {
+            return;
+        }
+
+        // Prioridad
+        $prioridad = isset($_POST['gdm_prioridad']) ? absint($_POST['gdm_prioridad']) : 10;
+        update_post_meta($post_id, '_gdm_prioridad', $prioridad);
+
+        // Reutilizable
+        $reutilizable = isset($_POST['gdm_reutilizable']) ? '1' : '0';
+        update_post_meta($post_id, '_gdm_reutilizable', $reutilizable);
+
+        // Aplicar a (módulos)
+        $aplicar_a = isset($_POST['gdm_aplicar_a']) ? array_map('sanitize_text_field', $_POST['gdm_aplicar_a']) : [];
+        update_post_meta($post_id, '_gdm_aplicar_a', $aplicar_a);
+
+        // Categorías (NUEVO FORMATO)
+        $categorias_enabled = isset($_POST['gdm_categorias_enabled']) ? '1' : '0';
+        update_post_meta($post_id, '_gdm_categorias_enabled', $categorias_enabled);
+        
+        $categorias_objetivo = isset($_POST['gdm_categorias_objetivo']) ? array_map('intval', $_POST['gdm_categorias_objetivo']) : [];
+        update_post_meta($post_id, '_gdm_categorias_objetivo', $categorias_objetivo);
+        
+        // Mantener compatibilidad con código antiguo
+        update_post_meta($post_id, '_gdm_todas_categorias', empty($categorias_objetivo) ? '1' : '0');
+
+        // Tags (NUEVO FORMATO)
+        $tags_enabled = isset($_POST['gdm_tags_enabled']) ? '1' : '0';
+        update_post_meta($post_id, '_gdm_tags_enabled', $tags_enabled);
+        
+        $tags_objetivo = isset($_POST['gdm_tags_objetivo']) ? array_map('intval', $_POST['gdm_tags_objetivo']) : [];
+        update_post_meta($post_id, '_gdm_tags_objetivo', $tags_objetivo);
+        
+        // Mantener compatibilidad
+        update_post_meta($post_id, '_gdm_cualquier_tag', empty($tags_objetivo) ? '1' : '0');
+        
+        // Productos específicos
+        $productos_enabled = isset($_POST['gdm_productos_enabled']) ? '1' : '0';
+        update_post_meta($post_id, '_gdm_productos_enabled', $productos_enabled);
+        
+        $productos_objetivo = isset($_POST['gdm_productos_objetivo']) ? array_map('intval', $_POST['gdm_productos_objetivo']) : [];
+        update_post_meta($post_id, '_gdm_productos_objetivo', $productos_objetivo);
+        
+        // ... continuar con los demás ámbitos
+    }
+
+    /**
+     * Obtener datos de la regla
+     */
+    private static function get_rule_data($post_id) {
+        static $cache = [];
+        
+        if (isset($cache[$post_id])) {
+            return $cache[$post_id];
+        }
+
+        $data = [
+            'prioridad' => get_post_meta($post_id, '_gdm_prioridad', true) ?: 10,
+            'reutilizable' => get_post_meta($post_id, '_gdm_reutilizable', true),
+            'aplicar_a' => get_post_meta($post_id, '_gdm_aplicar_a', true) ?: [],
+            'todas_categorias' => get_post_meta($post_id, '_gdm_todas_categorias', true) ?: '1',
+            'categorias_objetivo' => get_post_meta($post_id, '_gdm_categorias_objetivo', true) ?: [],
+            'cualquier_tag' => get_post_meta($post_id, '_gdm_cualquier_tag', true) ?: '1',
+            'tags_objetivo' => get_post_meta($post_id, '_gdm_tags_objetivo', true) ?: [],
+            'productos_objetivo' => get_post_meta($post_id, '_gdm_productos_objetivo', true) ?: [],
+        ];
+        
+        $cache[$post_id] = $data;
+        return $data;
+    }
+    
+    /**
+     * AJAX: Buscar productos
+     */
+    public static function ajax_search_products() {
+        check_ajax_referer('gdm_admin_nonce', 'nonce');
+        
+        $search = isset($_POST['search']) ? sanitize_text_field($_POST['search']) : '';
+        
+        if (strlen($search) < 3) {
+            wp_send_json_error(['message' => __('Escribe al menos 3 caracteres', 'product-conditional-content')]);
+        }
+        
+        $products = wc_get_products([
+            's' => $search,
+            'limit' => 50,
+            'return' => 'ids',
+        ]);
+        
+        $results = [];
+        foreach ($products as $product_id) {
+            $product = wc_get_product($product_id);
+            if ($product) {
+                $results[] = [
+                    'id' => $product_id,
+                    'title' => $product->get_name(),
+                ];
+            }
+        }
+        
+        wp_send_json_success(['products' => $results]);
+    }
+}
+
+GDM_Reglas_Metabox::init();

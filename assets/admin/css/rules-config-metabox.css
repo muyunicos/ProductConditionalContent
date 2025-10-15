@@ -1,7 +1,7 @@
 /* ... CONTENIDO EXISTENTE ... */
 
 /* ========================================================================
-   ÁMBITOS MEJORADOS v6.1
+   ÁMBITOS MEJORADOS v6.1 - NUEVA UX
    ======================================================================== */
 
 .gdm-scope-group {
@@ -12,28 +12,112 @@
     overflow: hidden;
 }
 
-.gdm-scope-toggle {
-    display: flex;
-    align-items: center;
+.gdm-scope-header {
     padding: 12px 15px;
     background: #f9f9f9;
     border-bottom: 1px solid #ddd;
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.2s ease;
-    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
 }
 
-.gdm-scope-toggle:hover {
-    background: #f0f0f1;
+.gdm-scope-toggle {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    cursor: pointer;
+    user-select: none;
 }
 
 .gdm-scope-toggle input[type="checkbox"] {
     margin: 0 10px 0 0 !important;
+    cursor: pointer;
 }
 
+.gdm-scope-toggle:hover strong {
+    color: #2271b1;
+}
+
+/* Resumen de selección */
+.gdm-scope-summary {
+    display: none;
+    flex: 1;
+    align-items: center;
+    gap: 10px;
+    padding-left: 15px;
+    border-left: 2px solid #2271b1;
+}
+
+.gdm-summary-text {
+    flex: 1;
+    font-size: 12px;
+    color: #135e96;
+    line-height: 1.5;
+}
+
+.gdm-summary-text em {
+    font-weight: 600;
+    font-style: normal;
+    color: #2271b1;
+}
+
+.gdm-scope-edit {
+    padding: 4px 12px !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    font-size: 12px !important;
+    border-color: #2271b1 !important;
+    color: #2271b1 !important;
+}
+
+.gdm-scope-edit:hover {
+    background: #2271b1 !important;
+    color: #fff !important;
+}
+
+/* Contenido expandible */
 .gdm-scope-content {
     padding: 15px;
+    display: none;
+    background: #fafafa;
+}
+
+.gdm-scope-content.active {
+    display: block;
+    animation: slideDown 0.3s ease;
+}
+
+/* Acciones del ámbito */
+.gdm-scope-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.gdm-scope-accept {
+    padding: 8px 20px !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    font-weight: 600 !important;
+}
+
+.gdm-scope-accept .dashicons {
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+.gdm-selection-counter {
+    font-size: 12px;
+    color: #666;
+    font-weight: 600;
+    padding: 5px 12px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 3px;
 }
 
 /* Filtros de búsqueda */
@@ -63,11 +147,11 @@
     border: 1px solid #ddd;
     border-radius: 4px;
     padding: 8px;
-    background: #fafafa;
+    background: #fff;
     margin-bottom: 12px;
 }
 
-/* Scrollbar personalizado (WebKit) */
+/* Scrollbar personalizado */
 .gdm-category-list::-webkit-scrollbar,
 .gdm-tag-list::-webkit-scrollbar,
 .gdm-product-list::-webkit-scrollbar,
@@ -121,73 +205,6 @@
     vertical-align: middle;
 }
 
-/* Descripción de selección */
-.gdm-scope-description {
-    padding: 10px;
-    background: #fff3cd;
-    border: 1px solid #ffc107;
-    border-radius: 4px;
-    margin-bottom: 12px;
-    font-size: 13px;
-    color: #856404;
-    display: none;
-}
-
-.gdm-scope-description.active {
-    display: block;
-}
-
-.gdm-scope-description strong {
-    display: block;
-    margin-bottom: 5px;
-}
-
-.gdm-scope-selected-items {
-    font-size: 12px;
-    margin-top: 5px;
-    line-height: 1.6;
-}
-
-/* Contador de selección */
-.gdm-selection-counter {
-    display: inline-block;
-    background: #2271b1;
-    color: #fff;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 11px;
-    font-weight: 600;
-    margin-left: 10px;
-    vertical-align: middle;
-}
-
-/* Botón aplicar */
-.gdm-scope-apply {
-    width: 100%;
-    padding: 10px 15px;
-    background: #2271b1;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s ease, transform 0.1s ease;
-}
-
-.gdm-scope-apply:hover {
-    background: #135e96;
-}
-
-.gdm-scope-apply:active {
-    transform: translateY(1px);
-}
-
-.gdm-scope-apply .dashicons {
-    vertical-align: middle;
-    margin-right: 5px;
-}
-
 /* Estado vacío */
 .gdm-empty-state {
     padding: 30px;
@@ -208,45 +225,34 @@
     font-size: 13px;
 }
 
-/* Grupos de atributos */
-.gdm-attribute-group {
-    margin-bottom: 15px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-.gdm-attribute-group:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
-}
-
-.gdm-attribute-group > strong {
-    display: block;
-    margin-bottom: 8px;
-    color: #1d2327;
-}
-
 /* Animaciones */
 @keyframes slideDown {
     from {
         opacity: 0;
-        max-height: 0;
+        transform: translateY(-10px);
     }
     to {
         opacity: 1;
-        max-height: 500px;
+        transform: translateY(0);
     }
-}
-
-.gdm-scope-content[style*="display: block"] {
-    animation: slideDown 0.3s ease;
 }
 
 /* ========================================================================
    RESPONSIVE
    ======================================================================== */
 @media screen and (max-width: 782px) {
+    .gdm-scope-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .gdm-scope-summary {
+        padding-left: 0;
+        border-left: none;
+        padding-top: 10px;
+        border-top: 1px solid #ddd;
+    }
+    
     .gdm-category-list,
     .gdm-tag-list,
     .gdm-product-list,
@@ -254,52 +260,14 @@
         max-height: 200px;
     }
     
-    .gdm-scope-apply {
-        padding: 12px 15px;
-        font-size: 15px;
+    .gdm-scope-actions {
+        flex-direction: column;
+        gap: 10px;
     }
     
-    .gdm-scope-toggle {
-        padding: 15px;
-    }
-    
-    .gdm-filter-input {
-        font-size: 16px; /* Evita zoom en iOS */
-    }
-}
-
-/* Dark mode compatibility (opcional) */
-@media (prefers-color-scheme: dark) {
-    .gdm-scope-group {
-        border-color: #444;
-        background: #1e1e1e;
-    }
-    
-    .gdm-scope-toggle {
-        background: #2a2a2a;
-        border-bottom-color: #444;
-        color: #e0e0e0;
-    }
-    
-    .gdm-scope-toggle:hover {
-        background: #333;
-    }
-    
-    .gdm-filter-input {
-        background: #2a2a2a;
-        border-color: #444;
-        color: #e0e0e0;
-    }
-    
-    .gdm-category-list,
-    .gdm-tag-list,
-    .gdm-product-list,
-    .gdm-attribute-list {
-        background: #2a2a2a;
-        border-color: #444;
-    }
-    
-    .gdm-checkbox-item:hover {
-        background: #333;
+    .gdm-scope-accept,
+    .gdm-selection-counter {
+        width: 100%;
+        text-align: center;
     }
 }
