@@ -1,0 +1,1 @@
+aqui va el codigo de class-compat-check.php
