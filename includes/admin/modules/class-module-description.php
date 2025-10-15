@@ -24,7 +24,7 @@ final class GDM_Module_Descripcion extends GDM_Module_Base {
      */
     protected function module_init() {
         // Registrar AJAX para reglas reutilizables
-        add_action('wp_ajax_gdm_get_reusable_rules', [$this, 'ajax_get_reusable_rules']);
+        add_action('wp_ajax_gdm_get_reusable_rules', [$this, 'handle_ajax_get_reusable_rules']);
     }
     
     /**
@@ -468,7 +468,7 @@ final class GDM_Module_Descripcion extends GDM_Module_Base {
     /**
      * AJAX: Obtener reglas reutilizables
      */
-    public function ajax_get_reusable_rules() {
+    public function handle_ajax_get_reusable_rules() {
         check_ajax_referer('gdm_admin_nonce', 'nonce');
         
         $current_post_id = isset($_POST['current_post_id']) ? intval($_POST['current_post_id']) : 0;
