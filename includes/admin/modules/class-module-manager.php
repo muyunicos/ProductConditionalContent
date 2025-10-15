@@ -1,7 +1,7 @@
 <?php
 /**
- * Metabox de Ámbito de Aplicación Mejorado
- * Incluye: Categorías, Tags, Productos Específicos, Atributos, Stock, Precio, Título
+ * Gestor Centralizado de Módulos v6.1
+ * Registra y administra todos los módulos del sistema
  * Compatible con WordPress 6.8.3, PHP 8.2, WooCommerce 10.2.2
  * 
  * @package ProductConditionalContent
@@ -11,618 +11,410 @@
 
 if (!defined('ABSPATH')) exit;
 
-final class GDM_Scope_Metabox {
+final class GDM_Module_Manager {
     
-    public static function init() {
-        add_action('add_meta_boxes', [__CLASS__, 'add_metabox']);
-        add_action('save_post_gdm_regla', [__CLASS__, 'save_metabox'], 10, 2);
-        add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
-        
-        // AJAX para búsqueda de productos
-        add_action('wp_ajax_gdm_search_products', [__CLASS__, 'ajax_search_products']);
+    /**
+     * Instancia única (Singleton)
+     * @var GDM_Module_Manager|null
+     */
+    private static $instance = null;
+    
+    /**
+     * Módulos registrados
+     * @var array
+     */
+    private $modules = [];
+    
+    /**
+     * Instancias de módulos inicializados
+     * @var array
+     */
+    private $module_instances = [];
+    
+    /**
+     * Obtener instancia única
+     */
+    public static function instance() {
+        if (null === self::$instance) {
+            self::$instance = new self();
+        }
+        return self::$instance;
     }
     
     /**
-     * Encolar assets
+     * Constructor privado (Singleton)
      */
-    public static function enqueue_assets($hook) {
-        $screen = get_current_screen();
-        if ($screen->id !== 'gdm_regla') {
-            return;
-        }
+    private function __construct() {
+        // Registrar módulos en init con prioridad 5 (antes de metaboxes)
+        add_action('init', [$this, 'register_core_modules'], 5);
         
-        wp_enqueue_style(
-            'gdm-scope-selector',
-            GDM_PLUGIN_URL . 'assets/admin/css/scope-selector.css',
-            [],
-            GDM_VERSION
-        );
+        // Permitir que otros plugins/temas registren módulos
+        add_action('init', [$this, 'allow_external_registration'], 6);
         
-        wp_enqueue_script(
-            'gdm-scope-selector',
-            GDM_PLUGIN_URL . 'assets/admin/js/metaboxes/scope-selector.js',
-            ['jquery'],
-            GDM_VERSION,
-            true
-        );
+        // Inicializar módulos registrados
+        add_action('init', [$this, 'init_registered_modules'], 7);
+    }
+    
+    /**
+     * Registrar módulos del core
+     */
+    public function register_core_modules() {
+        $modules_dir = GDM_PLUGIN_DIR . 'includes/admin/modules/';
         
-        wp_localize_script('gdm-scope-selector', 'gdmScopeSelector', [
-            'ajaxUrl' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('gdm_scope_nonce'),
-            'i18n' => [
-                'searching' => __('Buscando...', 'product-conditional-content'),
-                'noResults' => __('No se encontraron resultados', 'product-conditional-content'),
-                'selectAtLeast' => __('Selecciona al menos un elemento', 'product-conditional-content'),
-            ]
+        // Módulo de Descripción (existente)
+        $this->register_module('descripcion', [
+            'class' => 'GDM_Module_Descripcion',
+            'label' => __('Descripción', 'product-conditional-content'),
+            'icon' => '📄',
+            'file' => $modules_dir . 'class-module-description.php',
+            'enabled' => true,
+            'priority' => 10,
         ]);
+        
+        // Módulo de Galería (NUEVO)
+        $this->register_module('galeria', [
+            'class' => 'GDM_Module_Gallery',
+            'label' => __('Galería', 'product-conditional-content'),
+            'icon' => '🖼️',
+            'file' => $modules_dir . 'class-module-gallery.php',
+            'enabled' => true,
+            'priority' => 15,
+        ]);
+        
+        // Módulo de Título (NUEVO)
+        $this->register_module('titulo', [
+            'class' => 'GDM_Module_Title',
+            'label' => __('Título', 'product-conditional-content'),
+            'icon' => '📝',
+            'file' => $modules_dir . 'class-module-title.php',
+            'enabled' => true,
+            'priority' => 20,
+        ]);
+        
+        // Módulo de Precio (NUEVO)
+        $this->register_module('precio', [
+            'class' => 'GDM_Module_Price',
+            'label' => __('Precio', 'product-conditional-content'),
+            'icon' => '💰',
+            'file' => $modules_dir . 'class-module-price.php',
+            'enabled' => true,
+            'priority' => 25,
+        ]);
+        
+        // Módulo de Destacado (NUEVO)
+        $this->register_module('destacado', [
+            'class' => 'GDM_Module_Featured',
+            'label' => __('Destacado', 'product-conditional-content'),
+            'icon' => '⭐',
+            'file' => $modules_dir . 'class-module-featured.php',
+            'enabled' => true,
+            'priority' => 30,
+        ]);
+        
+        /**
+         * Hook para permitir registro de módulos personalizados
+         * 
+         * @param GDM_Module_Manager $this Instancia del manager
+         */
+        do_action('gdm_register_modules', $this);
     }
     
     /**
-     * Registrar metabox
+     * Permitir registro externo de módulos
      */
-    public static function add_metabox() {
-        add_meta_box(
-            'gdm_scope_metabox',
-            __('🎯 Ámbito de Aplicación Avanzado', 'product-conditional-content'),
-            [__CLASS__, 'render_metabox'],
-            'gdm_regla',
-            'normal',
-            'default'
-        );
+    public function allow_external_registration() {
+        /**
+         * Permite a otros plugins/temas registrar módulos
+         * 
+         * Ejemplo de uso:
+         * add_action('gdm_modules_init', function($manager) {
+         *     $manager->register_module('mi_modulo', [
+         *         'class' => 'My_Custom_Module',
+         *         'label' => 'Mi Módulo',
+         *         'icon' => '🎯',
+         *         'file' => '/path/to/my-module.php',
+         *         'enabled' => true,
+         *         'priority' => 50,
+         *     ]);
+         * });
+         */
+        do_action('gdm_modules_init', $this);
     }
     
     /**
-     * Renderizar metabox
+     * Inicializar módulos registrados
      */
-    public static function render_metabox($post) {
-        wp_nonce_field('gdm_save_scope_data', 'gdm_scope_nonce');
-        
-        $data = self::get_scope_data($post->ID);
-        ?>
-        <div class="gdm-scope-container">
+    public function init_registered_modules() {
+        foreach ($this->modules as $id => $config) {
+            // Solo inicializar módulos habilitados
+            if (!$config['enabled']) {
+                continue;
+            }
             
-            <p class="description" style="margin-bottom: 20px;">
-                <?php _e('Define las condiciones específicas para que esta regla se aplique. Puedes combinar múltiples condiciones.', 'product-conditional-content'); ?>
-            </p>
+            // Cargar archivo si existe
+            if (!empty($config['file']) && file_exists($config['file'])) {
+                require_once $config['file'];
+            }
             
-            <!-- CATEGORÍAS -->
-            <div class="gdm-scope-group">
-                <label class="gdm-scope-toggle">
-                    <input type="checkbox" 
-                           id="gdm_todas_categorias" 
-                           name="gdm_todas_categorias" 
-                           value="1"
-                           <?php checked($data['todas_categorias'], '1'); ?>>
-                    <strong><?php _e('📂 Todas las Categorías', 'product-conditional-content'); ?></strong>
-                </label>
-                
-                <div class="gdm-scope-content" id="gdm-categorias-wrapper" <?php echo $data['todas_categorias'] === '1' ? 'style="display:none;"' : ''; ?>>
-                    
-                    <div class="gdm-scope-description" id="gdm-categorias-description">
-                        <strong><?php _e('Selecciona las categorías a filtrar:', 'product-conditional-content'); ?></strong>
-                        <div class="gdm-scope-selected-items"></div>
-                    </div>
-                    
-                    <input type="text" 
-                           id="gdm_category_filter" 
-                           class="gdm-filter-input" 
-                           placeholder="<?php esc_attr_e('🔍 Buscar categorías...', 'product-conditional-content'); ?>">
-                    
-                    <div class="gdm-category-list">
-                        <?php
-                        $categories = get_terms([
-                            'taxonomy' => 'product_cat',
-                            'hide_empty' => false,
-                            'orderby' => 'name',
-                            'order' => 'ASC'
-                        ]);
-                        
-                        if ($categories && !is_wp_error($categories)) {
-                            foreach ($categories as $cat) {
-                                $checked = in_array($cat->term_id, $data['categorias_objetivo']);
-                                printf(
-                                    '<label class="gdm-checkbox-item">
-                                        <input type="checkbox" 
-                                               name="gdm_categorias_objetivo[]" 
-                                               value="%d"
-                                               class="gdm-category-checkbox"
-                                               %s>
-                                        <span>%s</span>
-                                    </label>',
-                                    $cat->term_id,
-                                    checked($checked, true, false),
-                                    esc_html($cat->name)
-                                );
-                            }
-                        }
-                        ?>
-                    </div>
-                    
-                    <button type="button" class="button gdm-scope-apply" id="gdm-categorias-apply">
-                        <span class="dashicons dashicons-yes"></span>
-                        <?php _e('Aplicar Selección', 'product-conditional-content'); ?>
-                    </button>
-                    
-                    <span class="gdm-selection-counter" id="gdm-category-counter" style="display:none;">0</span>
-                </div>
-            </div>
-            
-            <!-- TAGS -->
-            <div class="gdm-scope-group">
-                <label class="gdm-scope-toggle">
-                    <input type="checkbox" 
-                           id="gdm_cualquier_tag" 
-                           name="gdm_cualquier_tag" 
-                           value="1"
-                           <?php checked($data['cualquier_tag'], '1'); ?>>
-                    <strong><?php _e('🏷️ Cualquier Etiqueta', 'product-conditional-content'); ?></strong>
-                </label>
-                
-                <div class="gdm-scope-content" id="gdm-tags-wrapper" <?php echo $data['cualquier_tag'] === '1' ? 'style="display:none;"' : ''; ?>>
-                    
-                    <div class="gdm-scope-description" id="gdm-tags-description">
-                        <strong><?php _e('Selecciona las etiquetas a filtrar:', 'product-conditional-content'); ?></strong>
-                        <div class="gdm-scope-selected-items"></div>
-                    </div>
-                    
-                    <input type="text" 
-                           id="gdm_tag_filter" 
-                           class="gdm-filter-input" 
-                           placeholder="<?php esc_attr_e('🔍 Buscar etiquetas...', 'product-conditional-content'); ?>">
-                    
-                    <div class="gdm-tag-list">
-                        <?php
-                        $tags = get_terms([
-                            'taxonomy' => 'product_tag',
-                            'hide_empty' => false,
-                            'orderby' => 'name',
-                            'order' => 'ASC'
-                        ]);
-                        
-                        if ($tags && !is_wp_error($tags)) {
-                            foreach ($tags as $tag) {
-                                $checked = in_array($tag->term_id, $data['tags_objetivo']);
-                                printf(
-                                    '<label class="gdm-checkbox-item">
-                                        <input type="checkbox" 
-                                               name="gdm_tags_objetivo[]" 
-                                               value="%d"
-                                               class="gdm-tag-checkbox"
-                                               %s>
-                                        <span>%s</span>
-                                    </label>',
-                                    $tag->term_id,
-                                    checked($checked, true, false),
-                                    esc_html($tag->name)
-                                );
-                            }
-                        }
-                        ?>
-                    </div>
-                    
-                    <button type="button" class="button gdm-scope-apply" id="gdm-tags-apply">
-                        <span class="dashicons dashicons-yes"></span>
-                        <?php _e('Aplicar Selección', 'product-conditional-content'); ?>
-                    </button>
-                    
-                    <span class="gdm-selection-counter" id="gdm-tag-counter" style="display:none;">0</span>
-                </div>
-            </div>
-            
-            <!-- PRODUCTOS ESPECÍFICOS -->
-            <div class="gdm-scope-group">
-                <label class="gdm-scope-toggle">
-                    <input type="checkbox" 
-                           id="gdm_productos_especificos_enabled" 
-                           name="gdm_productos_especificos_enabled" 
-                           value="1"
-                           <?php checked($data['productos_especificos_enabled'], '1'); ?>>
-                    <strong><?php _e('🛍️ Productos Específicos', 'product-conditional-content'); ?></strong>
-                </label>
-                
-                <div class="gdm-scope-content" id="gdm-productos-wrapper" <?php echo $data['productos_especificos_enabled'] !== '1' ? 'style="display:none;"' : ''; ?>>
-                    
-                    <input type="text" 
-                           id="gdm_product_search" 
-                           class="gdm-filter-input" 
-                           placeholder="<?php esc_attr_e('🔍 Buscar productos por nombre...', 'product-conditional-content'); ?>">
-                    
-                    <div class="gdm-product-list">
-                        <div class="gdm-empty-state">
-                            <p><?php _e('Escribe al menos 3 caracteres para buscar productos', 'product-conditional-content'); ?></p>
-                        </div>
-                    </div>
-                    
-                    <input type="hidden" name="gdm_productos_objetivo" id="gdm_productos_objetivo" value="<?php echo esc_attr(json_encode($data['productos_objetivo'])); ?>">
-                    
-                    <span class="gdm-selection-counter" id="gdm-product-counter" style="display:none;">0</span>
-                </div>
-            </div>
-            
-            <!-- ATRIBUTOS -->
-            <div class="gdm-scope-group">
-                <label class="gdm-scope-toggle">
-                    <input type="checkbox" 
-                           id="gdm_atributos_enabled" 
-                           name="gdm_atributos_enabled" 
-                           value="1"
-                           <?php checked($data['atributos_enabled'], '1'); ?>>
-                    <strong><?php _e('🎨 Atributos de Productos', 'product-conditional-content'); ?></strong>
-                </label>
-                
-                <div class="gdm-scope-content" id="gdm-atributos-wrapper" <?php echo $data['atributos_enabled'] !== '1' ? 'style="display:none;"' : ''; ?>>
-                    
-                    <?php
-                    $product_attributes = wc_get_attribute_taxonomies();
-                    if ($product_attributes) {
-                        foreach ($product_attributes as $attribute) {
-                            $taxonomy = wc_attribute_taxonomy_name($attribute->attribute_name);
-                            $terms = get_terms([
-                                'taxonomy' => $taxonomy,
-                                'hide_empty' => false,
-                            ]);
-                            
-                            if ($terms && !is_wp_error($terms)) {
-                                ?>
-                                <div style="margin-bottom: 15px;">
-                                    <strong><?php echo esc_html($attribute->attribute_label); ?>:</strong>
-                                    <div style="margin-top: 5px; max-height: 150px; overflow-y: auto; border: 1px solid #ddd; padding: 8px; border-radius: 3px;">
-                                        <?php foreach ($terms as $term) {
-                                            $checked = isset($data['atributos'][$taxonomy]) && in_array($term->term_id, $data['atributos'][$taxonomy]);
-                                            ?>
-                                            <label class="gdm-checkbox-item">
-                                                <input type="checkbox" 
-                                                       name="gdm_atributos[<?php echo esc_attr($taxonomy); ?>][]" 
-                                                       value="<?php echo esc_attr($term->term_id); ?>"
-                                                       <?php checked($checked); ?>>
-                                                <span><?php echo esc_html($term->name); ?></span>
-                                            </label>
-                                        <?php } ?>
-                                    </div>
-                                </div>
-                                <?php
-                            }
-                        }
-                    } else {
-                        echo '<p>' . __('No hay atributos de producto configurados', 'product-conditional-content') . '</p>';
-                    }
-                    ?>
-                </div>
-            </div>
-            
-            <!-- STOCK STATUS -->
-            <div class="gdm-scope-group">
-                <label class="gdm-scope-toggle">
-                    <input type="checkbox" 
-                           id="gdm_stock_enabled" 
-                           name="gdm_stock_enabled" 
-                           value="1"
-                           <?php checked($data['stock_enabled'], '1'); ?>>
-                    <strong><?php _e('📦 Estado de Stock', 'product-conditional-content'); ?></strong>
-                </label>
-                
-                <div class="gdm-scope-content" id="gdm-stock-wrapper" <?php echo $data['stock_enabled'] !== '1' ? 'style="display:none;"' : ''; ?>>
-                    
-                    <label class="gdm-checkbox-item">
-                        <input type="checkbox" 
-                               name="gdm_stock_status[]" 
-                               value="instock"
-                               <?php checked(in_array('instock', $data['stock_status'])); ?>>
-                        <span><?php _e('En Stock', 'product-conditional-content'); ?></span>
-                    </label>
-                    
-                    <label class="gdm-checkbox-item">
-                        <input type="checkbox" 
-                               name="gdm_stock_status[]" 
-                               value="outofstock"
-                               <?php checked(in_array('outofstock', $data['stock_status'])); ?>>
-                        <span><?php _e('Sin Stock', 'product-conditional-content'); ?></span>
-                    </label>
-                    
-                    <label class="gdm-checkbox-item">
-                        <input type="checkbox" 
-                               name="gdm_stock_status[]" 
-                               value="onbackorder"
-                               <?php checked(in_array('onbackorder', $data['stock_status'])); ?>>
-                        <span><?php _e('En Pedido Pendiente', 'product-conditional-content'); ?></span>
-                    </label>
-                </div>
-            </div>
-            
-            <!-- PRECIO -->
-            <div class="gdm-scope-group">
-                <label class="gdm-scope-toggle">
-                    <input type="checkbox" 
-                           id="gdm_precio_enabled" 
-                           name="gdm_precio_enabled" 
-                           value="1"
-                           <?php checked($data['precio_enabled'], '1'); ?>>
-                    <strong><?php _e('💵 Filtro por Precio', 'product-conditional-content'); ?></strong>
-                </label>
-                
-                <div class="gdm-scope-content" id="gdm-precio-wrapper" <?php echo $data['precio_enabled'] !== '1' ? 'style="display:none;"' : ''; ?>>
-                    
-                    <label>
-                        <strong><?php _e('Condición:', 'product-conditional-content'); ?></strong>
-                    </label>
-                    <select name="gdm_precio_condicion" class="regular-text">
-                        <option value="mayor_que" <?php selected($data['precio_condicion'], 'mayor_que'); ?>>
-                            <?php _e('Mayor que', 'product-conditional-content'); ?>
-                        </option>
-                        <option value="menor_que" <?php selected($data['precio_condicion'], 'menor_que'); ?>>
-                            <?php _e('Menor que', 'product-conditional-content'); ?>
-                        </option>
-                        <option value="igual_a" <?php selected($data['precio_condicion'], 'igual_a'); ?>>
-                            <?php _e('Igual a', 'product-conditional-content'); ?>
-                        </option>
-                        <option value="entre" <?php selected($data['precio_condicion'], 'entre'); ?>>
-                            <?php _e('Entre', 'product-conditional-content'); ?>
-                        </option>
-                    </select>
-                    
-                    <div style="margin-top: 10px;">
-                        <label>
-                            <strong><?php _e('Valor:', 'product-conditional-content'); ?></strong>
-                        </label>
-                        <input type="number" 
-                               name="gdm_precio_valor" 
-                               value="<?php echo esc_attr($data['precio_valor']); ?>" 
-                               step="0.01" 
-                               min="0"
-                               class="regular-text">
-                        <?php echo get_woocommerce_currency_symbol(); ?>
-                    </div>
-                    
-                    <div id="gdm-precio-valor2-wrapper" style="margin-top: 10px; <?php echo $data['precio_condicion'] !== 'entre' ? 'display:none;' : ''; ?>">
-                        <label>
-                            <strong><?php _e('Valor máximo:', 'product-conditional-content'); ?></strong>
-                        </label>
-                        <input type="number" 
-                               name="gdm_precio_valor2" 
-                               value="<?php echo esc_attr($data['precio_valor2']); ?>" 
-                               step="0.01" 
-                               min="0"
-                               class="regular-text">
-                        <?php echo get_woocommerce_currency_symbol(); ?>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- TÍTULO -->
-            <div class="gdm-scope-group">
-                <label class="gdm-scope-toggle">
-                    <input type="checkbox" 
-                           id="gdm_titulo_enabled" 
-                           name="gdm_titulo_enabled" 
-                           value="1"
-                           <?php checked($data['titulo_enabled'], '1'); ?>>
-                    <strong><?php _e('📝 Filtro por Título', 'product-conditional-content'); ?></strong>
-                </label>
-                
-                <div class="gdm-scope-content" id="gdm-titulo-wrapper" <?php echo $data['titulo_enabled'] !== '1' ? 'style="display:none;"' : ''; ?>>
-                    
-                    <label>
-                        <strong><?php _e('Condición:', 'product-conditional-content'); ?></strong>
-                    </label>
-                    <select name="gdm_titulo_condicion" class="regular-text">
-                        <option value="contiene" <?php selected($data['titulo_condicion'], 'contiene'); ?>>
-                            <?php _e('Contiene', 'product-conditional-content'); ?>
-                        </option>
-                        <option value="no_contiene" <?php selected($data['titulo_condicion'], 'no_contiene'); ?>>
-                            <?php _e('No contiene', 'product-conditional-content'); ?>
-                        </option>
-                        <option value="empieza_con" <?php selected($data['titulo_condicion'], 'empieza_con'); ?>>
-                            <?php _e('Empieza con', 'product-conditional-content'); ?>
-                        </option>
-                        <option value="termina_con" <?php selected($data['titulo_condicion'], 'termina_con'); ?>>
-                            <?php _e('Termina con', 'product-conditional-content'); ?>
-                        </option>
-                        <option value="regex" <?php selected($data['titulo_condicion'], 'regex'); ?>>
-                            <?php _e('Expresión Regular (Regex)', 'product-conditional-content'); ?>
-                        </option>
-                    </select>
-                    
-                    <div style="margin-top: 10px;">
-                        <label>
-                            <strong><?php _e('Texto:', 'product-conditional-content'); ?></strong>
-                        </label>
-                        <input type="text" 
-                               name="gdm_titulo_texto" 
-                               value="<?php echo esc_attr($data['titulo_texto']); ?>" 
-                               class="regular-text"
-                               placeholder="<?php esc_attr_e('Texto a buscar', 'product-conditional-content'); ?>">
-                    </div>
-                    
-                    <label style="margin-top: 10px;">
-                        <input type="checkbox" 
-                               name="gdm_titulo_case_sensitive" 
-                               value="1" 
-                               <?php checked($data['titulo_case_sensitive'], '1'); ?>>
-                        <?php _e('Distinguir mayúsculas/minúsculas', 'product-conditional-content'); ?>
-                    </label>
-                </div>
-            </div>
-            
-        </div>
-        
-        <script>
-        jQuery(document).ready(function($) {
-            // Toggle de secciones
-            $('.gdm-scope-toggle input[type="checkbox"]').on('change', function() {
-                var $content = $(this).closest('.gdm-scope-group').find('.gdm-scope-content');
-                if ($(this).is(':checked')) {
-                    $content.slideUp();
-                } else {
-                    $content.slideDown();
+            // Instanciar clase
+            if (class_exists($config['class'])) {
+                try {
+                    $this->module_instances[$id] = new $config['class']();
+                } catch (Exception $e) {
+                    error_log(sprintf(
+                        'GDM Module Manager: Error al inicializar módulo "%s": %s',
+                        $id,
+                        $e->getMessage()
+                    ));
                 }
-            });
-            
-            // Toggle de precio "entre"
-            $('[name="gdm_precio_condicion"]').on('change', function() {
-                if ($(this).val() === 'entre') {
-                    $('#gdm-precio-valor2-wrapper').slideDown();
-                } else {
-                    $('#gdm-precio-valor2-wrapper').slideUp();
-                }
-            });
-        });
-        </script>
-        <?php
+            } else {
+                error_log(sprintf(
+                    'GDM Module Manager: Clase "%s" no encontrada para el módulo "%s"',
+                    $config['class'],
+                    $id
+                ));
+            }
+        }
+        
+        /**
+         * Hook ejecutado después de inicializar todos los módulos
+         * 
+         * @param array $module_instances Instancias de módulos inicializados
+         */
+        do_action('gdm_modules_loaded', $this->module_instances);
     }
     
     /**
-     * Guardar datos del metabox
+     * Registrar un módulo
+     * 
+     * @param string $id ID único del módulo
+     * @param array $config Configuración del módulo
+     * @return bool True si se registró correctamente
      */
-    public static function save_metabox($post_id, $post) {
-        if (!isset($_POST['gdm_scope_nonce']) || !wp_verify_nonce($_POST['gdm_scope_nonce'], 'gdm_save_scope_data')) {
-            return;
+    public function register_module($id, $config = []) {
+        // Validar ID
+        if (empty($id)) {
+            return false;
         }
         
-        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
-            return;
+        // Si ya existe, permitir sobrescribir solo si se fuerza
+        if (isset($this->modules[$id]) && empty($config['force'])) {
+            return false;
         }
         
-        // Categorías
-        $todas_categorias = isset($_POST['gdm_todas_categorias']) ? '1' : '0';
-        update_post_meta($post_id, '_gdm_todas_categorias', $todas_categorias);
-        
-        $categorias_objetivo = isset($_POST['gdm_categorias_objetivo']) ? array_map('intval', $_POST['gdm_categorias_objetivo']) : [];
-        update_post_meta($post_id, '_gdm_categorias_objetivo', $categorias_objetivo);
-        
-        // Tags
-        $cualquier_tag = isset($_POST['gdm_cualquier_tag']) ? '1' : '0';
-        update_post_meta($post_id, '_gdm_cualquier_tag', $cualquier_tag);
-        
-        $tags_objetivo = isset($_POST['gdm_tags_objetivo']) ? array_map('intval', $_POST['gdm_tags_objetivo']) : [];
-        update_post_meta($post_id, '_gdm_tags_objetivo', $tags_objetivo);
-        
-        // Productos específicos
-        $productos_especificos_enabled = isset($_POST['gdm_productos_especificos_enabled']) ? '1' : '0';
-        update_post_meta($post_id, '_gdm_productos_especificos_enabled', $productos_especificos_enabled);
-        
-        $productos_objetivo = isset($_POST['gdm_productos_objetivo']) ? json_decode(stripslashes($_POST['gdm_productos_objetivo']), true) : [];
-        update_post_meta($post_id, '_gdm_productos_objetivo', $productos_objetivo);
-        
-        // Atributos
-        $atributos_enabled = isset($_POST['gdm_atributos_enabled']) ? '1' : '0';
-        update_post_meta($post_id, '_gdm_atributos_enabled', $atributos_enabled);
-        
-        $atributos = isset($_POST['gdm_atributos']) ? $_POST['gdm_atributos'] : [];
-        update_post_meta($post_id, '_gdm_atributos', $atributos);
-        
-        // Stock
-        $stock_enabled = isset($_POST['gdm_stock_enabled']) ? '1' : '0';
-        update_post_meta($post_id, '_gdm_stock_enabled', $stock_enabled);
-        
-        $stock_status = isset($_POST['gdm_stock_status']) ? array_map('sanitize_text_field', $_POST['gdm_stock_status']) : [];
-        update_post_meta($post_id, '_gdm_stock_status', $stock_status);
-        
-        // Precio
-        $precio_enabled = isset($_POST['gdm_precio_enabled']) ? '1' : '0';
-        update_post_meta($post_id, '_gdm_precio_enabled', $precio_enabled);
-        
-        $precio_condicion = isset($_POST['gdm_precio_condicion']) ? sanitize_text_field($_POST['gdm_precio_condicion']) : 'mayor_que';
-        update_post_meta($post_id, '_gdm_precio_condicion', $precio_condicion);
-        
-        $precio_valor = isset($_POST['gdm_precio_valor']) ? floatval($_POST['gdm_precio_valor']) : 0;
-        update_post_meta($post_id, '_gdm_precio_valor', $precio_valor);
-        
-        $precio_valor2 = isset($_POST['gdm_precio_valor2']) ? floatval($_POST['gdm_precio_valor2']) : 0;
-        update_post_meta($post_id, '_gdm_precio_valor2', $precio_valor2);
-        
-        // Título
-        $titulo_enabled = isset($_POST['gdm_titulo_enabled']) ? '1' : '0';
-        update_post_meta($post_id, '_gdm_titulo_enabled', $titulo_enabled);
-        
-        $titulo_condicion = isset($_POST['gdm_titulo_condicion']) ? sanitize_text_field($_POST['gdm_titulo_condicion']) : 'contiene';
-        update_post_meta($post_id, '_gdm_titulo_condicion', $titulo_condicion);
-        
-        $titulo_texto = isset($_POST['gdm_titulo_texto']) ? sanitize_text_field($_POST['gdm_titulo_texto']) : '';
-        update_post_meta($post_id, '_gdm_titulo_texto', $titulo_texto);
-        
-        $titulo_case_sensitive = isset($_POST['gdm_titulo_case_sensitive']) ? '1' : '0';
-        update_post_meta($post_id, '_gdm_titulo_case_sensitive', $titulo_case_sensitive);
-    }
-    
-    /**
-     * Obtener datos del ámbito
-     */
-    private static function get_scope_data($post_id) {
-        static $cache = [];
-        
-        if (isset($cache[$post_id])) {
-            return $cache[$post_id];
-        }
-        
-        $data = [
-            // Categorías
-            'todas_categorias' => get_post_meta($post_id, '_gdm_todas_categorias', true) ?: '1',
-            'categorias_objetivo' => get_post_meta($post_id, '_gdm_categorias_objetivo', true) ?: [],
-            
-            // Tags
-            'cualquier_tag' => get_post_meta($post_id, '_gdm_cualquier_tag', true) ?: '1',
-            'tags_objetivo' => get_post_meta($post_id, '_gdm_tags_objetivo', true) ?: [],
-            
-            // Productos
-            'productos_especificos_enabled' => get_post_meta($post_id, '_gdm_productos_especificos_enabled', true),
-            'productos_objetivo' => get_post_meta($post_id, '_gdm_productos_objetivo', true) ?: [],
-            
-            // Atributos
-            'atributos_enabled' => get_post_meta($post_id, '_gdm_atributos_enabled', true),
-            'atributos' => get_post_meta($post_id, '_gdm_atributos', true) ?: [],
-            
-            // Stock
-            'stock_enabled' => get_post_meta($post_id, '_gdm_stock_enabled', true),
-            'stock_status' => get_post_meta($post_id, '_gdm_stock_status', true) ?: [],
-            
-            // Precio
-            'precio_enabled' => get_post_meta($post_id, '_gdm_precio_enabled', true),
-            'precio_condicion' => get_post_meta($post_id, '_gdm_precio_condicion', true) ?: 'mayor_que',
-            'precio_valor' => get_post_meta($post_id, '_gdm_precio_valor', true) ?: 0,
-            'precio_valor2' => get_post_meta($post_id, '_gdm_precio_valor2', true) ?: 0,
-            
-            // Título
-            'titulo_enabled' => get_post_meta($post_id, '_gdm_titulo_enabled', true),
-            'titulo_condicion' => get_post_meta($post_id, '_gdm_titulo_condicion', true) ?: 'contiene',
-            'titulo_texto' => get_post_meta($post_id, '_gdm_titulo_texto', true),
-            'titulo_case_sensitive' => get_post_meta($post_id, '_gdm_titulo_case_sensitive', true),
+        // Configuración por defecto
+        $defaults = [
+            'class' => '',
+            'label' => ucfirst($id),
+            'icon' => '⚙️',
+            'file' => '',
+            'enabled' => true,
+            'priority' => 10,
+            'description' => '',
         ];
         
-        $cache[$post_id] = $data;
-        return $data;
+        $config = wp_parse_args($config, $defaults);
+        
+        // Validar clase
+        if (empty($config['class'])) {
+            return false;
+        }
+        
+        // Registrar módulo
+        $this->modules[$id] = $config;
+        
+        return true;
     }
     
     /**
-     * AJAX: Buscar productos
+     * Desregistrar un módulo
+     * 
+     * @param string $id ID del módulo
+     * @return bool
      */
-    public static function ajax_search_products() {
-        check_ajax_referer('gdm_scope_nonce', 'nonce');
-        
-        $search = isset($_POST['search']) ? sanitize_text_field($_POST['search']) : '';
-        
-        if (strlen($search) < 3) {
-            wp_send_json_error(['message' => __('Escribe al menos 3 caracteres', 'product-conditional-content')]);
+    public function unregister_module($id) {
+        if (isset($this->modules[$id])) {
+            unset($this->modules[$id]);
+            
+            if (isset($this->module_instances[$id])) {
+                unset($this->module_instances[$id]);
+            }
+            
+            return true;
         }
         
-        $products = wc_get_products([
-            's' => $search,
-            'limit' => 50,
-            'return' => 'ids',
-        ]);
+        return false;
+    }
+    
+    /**
+     * Obtener módulo por ID
+     * 
+     * @param string $id ID del módulo
+     * @return array|null
+     */
+    public function get_module($id) {
+        return $this->modules[$id] ?? null;
+    }
+    
+    /**
+     * Obtener todos los módulos registrados
+     * 
+     * @return array
+     */
+    public function get_modules() {
+        return $this->modules;
+    }
+    
+    /**
+     * Obtener módulos habilitados
+     * 
+     * @return array
+     */
+    public function get_enabled_modules() {
+        return array_filter($this->modules, function($module) {
+            return $module['enabled'] === true;
+        });
+    }
+    
+    /**
+     * Obtener módulos con íconos para el selector
+     * 
+     * @return array
+     */
+    public function get_modules_with_icons() {
+        $modules = [];
         
-        $results = [];
-        foreach ($products as $product_id) {
-            $product = wc_get_product($product_id);
-            if ($product) {
-                $results[] = [
-                    'id' => $product_id,
-                    'title' => $product->get_name(),
+        foreach ($this->modules as $id => $config) {
+            if ($config['enabled']) {
+                $modules[$id] = [
+                    'id' => $id,
+                    'label' => $config['label'],
+                    'icon' => $config['icon'],
+                    'priority' => $config['priority'],
+                    'description' => $config['description'] ?? '',
                 ];
             }
         }
         
-        wp_send_json_success(['products' => $results]);
+        // Ordenar por prioridad
+        uasort($modules, function($a, $b) {
+            return $a['priority'] - $b['priority'];
+        });
+        
+        return $modules;
+    }
+    
+    /**
+     * Obtener instancia de un módulo
+     * 
+     * @param string $id ID del módulo
+     * @return object|null
+     */
+    public function get_module_instance($id) {
+        return $this->module_instances[$id] ?? null;
+    }
+    
+    /**
+     * Verificar si un módulo está registrado
+     * 
+     * @param string $id ID del módulo
+     * @return bool
+     */
+    public function is_module_registered($id) {
+        return isset($this->modules[$id]);
+    }
+    
+    /**
+     * Verificar si un módulo está habilitado
+     * 
+     * @param string $id ID del módulo
+     * @return bool
+     */
+    public function is_module_enabled($id) {
+        return isset($this->modules[$id]) && $this->modules[$id]['enabled'] === true;
+    }
+    
+    /**
+     * Habilitar/deshabilitar módulo
+     * 
+     * @param string $id ID del módulo
+     * @param bool $enabled Estado
+     * @return bool
+     */
+    public function set_module_status($id, $enabled = true) {
+        if (isset($this->modules[$id])) {
+            $this->modules[$id]['enabled'] = (bool) $enabled;
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Obtener conteo de módulos
+     * 
+     * @return array
+     */
+    public function get_modules_count() {
+        return [
+            'total' => count($this->modules),
+            'enabled' => count($this->get_enabled_modules()),
+            'disabled' => count($this->modules) - count($this->get_enabled_modules()),
+        ];
+    }
+    
+    /**
+     * Debug: Listar módulos registrados
+     * 
+     * @return void
+     */
+    public function debug_modules() {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+        
+        echo '<pre>';
+        echo "=== GDM Module Manager Debug ===\n\n";
+        echo "Módulos registrados: " . count($this->modules) . "\n";
+        echo "Módulos inicializados: " . count($this->module_instances) . "\n\n";
+        
+        foreach ($this->modules as $id => $config) {
+            $status = $config['enabled'] ? '✅' : '❌';
+            $loaded = isset($this->module_instances[$id]) ? '🟢' : '🔴';
+            
+            echo "{$status} {$loaded} {$config['icon']} {$id}\n";
+            echo "   Clase: {$config['class']}\n";
+            echo "   Label: {$config['label']}\n";
+            echo "   Prioridad: {$config['priority']}\n";
+            
+            if (!empty($config['file'])) {
+                echo "   Archivo: " . (file_exists($config['file']) ? '✓' : '✗') . " {$config['file']}\n";
+            }
+            
+            echo "\n";
+        }
+        
+        echo '</pre>';
     }
 }
 
-GDM_Scope_Metabox::init();
+/**
+ * Función helper para obtener el manager
+ * 
+ * @return GDM_Module_Manager
+ */
+function gdm_modules() {
+    return GDM_Module_Manager::instance();
+}
+
+/**
+ * Debug en el admin footer (solo para desarrollo)
+ */
+if (defined('WP_DEBUG') && WP_DEBUG && is_admin()) {
+    add_action('admin_footer', function() {
+        $screen = get_current_screen();
+        if ($screen && $screen->id === 'gdm_regla' && isset($_GET['debug_modules'])) {
+            GDM_Module_Manager::instance()->debug_modules();
+        }
+    });
+}

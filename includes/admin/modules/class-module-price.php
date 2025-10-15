@@ -397,15 +397,3 @@ class GDM_Module_Price extends GDM_Module_Base {
         ");
     }
 }
-
-// Registrar módulo
-add_action('init', function() {
-    GDM_Module_Manager::instance()->register_module('precio', [
-        'class' => 'GDM_Module_Price',
-        'label' => __('Precio', 'product-conditional-content'),
-        'icon' => '💰',
-        'file' => __FILE__,
-        'enabled' => true,
-        'priority' => 25,
-    ]);
-}, 5);

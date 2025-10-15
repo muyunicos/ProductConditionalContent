@@ -457,15 +457,3 @@ class GDM_Module_Gallery extends GDM_Module_Base {
         ");
     }
 }
-
-// Registrar módulo
-add_action('init', function() {
-    GDM_Module_Manager::instance()->register_module('galeria', [
-        'class' => 'GDM_Module_Gallery',
-        'label' => __('Galería', 'product-conditional-content'),
-        'icon' => '🖼️',
-        'file' => __FILE__,
-        'enabled' => true,
-        'priority' => 15,
-    ]);
-}, 5);

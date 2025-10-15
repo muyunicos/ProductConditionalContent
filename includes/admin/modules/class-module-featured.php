@@ -379,15 +379,3 @@ class GDM_Module_Featured extends GDM_Module_Base {
         ");
     }
 }
-
-// Registrar módulo
-add_action('init', function() {
-    GDM_Module_Manager::instance()->register_module('destacado', [
-        'class' => 'GDM_Module_Featured',
-        'label' => __('Destacado', 'product-conditional-content'),
-        'icon' => '⭐',
-        'file' => __FILE__,
-        'enabled' => true,
-        'priority' => 30,
-    ]);
-}, 5);

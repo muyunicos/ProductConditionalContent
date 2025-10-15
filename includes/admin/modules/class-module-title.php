@@ -377,15 +377,3 @@ class GDM_Module_Title extends GDM_Module_Base {
         ");
     }
 }
-
-// Registrar módulo
-add_action('init', function() {
-    GDM_Module_Manager::instance()->register_module('titulo', [
-        'class' => 'GDM_Module_Title',
-        'label' => __('Título', 'product-conditional-content'),
-        'icon' => '📝',
-        'file' => __FILE__,
-        'enabled' => true,
-        'priority' => 20,
-    ]);
-}, 5);
