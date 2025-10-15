@@ -45,11 +45,10 @@ final class GDM_Module_Manager {
     public function register_core_modules() {
         $modules_dir = GDM_PLUGIN_DIR . 'includes/admin/modules/';
         
-        // Módulo de Descripción
         $this->register_module('descripcion', [
             'class' => 'GDM_Module_Descripcion',
             'label' => __('Descripción', 'product-conditional-content'),
-            'icon' => '📄',
+            'icon' => '📝',
             'file' => $modules_dir . 'class-module-description.php',
             'enabled' => true,
             'priority' => 10,
@@ -93,6 +92,16 @@ final class GDM_Module_Manager {
             'file' => $modules_dir . 'class-module-featured.php',
             'enabled' => true,
             'priority' => 30,
+        ]);
+
+        $this->register_module('variantes', [
+            'class' => 'GDM_Module_Variants',
+            'label' => __('Variantes Condicionales', 'product-conditional-content'),
+            'icon' => '🔀',
+            'file' => $modules_dir . 'class-module-variants.php',
+            'enabled' => true,
+            'priority' => 12,
+            'description' => __('Sistema de contenido condicional basado en atributos del producto', 'product-conditional-content'),
         ]);
         
         // Hook para extensiones
