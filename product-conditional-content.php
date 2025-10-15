@@ -17,51 +17,25 @@
 
 if (!defined('ABSPATH')) exit;
 
-/**
- * Verificar compatibilidad antes de cargar
- */
-function gdm_check_plugin_compat() {
-    $min_wp = '6.0';
-    $min_php = '8.0';
-    $min_wc = '8.0';
-    $error_msgs = [];
-
-    if (version_compare(get_bloginfo('version'), $min_wp, '<')) {
-        $error_msgs[] = "WordPress $min_wp+";
-    }
-    if (version_compare(PHP_VERSION, $min_php, '<')) {
-        $error_msgs[] = "PHP $min_php+";
-    }
-    if (!defined('WC_VERSION')) {
-        $error_msgs[] = "WooCommerce $min_wc+ (WooCommerce no está activo)";
-    } elseif (version_compare(WC_VERSION, $min_wc, '<')) {
-        $error_msgs[] = "WooCommerce $min_wc+";
-    }
-
-    if ($error_msgs) {
-        add_action('admin_notices', function() use ($error_msgs) {
-            echo '<div class="notice notice-error"><p><b>Reglas de Contenido para WooCommerce:</b> Requiere: '
-                . implode(', ', $error_msgs) . '.</p></div>';
-        });
-        return false;
-    }
-    return true;
-}
+/** --- Cargar clase de compatibilidad --- */
+require_once plugin_dir_path(__FILE__) . 'includes/compatibility/class-compat-check.php';
 
 add_action('plugins_loaded', function() {
-    if (!gdm_check_plugin_compat()) return;
+    /** --- Verificar compatibilidad antes de cargar --- */
+    $compat_result = GDM_Compat_Check::check();
+    
+    if (!$compat_result['compatible']) {
+        GDM_Compat_Check::show_admin_notice($compat_result['messages']);
+        return;
+    }
 
     /** --- Constantes globales --- */
     define('GDM_VERSION', '6.0.0'); // ✅ ACTUALIZADO
     define('GDM_PLUGIN_DIR', plugin_dir_path(__FILE__));
     define('GDM_PLUGIN_URL', plugin_dir_url(__FILE__));
 
-    /** --- Compatibilidad HPOS --- */
-    add_action('before_woocommerce_init', function() {
-        if (class_exists(\Automattic\WooCommerce\Utilities\FeaturesUtil::class)) {
-            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
-        }
-    });
+    /** --- Declarar compatibilidad HPOS --- */
+    GDM_Compat_Check::declare_hpos_compatibility(__FILE__);
 
     /** --- Inicialización Core --- */
     require_once GDM_PLUGIN_DIR . 'includes/core/class-plugin-bootstrap.php';
