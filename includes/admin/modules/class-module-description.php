@@ -446,7 +446,7 @@ final class GDM_Module_Descripcion extends GDM_Module_Base {
         // Encolar script específico del módulo
         wp_enqueue_script(
             'gdm-module-descripcion',
-            GDM_PLUGIN_URL . 'assets/admin/module-descripcion.js',
+            GDM_PLUGIN_URL . 'assets/admin/js/modules/module-description.js',
             ['jquery', 'jquery-ui-sortable', 'wp-editor'],
             GDM_VERSION,
             true
