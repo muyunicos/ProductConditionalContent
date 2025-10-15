@@ -1,96 +1,181 @@
 <?php
 /**
- * Plugin Name: Reglas de Contenido para WooCommerce
- * Description: Motor profesional de reglas y campos personalizados con sistema modular para productos WooCommerce
- * Version: 6.2.0
- * Author: MuyUnicos
- * Author URI: https://muyunicos.com
- * Text Domain: product-conditional-content
- * Domain Path: /languages
- * Requires at least: 6.0
- * Requires PHP: 8.0
- * WC requires at least: 8.0
- * WC tested up to: 10.2.2
- * License: GPL-2.0+
- * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
+ * Ámbito: Atributos de Productos
+ * Filtrar productos por atributos (color, talla, etc.)
+ * Compatible con WordPress 6.8.3, PHP 8.2, WooCommerce 10.2.2
+ * 
+ * @package ProductConditionalContent
+ * @since 6.1.0
+ * @date 2025-10-15
  */
 
 if (!defined('ABSPATH')) exit;
 
-/** --- Cargar clase de compatibilidad --- */
-require_once plugin_dir_path(__FILE__) . 'includes/compatibility/class-compat-check.php';
-
-add_action('plugins_loaded', function() {
-    /** --- Verificar compatibilidad antes de cargar --- */
-    $compat_result = GDM_Compat_Check::check();
+class GDM_Scope_Attributes extends GDM_Scope_Base {
     
-    if (!$compat_result['compatible']) {
-        GDM_Compat_Check::show_admin_notice($compat_result['messages']);
-        return;
-    }
-
-    /** --- Constantes globales --- */
-    define('GDM_VERSION', '6.2.0');
-    define('GDM_PLUGIN_DIR', plugin_dir_path(__FILE__));
-    define('GDM_PLUGIN_URL', plugin_dir_url(__FILE__));
-
-    /** --- Declarar compatibilidad HPOS --- */
-    GDM_Compat_Check::declare_hpos_compatibility(__FILE__);
-
-    /** --- Inicialización Core --- */
-    require_once GDM_PLUGIN_DIR . 'includes/core/class-plugin-bootstrap.php';
-    require_once GDM_PLUGIN_DIR . 'includes/core/class-custom-post-types.php';
-
-    /** --- Sistema Modular (ORDEN CRÍTICO) --- */
-    require_once GDM_PLUGIN_DIR . 'includes/admin/modules/class-module-base.php';
+    protected $scope_id = 'atributos';
+    protected $scope_name = 'Atributos de Productos';
+    protected $scope_icon = '🎨';
+    protected $priority = 40;
     
-    require_once GDM_PLUGIN_DIR . 'includes/admin/modules/class-module-manager.php';
-    GDM_Module_Manager::instance();
-    
-    do_action('gdm_init_modules');
-
-    /** --- Carga según contexto --- */
-    if (is_admin()) {
-        require_once GDM_PLUGIN_DIR . 'includes/admin/managers/class-admin-helpers.php';
-        require_once GDM_PLUGIN_DIR . 'includes/admin/product-panels/class-product-options-panel.php';
-        require_once GDM_PLUGIN_DIR . 'includes/admin/product-panels/class-product-rules-panel.php';
+    protected function render_content($post_id, $data) {
+        $product_attributes = wc_get_attribute_taxonomies();
         
-        // ✅ Los metaboxes se cargan DESPUÉS del manager
-        require_once GDM_PLUGIN_DIR . 'includes/admin/metaboxes/class-rules-config-metabox.php';
-        require_once GDM_PLUGIN_DIR . 'includes/admin/metaboxes/class-options-config-metabox.php';
+        if (!$product_attributes) {
+            echo '<p class="description">' . __('No hay atributos de producto configurados', 'product-conditional-content') . '</p>';
+            return;
+        }
         
-        require_once GDM_PLUGIN_DIR . 'includes/admin/managers/class-ajax-toggle-handler.php';
-        require_once GDM_PLUGIN_DIR . 'includes/admin/managers/class-rules-status-manager.php';
-    } else {
-        require_once GDM_PLUGIN_DIR . 'includes/frontend/class-rules-engine.php';
-        require_once GDM_PLUGIN_DIR . 'includes/frontend/class-options-renderer.php';
-        require_once GDM_PLUGIN_DIR . 'includes/frontend/class-shortcodes-handler.php';
+        ?>
+        <div class="gdm-<?php echo esc_attr($this->scope_id); ?>-list">
+            <?php foreach ($product_attributes as $attribute): 
+                $taxonomy = wc_attribute_taxonomy_name($attribute->attribute_name);
+                $terms = get_terms(['taxonomy' => $taxonomy, 'hide_empty' => false]);
+                
+                if (empty($terms) || is_wp_error($terms)) continue;
+            ?>
+                <div class="gdm-attribute-group">
+                    <strong class="gdm-attribute-title">
+                        <?php echo esc_html($attribute->attribute_label); ?>:
+                    </strong>
+                    
+                    <div class="gdm-attribute-terms">
+                        <?php foreach ($terms as $term): 
+                            $checked = isset($data['valores'][$taxonomy]) && in_array($term->term_id, $data['valores'][$taxonomy]);
+                        ?>
+                            <label class="gdm-checkbox-item gdm-term-item">
+                                <input type="checkbox" 
+                                       name="gdm_<?php echo esc_attr($this->scope_id); ?>_valores[<?php echo esc_attr($taxonomy); ?>][]" 
+                                       value="<?php echo esc_attr($term->term_id); ?>"
+                                       class="gdm-scope-item-checkbox"
+                                       <?php checked($checked); ?>>
+                                <span><?php echo esc_html($term->name); ?></span>
+                                <span class="gdm-item-count">(<?php echo esc_html($term->count); ?>)</span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+        <?php
     }
     
-    /**
-     * Activar cron para verificar programaciones
-     */
-    if (!wp_next_scheduled('gdm_check_regla_schedules')) {
-        wp_schedule_event(time(), 'hourly', 'gdm_check_regla_schedules');
+    public function save($post_id) {
+        $valores = isset($_POST["gdm_{$this->scope_id}_valores"]) && is_array($_POST["gdm_{$this->scope_id}_valores"])
+            ? $_POST["gdm_{$this->scope_id}_valores"]
+            : [];
+        
+        // Sanitizar valores
+        $sanitized = [];
+        foreach ($valores as $taxonomy => $term_ids) {
+            $sanitized[sanitize_text_field($taxonomy)] = array_map('intval', $term_ids);
+        }
+        
+        $this->save_field($post_id, 'valores', $sanitized);
     }
-});
-
-/**
- * Hook de activación
- */
-register_activation_hook(__FILE__, function() {
-    // Crear roles y capabilities si es necesario
-    flush_rewrite_rules();
-});
-
-/**
- * Hook de desactivación
- */
-register_deactivation_hook(__FILE__, function() {
-    // Limpiar cron
-    $timestamp = wp_next_scheduled('gdm_check_regla_schedules');
-    if ($timestamp) {
-        wp_unschedule_event($timestamp, 'gdm_check_regla_schedules');
+    
+    protected function get_default_data() {
+        return ['valores' => []];
     }
-    flush_rewrite_rules();
-});
+    
+    protected function has_selection($data) {
+        return !empty($data['valores']);
+    }
+    
+    protected function get_summary($data) {
+        if (empty($data['valores'])) {
+            return '';
+        }
+        
+        $summary = [];
+        foreach ($data['valores'] as $taxonomy => $term_ids) {
+            $count = count($term_ids);
+            $attr_name = wc_attribute_label($taxonomy);
+            $summary[] = "{$attr_name} ({$count})";
+        }
+        
+        return implode(', ', $summary);
+    }
+    
+    protected function get_counter_text($data) {
+        if (empty($data['valores'])) {
+            return 'Ninguno seleccionado';
+        }
+        
+        $total = 0;
+        foreach ($data['valores'] as $term_ids) {
+            $total += count($term_ids);
+        }
+        
+        return "{$total} valores seleccionados";
+    }
+    
+    public function matches_product($product_id, $rule_id) {
+        $data = $this->get_scope_data($rule_id);
+        
+        if (empty($data['valores'])) {
+            return true;
+        }
+        
+        $product = wc_get_product($product_id);
+        if (!$product) {
+            return false;
+        }
+        
+        // Verificar cada atributo
+        foreach ($data['valores'] as $taxonomy => $required_term_ids) {
+            $product_terms = wp_get_post_terms($product_id, $taxonomy, ['fields' => 'ids']);
+            
+            // Si el producto no tiene ninguno de los términos requeridos, no cumple
+            if (empty(array_intersect($required_term_ids, $product_terms))) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    protected function render_styles() {
+        ?>
+        <style>
+            .gdm-attribute-group {
+                margin-bottom: 20px;
+                padding-bottom: 15px;
+                border-bottom: 1px solid #e0e0e0;
+            }
+            .gdm-attribute-group:last-child {
+                border-bottom: none;
+            }
+            .gdm-attribute-title {
+                display: block;
+                margin-bottom: 10px;
+                color: #2271b1;
+                font-size: 14px;
+            }
+            .gdm-attribute-terms {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 8px;
+            }
+            .gdm-term-item {
+                margin: 0 !important;
+            }
+        </style>
+        <?php
+    }
+    
+    protected function render_scripts() {
+        ?>
+        <script>
+        jQuery(document).ready(function($) {
+            $('.gdm-<?php echo esc_js($this->scope_id); ?>-list input').on('change', function() {
+                var count = $('.gdm-<?php echo esc_js($this->scope_id); ?>-list input:checked').length;
+                $('#gdm-<?php echo esc_js($this->scope_id); ?>-counter').text(
+                    count > 0 ? count + ' valores seleccionados' : 'Ninguno seleccionado'
+                );
+            });
+        });
+        </script>
+        <?php
+    }
+}
