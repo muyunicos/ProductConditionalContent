@@ -2,13 +2,12 @@
 if (!defined('ABSPATH')) exit;
 
 /**
- * Renderizado y aplicación de reglas de contenido en el frontend.
- *
- * Responsabilidad SOLA: Aplicar reglas y variantes a descripciones (NO campos, NO shortcodes).
- * - Aplica reglas a la descripción larga o corta del producto usando filtros.
- * - Soporta variantes condicionales, reglas reutilizables, y recursividad limitada.
- * - NO contiene lógica de administración ni helpers compartidos.
- * - La lógica de shortcodes como [campo-cond] va en class-shortcodes.php.
+ * Renderizado y aplicación de reglas de contenido en el frontend
+ * Sistema modular v6.0 - Compatible con módulos dinámicos
+ * Compatible con WordPress 6.8.3, PHP 8.2, WooCommerce 10.2.2
+ * 
+ * @package ProductConditionalContent
+ * @since 6.0.0
  */
 final class GDM_Rules_Frontend
 {
@@ -41,7 +40,7 @@ final class GDM_Rules_Frontend
     }
 
     /**
-     * Punto de entrada principal: aplica las reglas al contenido original.
+     * Punto de entrada principal: aplica las reglas al contenido original
      */
     private function apply_rules($initial_content, $type) {
         global $product;
@@ -50,7 +49,7 @@ final class GDM_Rules_Frontend
         $all_rules = get_posts([
             'post_type'      => 'gdm_regla',
             'posts_per_page' => -1,
-            'post_status'    => ['publish', 'habilitada'], // ✅ CORREGIDO: Ahora busca reglas habilitadas
+            'post_status'    => ['publish', 'habilitada'], // ✅ CORREGIDO
             'meta_key'       => '_gdm_prioridad',
             'orderby'        => 'meta_value_num',
             'order'          => 'ASC',
@@ -67,7 +66,8 @@ final class GDM_Rules_Frontend
 
         // Forzar reglas prioritarias si existen
         $forced_rules = array_filter($matching_rules, function($rule) {
-            return (bool) get_post_meta($rule->ID, '_gdm_forzar_aplicacion', true);
+            // Verificar forzado en módulo descripción
+            return (bool) get_post_meta($rule->ID, '_gdm_descripcion_forzar', true);
         });
         $rules_to_process = !empty($forced_rules) ? $forced_rules : $matching_rules;
 
@@ -105,58 +105,105 @@ final class GDM_Rules_Frontend
     }
 
     /**
-     * Verifica si una regla es aplicable a este producto y tipo de descripción.
+     * Verifica si una regla es aplicable a este producto y tipo de descripción
      */
     private function is_rule_applicable($rule_id, $product, $type) {
         $data = $this->get_rule_data($rule_id);
         if (!$data) return false;
 
-        // Si la regla es SOLO reutilizable, no aplicar automáticamente
-        if (in_array('reutilizable', $data['aplicar_a']) && count($data['aplicar_a']) === 1) return false;
-        // Verificar tipo de descripción (larga/corta)
-        if (empty($data['aplicar_a']) || !in_array($type, $data['aplicar_a'], true)) return false;
+        // Verificar si el módulo descripción está activo
+        $aplicar_a = get_post_meta($rule_id, '_gdm_aplicar_a', true) ?: [];
+        if (!in_array('descripcion', $aplicar_a)) return false;
+
+        // Verificar si es solo reutilizable
+        $is_reutilizable = get_post_meta($rule_id, '_gdm_reutilizable', true) === '1';
+        if ($is_reutilizable && count($aplicar_a) === 1) return false;
+
+        // Verificar tipo de descripción (larga/corta) desde el módulo
+        $tipos = get_post_meta($rule_id, '_gdm_descripcion_tipos', true) ?: ['larga'];
+        if (!in_array($type, $tipos)) return false;
 
         // Validar ámbito (categorías y tags)
         return $this->is_rule_in_scope($data, $product);
     }
 
     /**
-     * Verifica si una regla está en el ámbito del producto (categoría/tag).
+     * Verifica si una regla está en el ámbito del producto
      */
     private function is_rule_in_scope($data, $product) {
-        if (empty($data['ambito'])) return true;
+        // Todas las categorías
+        if (isset($data['todas_categorias']) && $data['todas_categorias'] === '1') {
+            return true;
+        }
 
-        foreach ($data['ambito'] as $scope) {
-            if ($scope['tipo'] === 'categoria' && !empty($scope['id'])) {
-                if (has_term($scope['id'], 'product_cat', $product->get_id())) return true;
-            } elseif ($scope['tipo'] === 'tag' && !empty($scope['id'])) {
-                if (has_term($scope['id'], 'product_tag', $product->get_id())) return true;
+        // Categorías específicas
+        if (!empty($data['categorias'])) {
+            foreach ($data['categorias'] as $cat_id) {
+                if (has_term($cat_id, 'product_cat', $product->get_id())) {
+                    return true;
+                }
             }
         }
+
+        // Cualquier tag
+        if (isset($data['cualquier_tag']) && $data['cualquier_tag'] === '1') {
+            $tags = wp_get_post_terms($product->get_id(), 'product_tag', ['fields' => 'ids']);
+            if (!empty($tags)) {
+                return true;
+            }
+        }
+
+        // Tags específicos
+        if (!empty($data['tags'])) {
+            foreach ($data['tags'] as $tag_id) {
+                if (has_term($tag_id, 'product_tag', $product->get_id())) {
+                    return true;
+                }
+            }
+        }
+
+        // Si no tiene ámbito definido, aplicar a todos
+        if (empty($data['categorias']) && empty($data['tags']) && 
+            (!isset($data['todas_categorias']) || $data['todas_categorias'] !== '1') &&
+            (!isset($data['cualquier_tag']) || $data['cualquier_tag'] !== '1')) {
+            return true;
+        }
+
         return false;
     }
 
+    /**
+     * Obtener datos de la regla (con módulos)
+     */
     private function get_rule_data($rule_id) {
         if (isset(self::$rule_cache[$rule_id])) {
             return self::$rule_cache[$rule_id];
         }
+
         $data = [
-            'ubicacion'           => get_post_meta($rule_id, '_gdm_ubicacion_desc', true) ?: 'reemplaza',
-            'regla_final'         => (bool) get_post_meta($rule_id, '_gdm_regla_final', true),
-            'aplicar_a'           => get_post_meta($rule_id, '_gdm_aplicar_a', true) ?: [],
-            'ambito'              => get_post_meta($rule_id, '_gdm_ambito', true) ?: [],
-            'descripcion'         => get_post_meta($rule_id, '_gdm_descripcion', true),
-            'variantes'           => get_post_meta($rule_id, '_gdm_variantes', true) ?: [],
+            // Configuración general
+            'prioridad' => (int) get_post_meta($rule_id, '_gdm_prioridad', true) ?: 10,
+            'todas_categorias' => get_post_meta($rule_id, '_gdm_todas_categorias', true),
+            'categorias' => get_post_meta($rule_id, '_gdm_categorias_objetivo', true) ?: [],
+            'cualquier_tag' => get_post_meta($rule_id, '_gdm_cualquier_tag', true),
+            'tags' => get_post_meta($rule_id, '_gdm_tags_objetivo', true) ?: [],
+            
+            // Datos del módulo descripción
+            'ubicacion' => get_post_meta($rule_id, '_gdm_descripcion_ubicacion', true) ?: 'reemplaza',
+            'contenido' => get_post_meta($rule_id, '_gdm_descripcion_contenido', true) ?: '',
+            'variantes' => get_post_meta($rule_id, '_gdm_descripcion_variantes', true) ?: [],
+            'regla_final' => get_post_meta($rule_id, '_gdm_descripcion_regla_final', true) === '1',
         ];
+
         self::$rule_cache[$rule_id] = $data;
         return $data;
     }
 
     /**
-     * Procesa el contenido de una regla, aplicando variantes condicionales.
+     * Procesa el contenido de una regla, aplicando variantes condicionales
      */
     private function process_rule_content($rule_data, $product) {
-        $content = $rule_data['descripcion'] ?? '';
+        $content = $rule_data['contenido'] ?? '';
         $variant_text = '';
 
         if (!empty($rule_data['variantes']) && is_array($rule_data['variantes'])) {
@@ -178,10 +225,20 @@ final class GDM_Rules_Frontend
                             }
                         }
                         break;
+                    case 'default':
+                        $condition_met = true; // Siempre se cumple
+                        break;
                 }
+                
                 if ($condition_met) {
-                    $variant_text = $variant['texto'] ?? '';
-                    break;
+                    $variant_text = $variant['text'] ?? '';
+                    
+                    // Si la acción es "reemplaza_todo", retornar directamente
+                    if (isset($variant['action']) && $variant['action'] === 'reemplaza_todo') {
+                        return $this->replace_placeholders($variant_text, $product);
+                    }
+                    
+                    break; // Usar primera variante que cumpla
                 }
             }
         }
@@ -191,26 +248,33 @@ final class GDM_Rules_Frontend
 
         $final_content = $content;
         if (!empty($variant_text)) {
-            $final_content = str_replace('[variante]', $variant_text, $content);
-            if (strpos($final_content, '[variante]') === false) {
+            $final_content = str_replace('[var-cond]', $variant_text, $content);
+            if (strpos($final_content, '[var-cond]') === false && strpos($content, '[var-cond]') === false) {
                 $final_content .= ' ' . $variant_text;
             }
         } else {
-            $final_content = str_replace('[variante]', '', $content);
+            $final_content = str_replace('[var-cond]', '', $content);
         }
 
         return $this->process_nested_rules($final_content, $product);
     }
 
+    /**
+     * Reemplazar placeholders/comodines
+     */
     private function replace_placeholders($text, $product) {
         $placeholders = [
-            '[nombre]' => $product->get_name(),
-            '[precio]' => wc_price($product->get_price()),
-            '[sku]' => $product->get_sku(),
+            '[nombre-prod]' => $product->get_name(),
+            '[precio-prod]' => wc_price($product->get_price()),
+            '[sku-prod]' => $product->get_sku(),
+            '[slug-prod]' => $product->get_slug(),
         ];
         return str_replace(array_keys($placeholders), array_values($placeholders), $text);
     }
 
+    /**
+     * Procesar reglas anidadas (rule-id)
+     */
     private function process_nested_rules($content, $product, $depth = 0) {
         if ($depth >= self::MAX_RECURSION_DEPTH || !preg_match_all('/\[rule-(\d+)\]/', $content, $matches)) {
             return $content;
@@ -223,7 +287,9 @@ final class GDM_Rules_Frontend
             $this->processed_rules[] = $nested_rule_id;
             $nested_data = $this->get_rule_data($nested_rule_id);
 
-            if (!$nested_data || !in_array('reutilizable', $nested_data['aplicar_a'])) continue;
+            // Verificar que sea reutilizable
+            $is_reutilizable = get_post_meta($nested_rule_id, '_gdm_reutilizable', true) === '1';
+            if (!$is_reutilizable) continue;
 
             $nested_content = $this->process_rule_content($nested_data, $product);
             $nested_content = $this->process_nested_rules($nested_content, $product, $depth + 1);
@@ -233,3 +299,6 @@ final class GDM_Rules_Frontend
         return $content;
     }
 }
+
+// Inicialización automática en frontend
+GDM_Rules_Frontend::instance();
