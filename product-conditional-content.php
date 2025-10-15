@@ -65,7 +65,7 @@ add_action('plugins_loaded', function() {
 
     /** --- Inicialización Core --- */
     require_once GDM_PLUGIN_DIR . 'includes/core/class-plugin-init.php';
-    require_once GDM_PLUGIN_DIR . 'includes/core/class-cpt.php';
+    require_once GDM_PLUGIN_DIR . 'includes/core/class-custom-post-types.php';
 
     /** --- Sistema Modular --- */
     require_once GDM_PLUGIN_DIR . 'includes/admin/modules/class-module-base.php';

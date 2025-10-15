@@ -12,7 +12,7 @@
  */
 if (!defined('ABSPATH')) exit;
 
-final class GDM_CPT {
+final class GDM_Custom_Post_Types {
     public static function init() {
         add_action('init', [__CLASS__, 'register_cpts']);
         add_filter('parent_file', [__CLASS__, 'fix_menu_highlight']);
@@ -91,4 +91,4 @@ final class GDM_CPT {
     }
 }
 
-GDM_CPT::init();
+GDM_Custom_Post_Types::init();
