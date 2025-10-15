@@ -49,7 +49,7 @@ final class GDM_Reglas_Metabox {
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('gdm_admin_nonce'),
             'i18n' => [
-                'selectModule' => __('Selecciona al menos un módulo en "Aplicar a"', 'product-conditional-content'),
+                'selectModule' => __('Selecciona al menos un módulo en "Aplica a"', 'product-conditional-content'),
                 'moduleWarning' => __('Al desactivar un módulo, se ocultará su configuración pero no se perderán los datos.', 'product-conditional-content'),
             ]
         ]);
@@ -90,33 +90,19 @@ final class GDM_Reglas_Metabox {
                     </h3>
                 </div>
                 
-                <div class="gdm-row">
-                    <div class="gdm-col-6">
-                        <label>
-                            <strong><?php _e('ID de Regla:', 'product-conditional-content'); ?></strong>
-                            <input type="text" 
-                                   value="<?php echo esc_attr($post->ID); ?>" 
-                                   disabled 
-                                   class="regular-text">
-                        </label>
-                        <p class="description">
-                            <?php _e('Identificador único de la regla (generado automáticamente)', 'product-conditional-content'); ?>
-                        </p>
-                    </div>
-                    <div class="gdm-col-6">
-                        <label>
-                            <strong><?php _e('Prioridad:', 'product-conditional-content'); ?></strong>
-                            <input type="number" 
-                                   name="gdm_prioridad" 
-                                   value="<?php echo esc_attr($data['prioridad']); ?>" 
-                                   min="0" 
-                                   max="999" 
-                                   class="regular-text">
-                        </label>
-                        <p class="description">
-                            <?php _e('Número menor = Mayor prioridad. Las reglas con menor número se procesan primero.', 'product-conditional-content'); ?>
-                        </p>
-                    </div>
+                <div class="gdm-field-group">
+                    <label>
+                        <strong><?php _e('Prioridad:', 'product-conditional-content'); ?></strong>
+                        <input type="number" 
+                               name="gdm_prioridad" 
+                               value="<?php echo esc_attr($data['prioridad']); ?>" 
+                               min="0" 
+                               max="999" 
+                               class="regular-text">
+                    </label>
+                    <p class="description">
+                        <?php _e('Número menor = Mayor prioridad. Las reglas con menor número se procesan primero.', 'product-conditional-content'); ?>
+                    </p>
                 </div>
                 
                 <div class="gdm-field-group">
@@ -128,19 +114,21 @@ final class GDM_Reglas_Metabox {
                         <strong><?php _e('🔄 Regla Reutilizable', 'product-conditional-content'); ?></strong>
                     </label>
                     <p class="description">
-                        <?php _e('Las reglas reutilizables solo se activan mediante el shortcode [rule-ID] en otras reglas.', 'product-conditional-content'); ?>
+                        <?php _e('Las reglas reutilizables solo se activan mediante el shortcode ', 'product-conditional-content'); ?>
+                        <code class="gdm-click-to-copy" onclick="copyToClipboard(this)">[rule-<?php echo esc_attr($post->ID); ?>]</code>
+                        <?php _e(' en otras reglas.', 'product-conditional-content'); ?>
                     </p>
                 </div>
             </div>
             
             <hr class="gdm-separator">
             
-            <!-- Aplicar a (Módulos) -->
+            <!-- Aplica a -->
             <div class="gdm-section">
                 <div class="gdm-section-header">
                     <h3>
                         <span class="dashicons dashicons-admin-tools"></span>
-                        <?php _e('Aplicar a (Módulos)', 'product-conditional-content'); ?>
+                        <?php _e('Aplica a', 'product-conditional-content'); ?>
                     </h3>
                 </div>
                 
@@ -161,11 +149,6 @@ final class GDM_Reglas_Metabox {
                             <span class="gdm-module-label"><?php echo esc_html($module_info['label']); ?></span>
                         </label>
                     <?php endforeach; ?>
-                </div>
-                
-                <div class="gdm-modules-hint">
-                    <span class="dashicons dashicons-info"></span>
-                    <?php _e('Activa/desactiva módulos haciendo clic en las tarjetas. Los metaboxes correspondientes aparecerán/desaparecerán automáticamente.', 'product-conditional-content'); ?>
                 </div>
             </div>
             
@@ -230,6 +213,9 @@ final class GDM_Reglas_Metabox {
                             }
                             ?>
                         </div>
+                        <button type="button" class="button button-secondary gdm-scope-apply">
+                            <?php _e('Aplicar Selección', 'product-conditional-content'); ?>
+                        </button>
                     </div>
                 </div>
                 
@@ -279,6 +265,9 @@ final class GDM_Reglas_Metabox {
                             }
                             ?>
                         </div>
+                        <button type="button" class="button button-secondary gdm-scope-apply">
+                            <?php _e('Aplicar Selección', 'product-conditional-content'); ?>
+                        </button>
                     </div>
                 </div>
                 
@@ -366,9 +355,9 @@ final class GDM_Reglas_Metabox {
             'prioridad' => (int) (get_post_meta($post_id, '_gdm_prioridad', true) ?: 10),
             'reutilizable' => get_post_meta($post_id, '_gdm_reutilizable', true),
             'aplicar_a' => get_post_meta($post_id, '_gdm_aplicar_a', true) ?: [],
-            'todas_categorias' => get_post_meta($post_id, '_gdm_todas_categorias', true),
+            'todas_categorias' => get_post_meta($post_id, '_gdm_todas_categorias', true) ?: '1', // DEFAULT: '1'
             'categorias_objetivo' => get_post_meta($post_id, '_gdm_categorias_objetivo', true) ?: [],
-            'cualquier_tag' => get_post_meta($post_id, '_gdm_cualquier_tag', true),
+            'cualquier_tag' => get_post_meta($post_id, '_gdm_cualquier_tag', true) ?: '1', // DEFAULT: '1'
             'tags_objetivo' => get_post_meta($post_id, '_gdm_tags_objetivo', true) ?: [],
         ];
         

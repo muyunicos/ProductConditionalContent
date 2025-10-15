@@ -186,7 +186,30 @@
 }
 
 /* ========================================================================
-   RESPONSIVE
+   CÓDIGOS COPIABLES
+   ======================================================================== */
+.gdm-click-to-copy {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.gdm-click-to-copy:hover {
+    background-color: #f0f6ff !important;
+    border-color: #2271b1 !important;
+    transform: scale(1.05);
+}
+
+/* Botones de aplicar en ámbito */
+.gdm-scope-apply {
+    margin-top: 10px;
+    float: right;
+}
+
+/* ========================================================================
+   RESPONSIVE FIXES PARA CAMPOS
    ======================================================================== */
 @media screen and (max-width: 782px) {
     .gdm-container,
@@ -196,6 +219,18 @@
 
     .gdm-column {
         min-width: 100%;
+    }
+    
+    .gdm-col-6 {
+        width: 100%;
+        margin-bottom: 15px;
+    }
+    
+    .gdm-col-6 input[type="number"],
+    .gdm-col-6 input[type="text"] {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 
     .gdm-modules-grid {

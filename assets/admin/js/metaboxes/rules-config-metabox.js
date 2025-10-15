@@ -20,6 +20,7 @@ jQuery(document).ready(function($) {
      * Inicializar toggles de módulos
      */
     function initModuleToggles() {
+        // Solo manejar el checkbox, no el clic en toda la tarjeta
         $('.gdm-module-toggle').on('change', function() {
             const moduleId = $(this).data('module');
             const $checkbox = $(this);
@@ -32,24 +33,8 @@ jQuery(document).ready(function($) {
             } else {
                 $label.removeClass('active');
                 $metabox.hide().removeClass('gdm-fade-in');
-                
-                // Advertencia opcional
-                if ($metabox.find('input, textarea, select').filter(function() {
-                    return $(this).val() !== '';
-                }).length > 0) {
-                    // Hay datos guardados
-                    console.warn('Módulo desactivado pero contiene datos guardados');
-                }
             }
         }).trigger('change');
-        
-        // Click en toda la tarjeta activa/desactiva
-        $('.gdm-module-checkbox').on('click', function(e) {
-            if ($(e.target).is('input')) return; // No duplicar si es el checkbox
-            
-            const $checkbox = $(this).find('.gdm-module-toggle');
-            $checkbox.prop('checked', !$checkbox.is(':checked')).trigger('change');
-        });
     }
 
     // =========================================================================
@@ -143,6 +128,38 @@ jQuery(document).ready(function($) {
             return false;
         }
     });
+
+    // =========================================================================
+    // UTILIDADES
+    // =========================================================================
+
+    /**
+     * Copiar texto al portapapeles
+     */
+    window.copyToClipboard = function(element) {
+        const text = element.textContent;
+        navigator.clipboard.writeText(text).then(function() {
+            // Feedback visual
+            const originalText = element.textContent;
+            element.textContent = '✓ Copiado';
+            element.style.background = '#46b450';
+            element.style.color = '#fff';
+            
+            setTimeout(function() {
+                element.textContent = originalText;
+                element.style.background = '';
+                element.style.color = '';
+            }, 1500);
+        }).catch(function() {
+            // Fallback para navegadores antiguos
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+        });
+    };
 
     // =========================================================================
     // INICIALIZACIÓN
