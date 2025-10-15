@@ -1,6 +1,310 @@
 /* ... CONTENIDO EXISTENTE ... */
 
 /* ========================================================================
+   ÁMBITOS MEJORADOS v6.1
+   ======================================================================== */
+
+.gdm-scope-group {
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.gdm-scope-toggle {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    background: #f9f9f9;
+    border-bottom: 1px solid #ddd;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s ease;
+    margin: 0;
+}
+
+.gdm-scope-toggle:hover {
+    background: #f0f0f1;
+}
+
+.gdm-scope-toggle input[type="checkbox"] {
+    margin: 0 10px 0 0 !important;
+}
+
+.gdm-scope-content {
+    padding: 15px;
+}
+
+/* Filtros de búsqueda */
+.gdm-filter-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gdm-filter-input:focus {
+    border-color: #2271b1;
+    outline: none;
+    box-shadow: 0 0 0 1px #2271b1;
+}
+
+/* Listas con scroll */
+.gdm-category-list,
+.gdm-tag-list,
+.gdm-product-list,
+.gdm-attribute-list {
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px;
+    background: #fafafa;
+    margin-bottom: 12px;
+}
+
+/* Scrollbar personalizado (WebKit) */
+.gdm-category-list::-webkit-scrollbar,
+.gdm-tag-list::-webkit-scrollbar,
+.gdm-product-list::-webkit-scrollbar,
+.gdm-attribute-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.gdm-category-list::-webkit-scrollbar-track,
+.gdm-tag-list::-webkit-scrollbar-track,
+.gdm-product-list::-webkit-scrollbar-track,
+.gdm-attribute-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.gdm-category-list::-webkit-scrollbar-thumb,
+.gdm-tag-list::-webkit-scrollbar-thumb,
+.gdm-product-list::-webkit-scrollbar-thumb,
+.gdm-attribute-list::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.gdm-category-list::-webkit-scrollbar-thumb:hover,
+.gdm-tag-list::-webkit-scrollbar-thumb:hover,
+.gdm-product-list::-webkit-scrollbar-thumb:hover,
+.gdm-attribute-list::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Items de checkbox */
+.gdm-checkbox-item {
+    display: block;
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    border-radius: 3px;
+    margin-bottom: 2px;
+}
+
+.gdm-checkbox-item:hover {
+    background: #e8f0fe;
+}
+
+.gdm-checkbox-item input[type="checkbox"] {
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.gdm-checkbox-item span {
+    vertical-align: middle;
+}
+
+/* Descripción de selección */
+.gdm-scope-description {
+    padding: 10px;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #856404;
+    display: none;
+}
+
+.gdm-scope-description.active {
+    display: block;
+}
+
+.gdm-scope-description strong {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.gdm-scope-selected-items {
+    font-size: 12px;
+    margin-top: 5px;
+    line-height: 1.6;
+}
+
+/* Contador de selección */
+.gdm-selection-counter {
+    display: inline-block;
+    background: #2271b1;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+/* Botón aplicar */
+.gdm-scope-apply {
+    width: 100%;
+    padding: 10px 15px;
+    background: #2271b1;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.gdm-scope-apply:hover {
+    background: #135e96;
+}
+
+.gdm-scope-apply:active {
+    transform: translateY(1px);
+}
+
+.gdm-scope-apply .dashicons {
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+/* Estado vacío */
+.gdm-empty-state {
+    padding: 30px;
+    text-align: center;
+    color: #999;
+}
+
+.gdm-empty-state .dashicons {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 10px;
+    opacity: 0.3;
+}
+
+.gdm-empty-state p {
+    margin: 0;
+    font-size: 13px;
+}
+
+/* Grupos de atributos */
+.gdm-attribute-group {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.gdm-attribute-group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.gdm-attribute-group > strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #1d2327;
+}
+
+/* Animaciones */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 500px;
+    }
+}
+
+.gdm-scope-content[style*="display: block"] {
+    animation: slideDown 0.3s ease;
+}
+
+/* ========================================================================
+   RESPONSIVE
+   ======================================================================== */
+@media screen and (max-width: 782px) {
+    .gdm-category-list,
+    .gdm-tag-list,
+    .gdm-product-list,
+    .gdm-attribute-list {
+        max-height: 200px;
+    }
+    
+    .gdm-scope-apply {
+        padding: 12px 15px;
+        font-size: 15px;
+    }
+    
+    .gdm-scope-toggle {
+        padding: 15px;
+    }
+    
+    .gdm-filter-input {
+        font-size: 16px; /* Evita zoom en iOS */
+    }
+}
+
+/* Dark mode compatibility (opcional) */
+@media (prefers-color-scheme: dark) {
+    .gdm-scope-group {
+        border-color: #444;
+        background: #1e1e1e;
+    }
+    
+    .gdm-scope-toggle {
+        background: #2a2a2a;
+        border-bottom-color: #444;
+        color: #e0e0e0;
+    }
+    
+    .gdm-scope-toggle:hover {
+        background: #333;
+    }
+    
+    .gdm-filter-input {
+        background: #2a2a2a;
+        border-color: #444;
+        color: #e0e0e0;
+    }
+    
+    .gdm-category-list,
+    .gdm-tag-list,
+    .gdm-product-list,
+    .gdm-attribute-list {
+        background: #2a2a2a;
+        border-color: #444;
+    }
+    
+    .gdm-checkbox-item:hover {
+        background: #333;
+    }
+}
+
+/* ========================================================================
    ÁMBITOS MEJORADOS v6.1 - NUEVA UX
    ======================================================================== */
 
