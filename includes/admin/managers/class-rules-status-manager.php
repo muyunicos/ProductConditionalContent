@@ -10,7 +10,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-    final class  {
+    final class GDM_Regla_Status_Manager {
         
         /**
          * Inicializar hooks
