@@ -24,7 +24,7 @@ final class GDM_Opciones_Metabox {
         
         wp_enqueue_script(
             'gdm-opciones-admin',
-            GDM_PLUGIN_URL . 'assets/admin/gdm-opciones-admin.js',
+            GDM_PLUGIN_URL . 'assets/admin/js/metaboxes/options-config-metabox.js',
             ['jquery', 'jquery-ui-sortable'],
             GDM_VERSION,
             true
@@ -32,7 +32,7 @@ final class GDM_Opciones_Metabox {
         
         wp_enqueue_style(
             'gdm-opciones-admin',
-            GDM_PLUGIN_URL . 'assets/admin/gdm-opciones-admin.css',
+            GDM_PLUGIN_URL . 'assets/admin/css/options-config-metabox.css',
             [],
             GDM_VERSION
         );

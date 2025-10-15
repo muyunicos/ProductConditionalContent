@@ -64,8 +64,8 @@ add_action('plugins_loaded', function() {
     });
 
     /** --- Inicialización Core --- */
-    require_once GDM_PLUGIN_DIR . 'includes/core/class-plugin-init.php';
-    require_once GDM_PLUGIN_DIR . 'includes/core/class-cpt.php';
+    require_once GDM_PLUGIN_DIR . 'includes/core/class-plugin-bootstrap.php';
+    require_once GDM_PLUGIN_DIR . 'includes/core/class-custom-post-types.php';
 
     /** --- Sistema Modular --- */
     require_once GDM_PLUGIN_DIR . 'includes/admin/modules/class-module-base.php';
@@ -73,17 +73,17 @@ add_action('plugins_loaded', function() {
 
     /** --- Carga según contexto --- */
     if (is_admin()) {
-        require_once GDM_PLUGIN_DIR . 'includes/admin/class-admin-helpers.php';
-        require_once GDM_PLUGIN_DIR . 'includes/admin/class-fields-admin.php';
-        require_once GDM_PLUGIN_DIR . 'includes/admin/class-rules-admin.php';
-        require_once GDM_PLUGIN_DIR . 'includes/admin/class-meta-boxes.php';
-        require_once GDM_PLUGIN_DIR . 'includes/admin/class-opciones-metabox.php';
-        require_once GDM_PLUGIN_DIR . 'includes/admin/class-regla-toggle-ajax.php';
-        require_once GDM_PLUGIN_DIR . 'includes/admin/class-regla-status-manager.php';
+        require_once GDM_PLUGIN_DIR . 'includes/admin/managers/class-admin-helpers.php';
+        require_once GDM_PLUGIN_DIR . 'includes/admin/product-panels/class-product-options-panel.php';
+        require_once GDM_PLUGIN_DIR . 'includes/admin/product-panels/class-product-rules-panel.php';
+        require_once GDM_PLUGIN_DIR . 'includes/admin/metaboxes/class-rules-config-metabox.php';
+        require_once GDM_PLUGIN_DIR . 'includes/admin/metaboxes/class-options-config-metabox.php';
+        require_once GDM_PLUGIN_DIR . 'includes/admin/managers/class-ajax-toggle-handler.php';
+        require_once GDM_PLUGIN_DIR . 'includes/admin/managers/class-rules-status-manager.php';
     } else {
-        require_once GDM_PLUGIN_DIR . 'includes/frontend/class-rules-frontend.php';
-        require_once GDM_PLUGIN_DIR . 'includes/frontend/class-fields-frontend.php';
-        require_once GDM_PLUGIN_DIR . 'includes/frontend/class-shortcodes.php';
+        require_once GDM_PLUGIN_DIR . 'includes/frontend/class-rules-engine.php';
+        require_once GDM_PLUGIN_DIR . 'includes/frontend/class-options-renderer.php';
+        require_once GDM_PLUGIN_DIR . 'includes/frontend/class-shortcodes-handler.php';
     }
     
     /**
