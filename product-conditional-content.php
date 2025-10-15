@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Reglas de Contenido para WooCommerce
  * Description: Motor profesional de reglas y campos personalizados con sistema modular para productos WooCommerce
- * Version: 6.2.1
+ * Version: 6.2.2
  * Author: MuyUnicos
  * Author URI: https://muyunicos.com
  * Text Domain: product-conditional-content
@@ -17,19 +17,20 @@
 
 if (!defined('ABSPATH')) exit;
 
-/** --- Constantes globales (ANTES de verificar compatibilidad) --- */
-define('GDM_VERSION', '6.2.1');
+// ✅ Constantes globales (ANTES de cualquier hook)
+define('GDM_VERSION', '6.2.2');
 define('GDM_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('GDM_PLUGIN_URL', plugin_dir_url(__FILE__));
+define('GDM_PLUGIN_FILE', __FILE__);
 
-/** --- Cargar clase de compatibilidad --- */
+// ✅ Cargar clase de compatibilidad (SIN traducciones todavía)
 require_once GDM_PLUGIN_DIR . 'includes/compatibility/class-compat-check.php';
 
 /**
- * ✅ CORRECCIÓN: Inicializar en plugins_loaded con prioridad correcta
+ * ✅ CORRECCIÓN CRÍTICA: Inicializar en plugins_loaded
  */
 add_action('plugins_loaded', function() {
-    /** --- Verificar compatibilidad antes de cargar --- */
+    // Verificar compatibilidad
     $compat_result = GDM_Compat_Check::check();
     
     if (!$compat_result['compatible']) {
@@ -37,26 +38,19 @@ add_action('plugins_loaded', function() {
         return;
     }
 
-    /** --- Declarar compatibilidad HPOS --- */
+    // Declarar compatibilidad HPOS
     GDM_Compat_Check::declare_hpos_compatibility(__FILE__);
     
-    /** --- ✅ NUEVO: Cargar traducciones en el momento correcto --- */
-    load_plugin_textdomain(
-        'product-conditional-content',
-        false,
-        dirname(plugin_basename(__FILE__)) . '/languages'
-    );
-
-    /** --- Inicialización Core --- */
+    // Inicialización Core
     require_once GDM_PLUGIN_DIR . 'includes/core/class-plugin-bootstrap.php';
     require_once GDM_PLUGIN_DIR . 'includes/core/class-custom-post-types.php';
 
-    /** --- Sistema Modular de Módulos --- */
+    // Sistema Modular de Módulos
     require_once GDM_PLUGIN_DIR . 'includes/admin/modules/class-module-base.php';
     require_once GDM_PLUGIN_DIR . 'includes/admin/modules/class-module-manager.php';
     GDM_Module_Manager::instance();
     
-    /** --- Sistema Modular de Ámbitos --- */
+    // Sistema Modular de Ámbitos
     require_once GDM_PLUGIN_DIR . 'includes/admin/scopes/class-scope-base.php';
     require_once GDM_PLUGIN_DIR . 'includes/admin/scopes/class-scope-manager.php';
     GDM_Scope_Manager::instance();
@@ -64,7 +58,7 @@ add_action('plugins_loaded', function() {
     do_action('gdm_init_modules');
     do_action('gdm_init_scopes');
 
-    /** --- Carga según contexto --- */
+    // Carga según contexto
     if (is_admin()) {
         require_once GDM_PLUGIN_DIR . 'includes/admin/managers/class-admin-helpers.php';
         require_once GDM_PLUGIN_DIR . 'includes/admin/product-panels/class-product-options-panel.php';
@@ -80,10 +74,21 @@ add_action('plugins_loaded', function() {
         require_once GDM_PLUGIN_DIR . 'includes/frontend/class-options-renderer.php';
         require_once GDM_PLUGIN_DIR . 'includes/frontend/class-shortcodes-handler.php';
     }
-}, 10); // ✅ Prioridad 10 para asegurar que WooCommerce ya cargó
+}, 10);
 
 /**
- * ✅ CORRECCIÓN: Cron independiente con validación
+ * ✅ Cargar traducciones en init (NO antes)
+ */
+add_action('init', function() {
+    load_plugin_textdomain(
+        'product-conditional-content',
+        false,
+        dirname(plugin_basename(__FILE__)) . '/languages'
+    );
+}, 5);
+
+/**
+ * Cron para programaciones
  */
 add_action('init', function() {
     if (!wp_next_scheduled('gdm_check_regla_schedules')) {
@@ -91,10 +96,16 @@ add_action('init', function() {
     }
 }, 15);
 
+/**
+ * Activación
+ */
 register_activation_hook(__FILE__, function() {
     flush_rewrite_rules();
 });
 
+/**
+ * Desactivación
+ */
 register_deactivation_hook(__FILE__, function() {
     $timestamp = wp_next_scheduled('gdm_check_regla_schedules');
     if ($timestamp) {

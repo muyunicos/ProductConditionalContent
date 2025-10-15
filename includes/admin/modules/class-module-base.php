@@ -25,7 +25,7 @@ abstract class GDM_Module_Base {
     
     public function __construct() {
         if (empty($this->module_id) || empty($this->module_name)) {
-            wp_die(__('El módulo debe definir module_id y module_name', 'product-conditional-content'));
+            wp_die('ERROR: El módulo debe definir module_id y module_name');
         }
         
         add_action('add_meta_boxes', [$this, 'register_metabox']);
