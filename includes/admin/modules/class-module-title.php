@@ -61,22 +61,22 @@ class GDM_Module_Title extends GDM_Module_Base {
                        class="regular-text" 
                        placeholder="<?php esc_attr_e('Ej: OFERTA - ', 'product-conditional-content'); ?>">
                 <p class="gdm-field-description">
-                    <?php _e('Este texto se agregará al título del producto', 'product-conditional-content'); ?>
+                    <?php _e('Este texto se agregará al inicio o final del título original', 'product-conditional-content'); ?>
                 </p>
             </div>
             
-            <!-- Reemplazar parte -->
+            <!-- Reemplazar -->
             <div class="gdm-field-group gdm-titulo-reemplazar" style="<?php echo $data['accion'] !== 'reemplazar' ? 'display:none;' : ''; ?>">
                 <label>
-                    <strong><?php _e('🔍 Texto a Buscar:', 'product-conditional-content'); ?></strong>
+                    <strong><?php _e('🔎 Buscar:', 'product-conditional-content'); ?></strong>
                 </label>
                 <input type="text" 
                        name="gdm_titulo_texto_buscar" 
                        value="<?php echo esc_attr($data['texto_buscar']); ?>" 
                        class="regular-text" 
-                       placeholder="<?php esc_attr_e('Texto que será reemplazado', 'product-conditional-content'); ?>">
+                       placeholder="<?php esc_attr_e('Texto a buscar', 'product-conditional-content'); ?>">
                 
-                <label style="margin-top: 15px; display: block;">
+                <label style="margin-top: 10px;">
                     <strong><?php _e('✏️ Reemplazar con:', 'product-conditional-content'); ?></strong>
                 </label>
                 <input type="text" 
@@ -97,7 +97,7 @@ class GDM_Module_Title extends GDM_Module_Base {
             <!-- Reemplazar todo -->
             <div class="gdm-field-group gdm-titulo-reemplazar-todo" style="<?php echo $data['accion'] !== 'reemplazar_todo' ? 'display:none;' : ''; ?>">
                 <label>
-                    <strong><?php _e('📄 Nuevo Título:', 'product-conditional-content'); ?></strong>
+                    <strong><?php _e('📝 Nuevo Título Completo:', 'product-conditional-content'); ?></strong>
                 </label>
                 <input type="text" 
                        name="gdm_titulo_nuevo_completo" 
@@ -118,22 +118,16 @@ class GDM_Module_Title extends GDM_Module_Base {
                        name="gdm_titulo_regex_patron" 
                        value="<?php echo esc_attr($data['regex_patron']); ?>" 
                        class="regular-text" 
-                       placeholder="<?php esc_attr_e('/patrón/i', 'product-conditional-content'); ?>">
-                <p class="gdm-field-description">
-                    <?php _e('Patrón de expresión regular compatible con PHP (preg_replace)', 'product-conditional-content'); ?>
-                </p>
+                       placeholder="<?php esc_attr_e('Ej: /^(.+)$/i', 'product-conditional-content'); ?>">
                 
-                <label style="margin-top: 15px; display: block;">
+                <label style="margin-top: 10px;">
                     <strong><?php _e('✏️ Reemplazo:', 'product-conditional-content'); ?></strong>
                 </label>
                 <input type="text" 
                        name="gdm_titulo_regex_reemplazo" 
                        value="<?php echo esc_attr($data['regex_reemplazo']); ?>" 
                        class="regular-text" 
-                       placeholder="<?php esc_attr_e('$1, $2, etc.', 'product-conditional-content'); ?>">
-                <p class="gdm-field-description">
-                    <?php _e('Usa $1, $2, etc. para hacer referencia a grupos capturados', 'product-conditional-content'); ?>
-                </p>
+                       placeholder="<?php esc_attr_e('Ej: OFERTA - $1', 'product-conditional-content'); ?>">
                 
                 <div class="gdm-regex-examples" style="margin-top: 15px; padding: 10px; background: #f0f6fc; border-left: 3px solid #2271b1; border-radius: 3px;">
                     <strong><?php _e('Ejemplos:', 'product-conditional-content'); ?></strong>
@@ -281,7 +275,7 @@ class GDM_Module_Title extends GDM_Module_Base {
                 }
             });
             
-            // Vista previa
+            // Testear título
             $('#gdm-titulo-test-btn').on('click', function() {
                 var original = $('#gdm-titulo-test-original').val();
                 var accion = $('#gdm_titulo_accion').val();
@@ -305,10 +299,9 @@ class GDM_Module_Title extends GDM_Module_Base {
                             var caseSensitive = $('[name=\"gdm_titulo_case_sensitive\"]').is(':checked');
                             
                             if (caseSensitive) {
-                                resultado = original.split(buscar).join(reemplazar);
+                                resultado = original.replace(new RegExp(buscar, 'g'), reemplazar);
                             } else {
-                                var regex = new RegExp(buscar.replace(/[.*+?^${}()|[\]\\\\]/g, '\\\\$&'), 'gi');
-                                resultado = original.replace(regex, reemplazar);
+                                resultado = original.replace(new RegExp(buscar, 'gi'), reemplazar);
                             }
                             break;
                             
