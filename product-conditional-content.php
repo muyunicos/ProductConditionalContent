@@ -30,7 +30,7 @@ add_action('plugins_loaded', function() {
     }
 
     /** --- Constantes globales --- */
-    define('GDM_VERSION', '6.1.0'); // ✅ ACTUALIZADO
+    define('GDM_VERSION', '6.1.0');
     define('GDM_PLUGIN_DIR', plugin_dir_path(__FILE__));
     define('GDM_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -42,14 +42,11 @@ add_action('plugins_loaded', function() {
     require_once GDM_PLUGIN_DIR . 'includes/core/class-custom-post-types.php';
 
     /** --- Sistema Modular (ORDEN CRÍTICO) --- */
-    // ✅ 1. PRIMERO: Cargar clase base
     require_once GDM_PLUGIN_DIR . 'includes/admin/modules/class-module-base.php';
     
-    // ✅ 2. SEGUNDO: Cargar e inicializar el manager
     require_once GDM_PLUGIN_DIR . 'includes/admin/modules/class-module-manager.php';
-    GDM_Module_Manager::instance(); // ✅ FORZAR INICIALIZACIÓN INMEDIATA
+    GDM_Module_Manager::instance();
     
-    // ✅ 3. TERCERO: Ejecutar hook de registro de módulos
     do_action('gdm_init_modules');
 
     /** --- Carga según contexto --- */
