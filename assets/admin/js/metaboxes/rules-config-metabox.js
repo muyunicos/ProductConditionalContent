@@ -306,6 +306,10 @@ jQuery(document).ready(function($) {
                 const min = $content.find('input[name*="_min"]').val();
                 const max = $content.find('input[name*="_max"]').val();
                 
+                // ✅ USAR EL TEXTO DEL PREVIEW EN VEZ DE FORMATEAR MANUALMENTE
+                const minFormatted = $content.find('.gdm-preview-min').text();
+                const maxFormatted = $content.find('.gdm-preview-max').text();
+                
                 const labels = {
                     'mayor_que': 'Mayor que',
                     'menor_que': 'Menor que',
@@ -314,9 +318,9 @@ jQuery(document).ready(function($) {
                 };
                 
                 if (condicion === 'entre') {
-                    summary = labels[condicion] + ' <strong>' + min + '€</strong> y <strong>' + max + '€</strong>';
+                    summary = labels[condicion] + ' <strong>' + minFormatted + '</strong> y <strong>' + maxFormatted + '</strong>';
                 } else {
-                    summary = labels[condicion] + ' <strong>' + min + '€</strong>';
+                    summary = labels[condicion] + ' <strong>' + minFormatted + '</strong>';
                 }
             }
             
