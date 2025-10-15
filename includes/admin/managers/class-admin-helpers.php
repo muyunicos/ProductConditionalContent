@@ -47,34 +47,58 @@ final class GDM_Admin_Helpers {
         }
         
         // ✅ VALIDACIÓN 2: Verificar que es el post type correcto
-        if ($post->post_type !== $post_type) {
-            if ($log_errors) {
-                error_log(sprintf(
-                    '⚠️ GDM: Post type incorrecto (esperado: %s, recibido: %s, post_id: %d)',
-                    $post_type,
-                    $post->post_type,
-                    $post_id
-                ));
-            }
-            return false;
+if ($post->post_type !== $post_type) {
+    if ($log_errors) {
+        error_log(sprintf(
+            '⚠️ GDM: Post type incorrecto (esperado: %s, recibido: %s, post_id: %d)',
+            $post_type,
+            $post->post_type,
+            $post_id
+        ));
+    }
+    return false;
+}
+
+// ✅ VALIDACIÓN 2.5: NUEVA - Manejar auto-drafts correctamente
+if ($post->post_status === 'auto-draft') {
+    // Permitir guardado si viene con el nonce (guardado manual del usuario)
+    if (!isset($_POST[$nonce_field])) {
+        if ($log_errors) {
+            error_log(sprintf(
+                '⚠️ GDM: Auto-draft sin nonce detectado, saltando guardado (post_id: %d)',
+                $post_id
+            ));
         }
+        return false;
+    }
+    
+    if ($log_errors) {
+        error_log(sprintf(
+            'ℹ️ GDM: Auto-draft CON nonce detectado (primer guardado), continuando... (post_id: %d)',
+            $post_id
+        ));
+    }
+}
+
+// ✅ VALIDACIÓN 3: Verificar que existe el nonce
+if (!isset($_POST[$nonce_field])) {
+    if ($log_errors) {
+        error_log(sprintf(
+            '❌ GDM: Campo nonce "%s" NO existe en $_POST (post_id: %d)',
+            $nonce_field,
+            $post_id
+        ));
         
-        // ✅ VALIDACIÓN 3: Verificar que existe el nonce
-        if (!isset($_POST[$nonce_field])) {
+        // Si es un heartbeat/ajax, es normal que no haya nonce
+        if (isset($_POST['action']) && in_array($_POST['action'], ['heartbeat', 'autosave'])) {
             if ($log_errors) {
-                error_log(sprintf(
-                    '❌ GDM: Campo nonce "%s" NO existe en $_POST (post_id: %d)',
-                    $nonce_field,
-                    $post_id
-                ));
-                
-                // Si es un heartbeat/ajax, es normal que no haya nonce
-                if (isset($_POST['action']) && in_array($_POST['action'], ['heartbeat', 'autosave'])) {
-                    error_log('ℹ️ GDM: Acción heartbeat/autosave detectada, esto es normal');
-                }
+                error_log('ℹ️ GDM: Acción heartbeat/autosave detectada, esto es normal');
             }
-            return false;
         }
+    }
+    return false;
+}
+
         
         // ✅ VALIDACIÓN 4: Verificar validez del nonce
         $nonce_value = sanitize_text_field($_POST[$nonce_field]);

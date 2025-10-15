@@ -104,7 +104,7 @@ jQuery(document).ready(function($) {
                 // Guardar estado original antes de abrir
                 saveOriginalState(scopeId);
                 
-                // ✅ Verificar si ya existe un resumen
+                // Verificar si ya existe un resumen
                 if ($summary.find('.gdm-summary-text').text().trim()) {
                     // Si hay resumen, mostrarlo en vez del contenido
                     $summary.fadeIn(200);
@@ -119,7 +119,7 @@ jQuery(document).ready(function($) {
                 $content.removeClass('active').slideUp(300);
                 $summary.slideUp(200);
                 
-                // ✅ Limpiar datos al desactivar
+                // Limpiar datos al desactivar
                 $content.find('input[type="checkbox"]').prop('checked', false);
                 $content.find('input[type="text"], input[type="number"]').val('');
                 $content.find('select').prop('selectedIndex', 0);
@@ -150,78 +150,85 @@ jQuery(document).ready(function($) {
         
         // Botón "Guardar"
         $(document).on('click', '.gdm-scope-save', function(e) {
-            e.preventDefault();
-            const $button = $(this);
-            const $scopeGroup = $button.closest('.gdm-scope-group');
-            const $content = $scopeGroup.find('.gdm-scope-content');
-            const $summary = $scopeGroup.find('.gdm-scope-summary');
-            const $summaryText = $summary.find('.gdm-summary-text');
-            const $checkbox = $scopeGroup.find('.gdm-scope-checkbox');
-            const $counter = $scopeGroup.find('.gdm-selection-counter');
-            const scopeId = $scopeGroup.data('scope');
-            
-            // ✅ Verificar si hay selección REAL
-            const hasSelection = checkHasSelection($content, scopeId);
-            
-            if (!hasSelection) {
-                // Si no hay selección, desactivar
-                $checkbox.prop('checked', false);
-                $content.removeClass('active').slideUp(300);
-                $summary.hide();
-                $counter.text('Ninguno seleccionado');
-                return;
-            }
-            
-            // ✅ Generar resumen dinámico
-            const summary = generateSummary(scopeId, $content);
-            $summaryText.html(summary);
-            
-            // ✅ Actualizar contador
-            const counterText = generateCounterText(scopeId, $content);
-            $counter.text(counterText);
-            
-            // Activar checkbox y mostrar resumen
-            $checkbox.prop('checked', true);
-            $content.removeClass('active').slideUp(300, function() {
-                $summary.fadeIn(200);
-            });
-            
-            // ✅ Animación de confirmación
-            const originalHtml = $button.html();
-            $button.html('<span class="dashicons dashicons-yes"></span> Guardado')
-                   .css('background', '#46b450')
-                   .prop('disabled', true);
-            
-            setTimeout(function() {
-                $button.html(originalHtml)
-                       .css('background', '')
-                       .prop('disabled', false);
-            }, 1500);
-        });
-        
-        // Botón "Cancelar"
-        $(document).on('click', '.gdm-scope-cancel', function(e) {
-            e.preventDefault();
-            const $scopeGroup = $(this).closest('.gdm-scope-group');
-            const $content = $scopeGroup.find('.gdm-scope-content');
-            const $summary = $scopeGroup.find('.gdm-scope-summary');
-            const $checkbox = $scopeGroup.find('.gdm-scope-checkbox');
-            const scopeId = $scopeGroup.data('scope');
-            
-            // Restaurar estado original
-            restoreOriginalState(scopeId);
-            
-            // Cerrar contenido
-            $content.removeClass('active').slideUp(300);
-            
-            // Si había resumen antes, mostrarlo
-            if ($checkbox.is(':checked') && $summary.find('.gdm-summary-text').text().trim()) {
-                $summary.fadeIn(200);
-            }
-        });
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const $button = $(this);
+    const $scopeGroup = $button.closest('.gdm-scope-group');
+    const $content = $scopeGroup.find('.gdm-scope-content');
+    const $summary = $scopeGroup.find('.gdm-scope-summary');
+    const $summaryText = $summary.find('.gdm-summary-text');
+    const $checkbox = $scopeGroup.find('.gdm-scope-checkbox');
+    const $counter = $scopeGroup.find('.gdm-selection-counter');
+    const scopeId = $scopeGroup.data('scope');
+    
+    // Verificar si hay selección REAL
+    const hasSelection = checkHasSelection($content, scopeId);
+    
+    if (!hasSelection) {
+        // Si no hay selección, desactivar
+        $checkbox.prop('checked', false);
+        $content.removeClass('active').slideUp(300);
+        $summary.hide();
+        $counter.text('Ninguno seleccionado');
+        return false; // ✅ NUEVO: Return explícito
+    }
+    
+    // Generar resumen dinámico
+    const summary = generateSummary(scopeId, $content);
+    $summaryText.html(summary);
+    
+    // Actualizar contador
+    const counterText = generateCounterText(scopeId, $content);
+    $counter.text(counterText);
+    
+    // Activar checkbox y mostrar resumen
+    $checkbox.prop('checked', true);
+    $content.removeClass('active').slideUp(300, function() {
+        $summary.fadeIn(200);
+    });
+    
+    const originalHtml = $button.html();
+    $button.html('<span class="dashicons dashicons-yes"></span> Guardado')
+           .css('background', '#46b450')
+           .prop('disabled', true);
+    
+    setTimeout(function() {
+        $button.html(originalHtml)
+               .css('background', '')
+               .prop('disabled', false);
+    }, 1500);
+    
+    return false;
+});
+
+// Botón "Cancelar"
+$(document).on('click', '.gdm-scope-cancel', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const $scopeGroup = $(this).closest('.gdm-scope-group');
+    const $content = $scopeGroup.find('.gdm-scope-content');
+    const $summary = $scopeGroup.find('.gdm-scope-summary');
+    const $checkbox = $scopeGroup.find('.gdm-scope-checkbox');
+    const scopeId = $scopeGroup.data('scope');
+    
+    // Restaurar estado original
+    restoreOriginalState(scopeId);
+    
+    // Cerrar contenido
+    $content.removeClass('active').slideUp(300);
+    
+    // Si había resumen antes, mostrarlo
+    if ($checkbox.is(':checked') && $summary.find('.gdm-summary-text').text().trim()) {
+        $summary.fadeIn(200);
+    }
+    
+    return false;
+});
         
         /**
-         * ✅ Verificar si hay selección real
+         * Verificar si hay selección real
          */
         function checkHasSelection($content, scopeId) {
             // Checkboxes marcados
@@ -445,8 +452,13 @@ jQuery(document).ready(function($) {
     // INICIALIZACIÓN
     // =========================================================================
 
-    initModuleToggles();
-    initScopeSystem();
+if (window.gdmMetaboxInitialized) {
+    return;
+}
+window.gdmMetaboxInitialized = true;
+
+initModuleToggles();
+initScopeSystem();
 
     // =========================================================================
     // DEBUG
