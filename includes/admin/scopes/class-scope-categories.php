@@ -136,25 +136,6 @@ class GDM_Scope_Categories extends GDM_Scope_Base {
     }
     
     /**
-     * Estilos específicos
-     */
-    protected function render_styles() {
-        ?>
-        <style>
-            .gdm-<?php echo esc_attr($this->scope_id); ?>-list {
-                max-height: 300px;
-                overflow-y: auto;
-            }
-            .gdm-item-count {
-                color: #999;
-                font-size: 11px;
-                margin-left: 5px;
-            }
-        </style>
-        <?php
-    }
-    
-    /**
      * Scripts específicos
      */
     protected function render_scripts() {

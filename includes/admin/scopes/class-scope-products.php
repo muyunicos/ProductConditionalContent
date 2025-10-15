@@ -135,18 +135,6 @@ class GDM_Scope_Products extends GDM_Scope_Base {
         wp_send_json_success(['products' => $results]);
     }
     
-    protected function render_styles() {
-        ?>
-        <style>
-            .gdm-item-price {
-                color: #2271b1;
-                font-size: 11px;
-                margin-left: 5px;
-            }
-        </style>
-        <?php
-    }
-    
     protected function render_scripts() {
         ?>
         <script>
@@ -175,19 +163,31 @@ class GDM_Scope_Products extends GDM_Scope_Base {
                         },
                         success: function(response) {
                             if (response.success && response.data.products.length > 0) {
+                                // ✅ Obtener IDs ya seleccionados
+                                var selectedIds = [];
+                                $('.gdm-productos-list input:checked').each(function() {
+                                    selectedIds.push($(this).val());
+                                });
+                                
+                                // ✅ Agregar productos nuevos SIN borrar los existentes
                                 var html = '';
                                 response.data.products.forEach(function(product) {
+                                    // Marcar como checked si ya estaba seleccionado
+                                    var isChecked = selectedIds.includes(product.id.toString());
+                                    
+                                    // No duplicar si ya existe en la lista
+                                    if ($('.gdm-productos-list input[value="' + product.id + '"]').length > 0) {
+                                        return;
+                                    }
+                                    
                                     html += '<label class="gdm-checkbox-item">' +
-                                           '<input type="checkbox" name="gdm_productos_objetivo[]" value="' + product.id + '" class="gdm-scope-item-checkbox">' +
+                                           '<input type="checkbox" name="gdm_productos_objetivo[]" value="' + product.id + '" ' + (isChecked ? 'checked' : '') + ' class="gdm-scope-item-checkbox">' +
                                            '<span>' + product.title + '</span>' +
                                            '<span class="gdm-item-price">' + product.price + '</span>' +
                                            '</label>';
                                 });
-                                $('.gdm-<?php echo esc_js($this->scope_id); ?>-list').html(html);
-                            } else {
-                                $('.gdm-<?php echo esc_js($this->scope_id); ?>-list').html(
-                                    '<div class="gdm-empty-state"><p>No se encontraron productos</p></div>'
-                                );
+                                
+                                $('.gdm-productos-list').append(html); // ✅ APPEND en vez de HTML
                             }
                         }
                     });

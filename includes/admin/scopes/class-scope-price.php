@@ -110,14 +110,28 @@ class GDM_Scope_Price extends GDM_Scope_Base {
     }
     
     public function matches_product($product_id, $rule_id) {
-        $data = $this->get_scope_data($rule_id);
-        
-        if (!$this->has_selection($data)) {
+    $data = $this->get_scope_data($rule_id);
+    
+    if (!$this->has_selection($data)) {
             return true;
         }
         
         $product = wc_get_product($product_id);
         if (!$product) {
+            return false;
+        }
+        
+        // ✅ Manejo de productos variables
+        if ($product->is_type('variable')) {
+            // Usar precio mínimo de variaciones
+            $price = floatval($product->get_variation_price('min'));
+        } else {
+            // Precio regular o en oferta
+            $price = floatval($product->get_price());
+        }
+        
+        // Si el precio está vacío, no cumple
+        if ($price <= 0) {
             return false;
         }
         

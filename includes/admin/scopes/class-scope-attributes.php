@@ -122,11 +122,16 @@ class GDM_Scope_Attributes extends GDM_Scope_Base {
             return false;
         }
         
-        // Verificar cada atributo
+        // ✅ Verificar cada atributo seleccionado
         foreach ($data['valores'] as $taxonomy => $required_term_ids) {
             $product_terms = wp_get_post_terms($product_id, $taxonomy, ['fields' => 'ids']);
             
-            // Si el producto no tiene ninguno de los términos requeridos, no cumple
+            // ✅ Si el producto NO tiene este atributo, omitir validación
+            if (empty($product_terms)) {
+                continue;
+            }
+            
+            // ✅ Si tiene el atributo pero NO coincide con ningún valor requerido
             if (empty(array_intersect($required_term_ids, $product_terms))) {
                 return false;
             }
@@ -138,6 +143,7 @@ class GDM_Scope_Attributes extends GDM_Scope_Base {
     protected function render_styles() {
         ?>
         <style>
+            /* Grupos de atributos con términos en grid */
             .gdm-attribute-group {
                 margin-bottom: 20px;
                 padding-bottom: 15px;
@@ -145,12 +151,15 @@ class GDM_Scope_Attributes extends GDM_Scope_Base {
             }
             .gdm-attribute-group:last-child {
                 border-bottom: none;
+                margin-bottom: 0;
+                padding-bottom: 0;
             }
             .gdm-attribute-title {
                 display: block;
                 margin-bottom: 10px;
                 color: #2271b1;
                 font-size: 14px;
+                font-weight: 600;
             }
             .gdm-attribute-terms {
                 display: grid;
@@ -159,6 +168,13 @@ class GDM_Scope_Attributes extends GDM_Scope_Base {
             }
             .gdm-term-item {
                 margin: 0 !important;
+            }
+            
+            /* Responsive */
+            @media screen and (max-width: 782px) {
+                .gdm-attribute-terms {
+                    grid-template-columns: 1fr;
+                }
             }
         </style>
         <?php

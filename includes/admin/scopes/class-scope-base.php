@@ -51,10 +51,41 @@ abstract class GDM_Scope_Base {
             wp_die(__('El ámbito debe definir scope_id y scope_name', 'product-conditional-content'));
         }
         
+        // ✅ AGREGAR ESTA LÍNEA:
+        add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_scope_assets']);
+        
         // Hooks de inicialización
         $this->scope_init();
     }
-    
+
+    /**
+    * Encolar CSS y JS globales de scopes (NUEVO)
+    * 
+    * @since 6.2.0
+    */
+    public static function enqueue_scope_assets() {
+    $screen = get_current_screen();
+    if (!$screen || $screen->id !== 'gdm_regla') {
+        return;
+    }
+
+    // CSS Base Global (Capa 1)
+    wp_enqueue_style(
+        'gdm-rules-admin-general',
+        GDM_PLUGIN_URL . 'assets/admin/css/rules-admin-general.css',
+        [],
+        GDM_VERSION
+    );
+
+    // CSS Específico de Scopes (Capa 2)
+    wp_enqueue_style(
+        'gdm-rules-config-metabox',
+        GDM_PLUGIN_URL . 'assets/admin/css/rules-config-metabox.css',
+        ['gdm-rules-admin-general'], // ✅ Dependencia explícita
+        GDM_VERSION
+    );
+    }
+
     /**
      * Hook de inicialización específica (opcional)
      */
