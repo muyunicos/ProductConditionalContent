@@ -51,16 +51,12 @@ abstract class GDM_Scope_Base {
             wp_die(__('El ámbito debe definir scope_id y scope_name', 'product-conditional-content'));
         }
         
-        // ✅ FIX #3: ELIMINADO - El enqueue se hace desde el Manager
-        // add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_scope_assets']);
-        
         // Hooks de inicialización
         $this->scope_init();
     }
 
     /**
      * Encolar CSS y JS globales de scopes
-     * ✅ MEJORA: Método estático para llamar desde Manager
      * 
      * @since 6.2.0
      */
@@ -82,7 +78,7 @@ abstract class GDM_Scope_Base {
         wp_enqueue_style(
             'gdm-rules-config-metabox',
             GDM_PLUGIN_URL . 'assets/admin/css/rules-config-metabox.css',
-            ['gdm-rules-admin-general'], // ✅ Dependencia explícita
+            ['gdm-rules-admin-general'],
             GDM_VERSION
         );
     }
@@ -96,8 +92,6 @@ abstract class GDM_Scope_Base {
     
     /**
      * Renderizar el ámbito completo
-     * ✅ MEJORA #2: Cacheo de contador para evitar cálculos duplicados
-     * ✅ MEJORA #3: Accessibility (ARIA labels)
      * 
      * @param int $post_id ID del post
      */
@@ -105,7 +99,7 @@ abstract class GDM_Scope_Base {
         $data = $this->get_scope_data($post_id);
         $has_selection = $this->has_selection($data);
         $summary = $this->get_summary($data);
-        $counter_text = $this->get_counter_text($data); // ✅ Cachear resultado
+        $counter_text = $this->get_counter_text($data);
         
         ?>
         <div class="gdm-scope-group" 

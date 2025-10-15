@@ -3,7 +3,7 @@
  * Gestor de Ámbitos (Scopes) - Sistema Dinámico y Extensible
  * Compatible con WordPress 6.8.3, PHP 8.2
  * 
- * ✅ FIX v6.2.4: Registro de scopes DESPUÉS de load_textdomain
+ * ✅ FIX v6.2.5: Corrección de enqueue_scope_assets
  * 
  * @package ProductConditionalContent
  * @since 5.0.0
@@ -33,8 +33,8 @@ final class GDM_Scope_Manager {
         // ✅ FIX: Inicializar scopes prioridad 12
         add_action('init', [$this, 'init_registered_scopes'], 12);
         
-        // Encolar assets
-        add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_scope_assets']);
+        // ✅ FIX v6.2.5: Llamar al método desde GDM_Scope_Base en vez de __CLASS__
+        add_action('admin_enqueue_scripts', ['GDM_Scope_Base', 'enqueue_scope_assets']);
     }
     
     /**
