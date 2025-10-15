@@ -4,19 +4,24 @@
  * Sistema simplificado: Habilitada/Deshabilitada + Sub-estados automáticos
  * Compatible con WordPress 6.8.3, PHP 8.2
  * 
+ * ✅ FIX v6.2.5: Archivo completo con todas las correcciones
+ * 
  * @package ProductConditionalContent
  * @since 5.0.4
  */
 
 if (!defined('ABSPATH')) exit;
 
-    final class GDM_Regla_Status_Manager {
-        
-        /**
-         * Inicializar hooks
-         */
-        public static function init() {
+final class GDM_Regla_Status_Manager {
+    
+    /**
+     * Inicializar hooks
+     */
+    public static function init() {
+        // ✅ FIX: Prioridad 10 (DESPUÉS de load_textdomain que usa prioridad 5)
         add_action('init', [__CLASS__, 'register_custom_statuses'], 10);
+        
+        // ✅ FIX: Prioridad 11 (DESPUÉS del registro de estados)
         add_action('init', [__CLASS__, 'register_toggle_handler'], 11);
         
         // Columnas del listado
@@ -32,6 +37,7 @@ if (!defined('ABSPATH')) exit;
         // Enqueue scripts
         add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_scripts']);
         
+        // ✅ CORRECCIÓN: Cambiar prioridad a 30 (DESPUÉS del metabox principal)
         add_action('save_post_gdm_regla', [__CLASS__, 'save_metabox_data'], 30, 2);
         
         // Quick Edit
@@ -40,6 +46,8 @@ if (!defined('ABSPATH')) exit;
         
         // Filtros de listado
         add_action('restrict_manage_posts', [__CLASS__, 'add_status_filter']);
+        // ✅ FIX v6.2.5: ELIMINADO - este hook causaba error fatal
+        // add_filter('parse_query', [__CLASS__, 'filter_by_status_query']);
         add_filter('views_edit-gdm_regla', [__CLASS__, 'custom_status_views']);
         add_action('pre_get_posts', [__CLASS__, 'filter_by_status']);
         add_filter('display_post_states', [__CLASS__, 'display_post_states'], 10, 2);
@@ -51,36 +59,37 @@ if (!defined('ABSPATH')) exit;
         add_action('wp_ajax_gdm_get_regla_data', [__CLASS__, 'ajax_get_regla_data']);
     }
 
-        /**
-         * Registrar estados personalizados
-         */
-        public static function register_custom_statuses() {
-            register_post_status('habilitada', [
-                'label'                     => _x('Habilitada', 'post status', 'product-conditional-content'),
-                'public'                    => true,
-                'exclude_from_search'       => false,
-                'show_in_admin_all_list'    => true,
-                'show_in_admin_status_list' => true,
-                'label_count'               => _n_noop(
-                    'Habilitada <span class="count">(%s)</span>',
-                    'Habilitadas <span class="count">(%s)</span>',
-                    'product-conditional-content'
-                ),
-            ]);
-            
-            register_post_status('deshabilitada', [
-                'label'                     => _x('Deshabilitada', 'post status', 'product-conditional-content'),
-                'public'                    => false,
-                'exclude_from_search'       => true,
-                'show_in_admin_all_list'    => true,
-                'show_in_admin_status_list' => true,
-                'label_count'               => _n_noop(
-                    'Deshabilitada <span class="count">(%s)</span>',
-                    'Deshabilitadas <span class="count">(%s)</span>',
-                    'product-conditional-content'
-                ),
-            ]);
-        }
+    /**
+     * Registrar estados personalizados
+     */
+    public static function register_custom_statuses() {
+        register_post_status('habilitada', [
+            'label'                     => _x('Habilitada', 'post status', 'product-conditional-content'),
+            'public'                    => true,
+            'exclude_from_search'       => false,
+            'show_in_admin_all_list'    => true,
+            'show_in_admin_status_list' => true,
+            'label_count'               => _n_noop(
+                'Habilitada <span class="count">(%s)</span>',
+                'Habilitadas <span class="count">(%s)</span>',
+                'product-conditional-content'
+            ),
+        ]);
+        
+        register_post_status('deshabilitada', [
+            'label'                     => _x('Deshabilitada', 'post status', 'product-conditional-content'),
+            'public'                    => false,
+            'exclude_from_search'       => true,
+            'show_in_admin_all_list'    => true,
+            'show_in_admin_status_list' => true,
+            'label_count'               => _n_noop(
+                'Deshabilitada <span class="count">(%s)</span>',
+                'Deshabilitadas <span class="count">(%s)</span>',
+                'product-conditional-content'
+            ),
+        ]);
+    }
+    
     /**
      * Registrar en el handler de toggle
      */
@@ -556,12 +565,12 @@ if (!defined('ABSPATH')) exit;
         $is_enabled = isset($_POST['gdm_regla_enabled']) && $_POST['gdm_regla_enabled'] === '1';
         $new_status = $is_enabled ? 'habilitada' : 'deshabilitada';
         
-        remove_action('save_post_gdm_regla', [__CLASS__, 'save_metabox_data'], 10);
+        remove_action('save_post_gdm_regla', [__CLASS__, 'save_metabox_data'], 30);
         wp_update_post([
             'ID' => $post_id,
             'post_status' => $new_status,
         ]);
-        add_action('save_post_gdm_regla', [__CLASS__, 'save_metabox_data'], 10, 2);
+        add_action('save_post_gdm_regla', [__CLASS__, 'save_metabox_data'], 30, 2);
         
         // Guardar programación
         $programar = isset($_POST['gdm_programar']) ? '1' : '0';
@@ -859,12 +868,12 @@ if (!defined('ABSPATH')) exit;
         $is_enabled = isset($_POST['gdm_quick_toggle']) && $_POST['gdm_quick_toggle'] === '1';
         $new_status = $is_enabled ? 'habilitada' : 'deshabilitada';
         
-        remove_action('save_post_gdm_regla', [__CLASS__, 'save_quick_edit'], 15);
+        remove_action('save_post_gdm_regla', [__CLASS__, 'save_quick_edit'], 35);
         wp_update_post([
             'ID' => $post_id,
             'post_status' => $new_status,
         ]);
-        add_action('save_post_gdm_regla', [__CLASS__, 'save_quick_edit'], 15, 2);
+        add_action('save_post_gdm_regla', [__CLASS__, 'save_quick_edit'], 35, 2);
     }
     
     /**
@@ -1042,6 +1051,31 @@ if (!defined('ABSPATH')) exit;
     }
     
     /**
+     * Agregar filtro de estado
+     */
+    public static function add_status_filter() {
+        global $typenow;
+        
+        if ($typenow !== 'gdm_regla') {
+            return;
+        }
+        
+        $current_status = isset($_GET['post_status']) ? $_GET['post_status'] : '';
+        
+        ?>
+        <select name="post_status">
+            <option value=""><?php _e('Todos los estados', 'product-conditional-content'); ?></option>
+            <option value="habilitada" <?php selected($current_status, 'habilitada'); ?>>
+                <?php _e('Habilitada', 'product-conditional-content'); ?>
+            </option>
+            <option value="deshabilitada" <?php selected($current_status, 'deshabilitada'); ?>>
+                <?php _e('Deshabilitada', 'product-conditional-content'); ?>
+            </option>
+        </select>
+        <?php
+    }
+    
+    /**
      * Display post states
      */
     public static function display_post_states($states, $post) {
@@ -1053,6 +1087,24 @@ if (!defined('ABSPATH')) exit;
         
         return $states;
     }
+    
+    /**
+     * ✅ MÉTODO CRÍTICO FALTANTE: Force custom status
+     * Convierte automáticamente "publish" a "habilitada"
+     */
+    public static function force_custom_status($data, $postarr) {
+        if ($data['post_type'] !== 'gdm_regla') {
+            return $data;
+        }
+        
+        // Convertir publish a habilitada automáticamente
+        if ($data['post_status'] === 'publish') {
+            $data['post_status'] = 'habilitada';
+        }
+        
+        return $data;
+    }
 }
 
+// ✅ INICIALIZAR EL MANAGER
 GDM_Regla_Status_Manager::init();
