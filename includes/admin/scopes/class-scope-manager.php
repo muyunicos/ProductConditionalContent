@@ -1,110 +1,103 @@
 <?php
 /**
- * Gestor de Ámbitos de Aplicación
- * Registra y administra todos los ámbitos del sistema
- * Compatible con WordPress 6.8.3, PHP 8.2, WooCommerce 10.2.2
+ * Gestor de Ámbitos (Scopes) - Sistema Dinámico y Extensible
+ * Compatible con WordPress 6.8.3, PHP 8.2
+ * 
+ * ✅ FIX v6.2.4: Registro de scopes DESPUÉS de load_textdomain
  * 
  * @package ProductConditionalContent
- * @since 6.1.0
- * @date 2025-10-15
+ * @since 5.0.0
  */
 
 if (!defined('ABSPATH')) exit;
 
 final class GDM_Scope_Manager {
-    
     private static $instance = null;
     private $scopes = [];
     private $scope_instances = [];
-    
+
     public static function instance() {
         if (null === self::$instance) {
             self::$instance = new self();
         }
         return self::$instance;
     }
-    
+
     private function __construct() {
-        // ✅ FIX #3: Encolar assets UNA SOLA VEZ desde el Manager
-        add_action('admin_enqueue_scripts', ['GDM_Scope_Base', 'enqueue_scope_assets']);
+        // ✅ FIX: Registrar scopes en init con prioridad 10 (DESPUÉS de traducciones)
+        add_action('init', [$this, 'register_core_scopes'], 10);
         
-        // Registrar ámbitos del core inmediatamente
-        $this->register_core_scopes();
+        // ✅ FIX: Permitir registro externo prioridad 11
+        add_action('init', [$this, 'allow_external_registration'], 11);
         
-        // Permitir registro externo
-        add_action('init', [$this, 'allow_external_registration'], 6);
+        // ✅ FIX: Inicializar scopes prioridad 12
+        add_action('init', [$this, 'init_registered_scopes'], 12);
         
-        // Inicializar ámbitos
-        add_action('init', [$this, 'init_registered_scopes'], 7);
+        // Encolar assets
+        add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_scope_assets']);
     }
     
     /**
      * Registrar ámbitos del core
+     * ✅ FIX: Ahora se ejecuta en hook init con prioridad 10
      */
     public function register_core_scopes() {
         $scopes_dir = GDM_PLUGIN_DIR . 'includes/admin/scopes/';
         
-        // Ámbito: Categorías
-        $this->register_scope('categorias', [
-            'class' => 'GDM_Scope_Categories',
-            'label' => __('Categorías Determinadas', 'product-conditional-content'),
-            'icon' => '📂',
-            'file' => $scopes_dir . 'class-scope-categories.php',
-            'enabled' => true,
-            'priority' => 10,
-        ]);
-        
-        // Ámbito: Tags
-        $this->register_scope('tags', [
-            'class' => 'GDM_Scope_Tags',
-            'label' => __('Etiquetas Determinadas', 'product-conditional-content'),
-            'icon' => '🏷️',
-            'file' => $scopes_dir . 'class-scope-tags.php',
-            'enabled' => true,
-            'priority' => 20,
-        ]);
-        
-        // Ámbito: Productos
         $this->register_scope('productos', [
             'class' => 'GDM_Scope_Products',
             'label' => __('Productos Específicos', 'product-conditional-content'),
             'icon' => '🛍️',
             'file' => $scopes_dir . 'class-scope-products.php',
             'enabled' => true,
+            'priority' => 10,
+        ]);
+        
+        $this->register_scope('categorias', [
+            'class' => 'GDM_Scope_Categories',
+            'label' => __('Categorías', 'product-conditional-content'),
+            'icon' => '📁',
+            'file' => $scopes_dir . 'class-scope-categories.php',
+            'enabled' => true,
+            'priority' => 20,
+        ]);
+        
+        $this->register_scope('etiquetas', [
+            'class' => 'GDM_Scope_Tags',
+            'label' => __('Etiquetas', 'product-conditional-content'),
+            'icon' => '🏷️',
+            'file' => $scopes_dir . 'class-scope-tags.php',
+            'enabled' => true,
             'priority' => 30,
         ]);
         
-        // Ámbito: Atributos
         $this->register_scope('atributos', [
             'class' => 'GDM_Scope_Attributes',
-            'label' => __('Atributos de Productos', 'product-conditional-content'),
-            'icon' => '🎨',
+            'label' => __('Atributos', 'product-conditional-content'),
+            'icon' => '⚙️',
             'file' => $scopes_dir . 'class-scope-attributes.php',
             'enabled' => true,
             'priority' => 40,
         ]);
         
-        // Ámbito: Stock
-        $this->register_scope('stock', [
-            'class' => 'GDM_Scope_Stock',
-            'label' => __('Estado de Stock', 'product-conditional-content'),
+        $this->register_scope('tipos', [
+            'class' => 'GDM_Scope_Product_Types',
+            'label' => __('Tipos de Producto', 'product-conditional-content'),
             'icon' => '📦',
-            'file' => $scopes_dir . 'class-scope-stock.php',
+            'file' => $scopes_dir . 'class-scope-product-types.php',
             'enabled' => true,
             'priority' => 50,
         ]);
         
-        // Ámbito: Precio
         $this->register_scope('precio', [
             'class' => 'GDM_Scope_Price',
-            'label' => __('Rango de Precio', 'product-conditional-content'),
-            'icon' => '💵',
+            'label' => __('Filtro por Precio', 'product-conditional-content'),
+            'icon' => '💰',
             'file' => $scopes_dir . 'class-scope-price.php',
             'enabled' => true,
             'priority' => 60,
         ]);
         
-        // Ámbito: Título
         $this->register_scope('titulo', [
             'class' => 'GDM_Scope_Title',
             'label' => __('Filtro por Título', 'product-conditional-content'),

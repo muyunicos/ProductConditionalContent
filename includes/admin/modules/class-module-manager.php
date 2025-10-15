@@ -1,46 +1,42 @@
 <?php
 /**
- * Gestor Centralizado de Módulos v6.1 CORREGIDO
- * Compatible con WordPress 6.8.3, PHP 8.2, WooCommerce 10.2.2
+ * Gestor de Módulos - Sistema Dinámico y Extensible
+ * Compatible con WordPress 6.8.3, PHP 8.2
+ * 
+ * ✅ FIX v6.2.4: Registro de módulos DESPUÉS de load_textdomain
  * 
  * @package ProductConditionalContent
- * @since 6.1.0
- * @date 2025-10-15
+ * @since 5.0.0
  */
 
 if (!defined('ABSPATH')) exit;
 
 final class GDM_Module_Manager {
-    
     private static $instance = null;
     private $modules = [];
     private $module_instances = [];
-    
+
     public static function instance() {
         if (null === self::$instance) {
             self::$instance = new self();
         }
         return self::$instance;
     }
-    
-    /**
-     * Constructor privado
-     * ✅ CORRECCIÓN: Registrar módulos INMEDIATAMENTE, no en hooks
-     */
+
     private function __construct() {
-        // ✅ INMEDIATO: Registrar módulos del core
-        $this->register_core_modules();
+        // ✅ FIX: Registrar módulos en init con prioridad 10 (DESPUÉS de traducciones)
+        add_action('init', [$this, 'register_core_modules'], 10);
         
-        // Permitir registro externo DESPUÉS
-        add_action('init', [$this, 'allow_external_registration'], 6);
+        // ✅ FIX: Permitir registro externo prioridad 11
+        add_action('init', [$this, 'allow_external_registration'], 11);
         
-        // Inicializar módulos en init
-        add_action('init', [$this, 'init_registered_modules'], 7);
+        // ✅ FIX: Inicializar módulos prioridad 12
+        add_action('init', [$this, 'init_registered_modules'], 12);
     }
     
     /**
      * Registrar módulos del core
-     * ✅ PÚBLICO: Se ejecuta desde el constructor
+     * ✅ FIX: Ahora se ejecuta en hook init con prioridad 10
      */
     public function register_core_modules() {
         $modules_dir = GDM_PLUGIN_DIR . 'includes/admin/modules/';
@@ -61,16 +57,6 @@ final class GDM_Module_Manager {
             'icon' => '🖼️',
             'file' => $modules_dir . 'class-module-gallery.php',
             'enabled' => true,
-            'priority' => 15,
-        ]);
-        
-        // Módulo de Título
-        $this->register_module('titulo', [
-            'class' => 'GDM_Module_Title',
-            'label' => __('Título', 'product-conditional-content'),
-            'icon' => '📝',
-            'file' => $modules_dir . 'class-module-title.php',
-            'enabled' => true,
             'priority' => 20,
         ]);
         
@@ -81,10 +67,9 @@ final class GDM_Module_Manager {
             'icon' => '💰',
             'file' => $modules_dir . 'class-module-price.php',
             'enabled' => true,
-            'priority' => 25,
+            'priority' => 15,
         ]);
-        
-        // Módulo de Destacado
+
         $this->register_module('destacado', [
             'class' => 'GDM_Module_Featured',
             'label' => __('Destacado', 'product-conditional-content'),
