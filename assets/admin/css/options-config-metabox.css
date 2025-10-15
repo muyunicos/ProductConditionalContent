@@ -1,43 +1,30 @@
 /**
- * Admin Styles para Opciones de Producto
+ * ARCHIVO DE COMPONENTE: Metabox de Configuración de Opciones de Producto
  * Versión: 1.0.0
  * Compatible con WordPress 6.8.3
- * Fecha: 2025-10-14
+ * * @package ProductConditionalContent
+ * @description Contiene los estilos específicos para el metabox donde se 
+ * configuran las opciones (choices) de un producto.
  */
 
 /* ========================================================================
-   CONTENEDOR PRINCIPAL
+   ESTRUCTURA Y LAYOUT
    ======================================================================== */
 .gdm-opcion-container {
     max-width: 1200px;
 }
 
-.gdm-section {
-    background: #fff;
-    border: 1px solid #ccd0d4;
-    border-radius: 4px;
-    padding: 20px;
-    margin-bottom: 20px;
+.form-table th {
+    width: 25%;
+    padding: 15px 10px;
 }
 
-.gdm-section h3 {
-    margin: 0 0 15px 0;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #dcdcde;
-    font-size: 16px;
-    font-weight: 600;
-    color: #1d2327;
-}
-
-.gdm-section .description {
-    font-size: 13px;
-    color: #646970;
-    margin-top: 5px;
-    font-style: italic;
+.form-table td {
+    padding: 15px 10px;
 }
 
 /* ========================================================================
-   TABLA DE CHOICES (OPCIONES DE SELECCIÓN)
+   TABLA DE OPCIONES (CHOICES)
    ======================================================================== */
 .gdm-choices-table {
     width: 100%;
@@ -70,10 +57,6 @@
     text-align: center;
 }
 
-.gdm-choice-row {
-    transition: background-color 0.2s ease;
-}
-
 .gdm-choice-row:hover {
     background-color: #f6f7f7;
 }
@@ -90,6 +73,7 @@
 
 .gdm-remove-choice {
     color: #b32d2e;
+    cursor: pointer;
 }
 
 .gdm-remove-choice:hover {
@@ -97,30 +81,7 @@
 }
 
 /* ========================================================================
-   CAMPOS DE FORMULARIO
-   ======================================================================== */
-.form-table th {
-    width: 25%;
-    padding: 15px 10px;
-}
-
-.form-table td {
-    padding: 15px 10px;
-}
-
-.required {
-    color: #d63638;
-    font-weight: bold;
-}
-
-.currency-symbol {
-    margin-left: 5px;
-    color: #646970;
-    font-weight: 600;
-}
-
-/* ========================================================================
-   SELECT DE TIPO DE OPCIÓN
+   CAMPOS ESPECÍFICOS
    ======================================================================== */
 .gdm-opcion-tipo-select {
     width: 100%;
@@ -129,70 +90,13 @@
     font-size: 14px;
 }
 
-/* ========================================================================
-   CONFIGURACIONES ESPECÍFICAS DE TIPO
-   ======================================================================== */
-.gdm-tipo-config {
-    animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* ========================================================================
-   BOTONES
-   ======================================================================== */
 #gdm-add-choice {
     margin-top: 10px;
 }
 
-#gdm-add-choice .dashicons {
-    vertical-align: middle;
-    margin-right: 4px;
-}
-
-/* ========================================================================
-   SELECT2 OVERRIDE (SI ESTÁ DISPONIBLE)
-   ======================================================================== */
-.select2-container {
-    z-index: 999999 !important;
-}
-
-.select2-container--default .select2-selection--multiple {
-    border-color: #8c8f94;
-    min-height: 36px;
-}
-
-.select2-container--default.select2-container--focus .select2-selection--multiple {
-    border-color: #2271b1;
-}
-
-/* ========================================================================
-   ESTADOS
-   ======================================================================== */
-input:focus,
-select:focus,
-textarea:focus {
-    border-color: #2271b1;
-    outline: none;
-    box-shadow: 0 0 0 1px #2271b1;
-}
-
-input:disabled,
-select:disabled,
-textarea:disabled {
-    background-color: #f6f7f7 !important;
-    color: #a7aaad !important;
-    cursor: not-allowed;
-    opacity: 0.6;
+.required {
+    color: #d63638;
+    font-weight: bold;
 }
 
 /* ========================================================================
@@ -205,56 +109,20 @@ textarea:disabled {
         width: 100%;
         padding: 10px 0;
     }
-    
-    .form-table th {
-        padding-bottom: 5px;
-    }
-    
+
     .gdm-choices-table {
         font-size: 12px;
     }
-    
+
     .gdm-choices-table thead th,
     .gdm-choices-table tbody td {
         padding: 6px 4px;
     }
-    
-    .gdm-opcion-tipo-select {
-        max-width: 100%;
-    }
 }
 
 @media screen and (max-width: 600px) {
-    .gdm-section {
-        padding: 15px;
-    }
-    
     .gdm-choices-table {
         display: block;
         overflow-x: auto;
     }
-}
-
-/* ========================================================================
-   UTILIDADES
-   ======================================================================== */
-.gdm-text-muted {
-    color: #646970;
-}
-
-.gdm-mb-10 {
-    margin-bottom: 10px;
-}
-
-.gdm-mt-20 {
-    margin-top: 20px;
-}
-
-code {
-    background: #f0f0f1;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
-    color: #d63638;
 }

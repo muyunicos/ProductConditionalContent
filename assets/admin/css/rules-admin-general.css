@@ -1,448 +1,229 @@
 /**
- * Admin Styles para Motor de Reglas MuyUnicos
- * Versión: 5.0.0 - Enhanced UX Completo
+ * ARCHIVO BASE: Estilos Comunes y Utilitarios
+ * Versión: 1.0.0
  * Compatible con WordPress 6.8.3
- * Fecha: 2025-10-14
+ * * @package ProductConditionalContent
+ * @description Contiene todos los estilos compartidos a través de diferentes 
+ * componentes del panel de administración, como contenedores,
+ * campos de formulario, modales, animaciones y utilidades.
  */
 
 /* ========================================================================
-   CONTENEDORES PRINCIPALES
+   ESTRUCTURA Y CONTENEDORES GENERALES
    ======================================================================== */
-.gdm-container { 
-    display: flex; 
-    gap: 20px; 
+.gdm-section {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 20px;
     margin-bottom: 20px;
-    flex-wrap: wrap;
 }
 
-.gdm-column { 
-    flex: 1; 
-    min-width: 300px;
-    box-sizing: border-box;
+.gdm-section h3,
+.gdm-fieldset legend {
+    margin: 0 0 15px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #dcdcde;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1d2327;
 }
 
-.gdm-full-width-container { 
-    margin-top: 20px;
-    clear: both;
-}
-
-/* ========================================================================
-   FIELDSETS Y LEYENDAS
-   ======================================================================== */
-.gdm-fieldset { 
-    border: 1px solid #ccd0d4; 
-    padding: 15px; 
-    margin-bottom: 20px; 
+.gdm-fieldset {
+    border: 1px solid #ccd0d4;
+    padding: 15px;
+    margin-bottom: 20px;
     border-radius: 4px;
     background: #fff;
 }
 
-.gdm-fieldset legend { 
-    font-weight: 600; 
-    padding: 0 8px; 
+.gdm-fieldset legend {
+    border-bottom: none;
+    padding: 0 8px;
     margin-left: -8px;
     font-size: 14px;
-    color: #1d2327;
 }
 
-.gdm-fieldset hr {
-    margin: 15px 0;
+.gdm-separator {
+    margin: 30px 0;
     border: 0;
-    border-top: 1px solid #dcdcde;
-}
-
-.gdm-fieldset label {
-    display: inline-block;
-    margin-bottom: 5px;
-}
-
-.gdm-fieldset input[type="number"],
-.gdm-fieldset select {
-    margin-top: 5px;
+    border-top: 1px solid #ddd;
 }
 
 /* ========================================================================
-   LISTAS SCROLLABLES CON FILTRO
+   CAMPOS DE FORMULARIO Y ESTADOS
    ======================================================================== */
-.gdm-scroll-list { 
-    max-height: 200px; 
-    overflow-y: auto; 
-    border: 1px solid #ccd0d4; 
-    padding: 10px; 
-    background-color: #fff; 
-    margin-top: 5px;
-    border-radius: 3px;
-}
-
-.gdm-filter-input {
-    width: 100%;
-    padding: 8px 12px;
-    margin-top: 8px;
-    margin-bottom: 8px;
-    border: 1px solid #8c8f94;
-    border-radius: 3px;
+.description,
+.gdm-text-muted {
+    color: #646970;
     font-size: 13px;
-    box-sizing: border-box;
-    transition: border-color 0.2s;
 }
 
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="datetime-local"]:focus,
+select:focus,
+textarea:focus,
 .gdm-filter-input:focus {
-    border-color: #2271b1;
-    outline: none;
-    box-shadow: 0 0 0 1px #2271b1;
+    border-color: #2271b1 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 1px #2271b1 !important;
 }
 
-.gdm-filterable-item {
-    display: block;
-    padding: 4px 0;
-    transition: opacity 0.2s ease;
-}
-
-.gdm-filterable-item:hover {
-    background-color: #f6f7f7;
-}
-
-/* Estado deshabilitado de listas */
-.gdm-disabled {
-    opacity: 0.5;
-    pointer-events: none;
-}
-
-/* ========================================================================
-   BOTONES DE SHORTCODES
-   ======================================================================== */
-.gdm-shortcode-buttons {
-    margin-bottom: 15px;
-    padding: 10px;
-    background: #f6f7f7;
-    border-radius: 4px;
-}
-
-.gdm-shortcode-buttons .button {
-    margin-right: 8px;
-    margin-bottom: 8px;
-    vertical-align: middle;
-}
-
-.gdm-shortcode-buttons .dashicons {
-    vertical-align: middle;
-    margin-right: 4px;
-}
-
-/* ========================================================================
-   TABLA REPETIDORA DE VARIANTES
-   ======================================================================== */
-#gdm-repeater-table { 
-    width: 100%; 
-    border-collapse: collapse; 
-    margin-top: 10px; 
-    table-layout: fixed;
-    background: #fff;
-}
-
-#gdm-repeater-table th, 
-#gdm-repeater-table td {
-    padding: 10px 8px;
-    vertical-align: middle;
-    text-align: left;
-    border: 1px solid #c3c4c7;
-}
-
-#gdm-repeater-table thead th {
-    background: #f6f7f7;
-    font-weight: 600;
-}
-
-/* Anchos de columnas */
-#gdm-repeater-table .check-col { 
-    width: 40px; 
-    text-align: center; 
-}
-
-#gdm-repeater-table .sort-col { 
-    width: 40px; 
-    text-align: center; 
-}
-
-#gdm-repeater-table .cond-type-col { 
-    width: 12%; 
-}
-
-#gdm-repeater-table .cond-key-col { 
-    width: 18%; 
-}
-
-#gdm-repeater-table .cond-value-col { 
-    width: 15%; 
-}
-
-#gdm-repeater-table .action-col { 
-    width: 18%; 
-}
-
-#gdm-repeater-table .text-col { 
-    width: 31%; 
-}
-
-/* ========================================================================
-   FILAS DE VARIANTES - ESTADOS
-   ======================================================================== */
-.gdm-repeater-row {
-    transition: background-color 0.2s ease, opacity 0.3s ease;
-}
-
-.gdm-repeater-row:hover {
-    background-color: #f6f7f7;
-}
-
-.gdm-repeater-row.gdm-row-selected {
-    background-color: #fffbf0 !important;
-    border-left: 3px solid #dba617;
-}
-
-.sort-handle {
-    cursor: move;
-    color: #8c8f94;
-    font-size: 18px;
-}
-
-.sort-handle:hover {
-    color: #1d2327;
-}
-
-.gdm-sortable-placeholder {
-    background: #f0f0f1;
-    border: 2px dashed #c3c4c7;
-    visibility: visible !important;
-    height: 60px;
-}
-
-/* ========================================================================
-   ACCIONES DE VARIANTES
-   ======================================================================== */
-.gdm-repeater-actions {
-    margin-top: 15px;
-    padding: 10px;
-    background: #f6f7f7;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-#gdm-variant-counter {
-    font-weight: 600;
-    color: #1d2327;
-    margin-left: auto;
-}
-
-.gdm-repeater-actions .button .dashicons {
-    vertical-align: middle;
-    margin-right: 4px;
-}
-
-/* ========================================================================
-   CAMPOS DESHABILITADOS
-   ======================================================================== */
 input:disabled,
 select:disabled,
 textarea:disabled {
     background-color: #f6f7f7 !important;
     color: #a7aaad !important;
-    cursor: not-allowed;
-    opacity: 0.6;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+}
+
+code {
+    background: #f0f0f1;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #d63638;
 }
 
 /* ========================================================================
-   MODAL DE SELECCIÓN DE REGLAS
+   LISTAS FILTRABLES
    ======================================================================== */
-#gdm-rule-modal-overlay {
+.gdm-filter-input {
+    width: 100%;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.gdm-scroll-list {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.gdm-checkbox-item {
+    display: block;
+    padding: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    border-radius: 3px;
+}
+
+.gdm-checkbox-item:hover,
+.gdm-filterable-item:hover {
+    background: #f0f0f1;
+}
+
+.gdm-checkbox-item input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+/* ========================================================================
+   MODAL GENÉRICO
+   ======================================================================== */
+.gdm-modal {
+    display: block;
     position: fixed;
-    top: 0;
+    z-index: 999999;
     left: 0;
+    top: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    z-index: 100000;
+    background-color: rgba(0, 0, 0, 0.6);
+    animation: fadeIn 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .gdm-modal-content {
-    background: #fff;
-    padding: 25px;
+    background-color: #fff;
+    padding: 0;
+    border: 1px solid #ccc;
+    width: 500px;
+    max-width: 90%;
     border-radius: 4px;
-    max-width: 600px;
-    width: 90%;
-    max-height: 80vh;
-    overflow-y: auto;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
-
-.gdm-modal-content h2 {
-    margin: 0 0 20px 0;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #dcdcde;
-    font-size: 18px;
-}
-
-.gdm-modal-spinner {
-    text-align: center;
-    color: #fff;
-}
-
-.gdm-modal-spinner .spinner {
-    float: none;
-    margin: 0 auto 10px auto;
-}
-
-.gdm-rule-list {
-    max-height: 400px;
-    overflow-y: auto;
-    margin-bottom: 20px;
-}
-
-.gdm-rule-option {
+    animation: slideIn 0.3s ease;
+    max-height: 80vh;
     display: flex;
+    flex-direction: column;
+}
+
+.gdm-modal-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    padding: 12px;
-    margin-bottom: 5px;
-    border: 1px solid #dcdcde;
-    border-radius: 3px;
+}
+
+.gdm-modal-header h3 {
+    margin: 0;
+    font-size: 16px;
+    border: none;
+    padding: 0;
+}
+
+.gdm-modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    font-weight: bold;
+    color: #666;
     cursor: pointer;
-    transition: all 0.2s ease;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    line-height: 1;
 }
 
-.gdm-rule-option:hover {
+.gdm-modal-close:hover {
+    color: #000;
+}
+
+.gdm-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.gdm-modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #ddd;
+    text-align: right;
     background: #f6f7f7;
-    border-color: #2271b1;
 }
 
-.gdm-rule-option input[type="radio"] {
-    margin: 0 10px 0 0;
-}
-
-.gdm-rule-title {
-    flex: 1;
-    font-weight: 500;
-}
-
-.gdm-rule-id {
-    font-size: 12px;
-    color: #646970;
+.gdm-modal-footer .button {
     margin-left: 10px;
 }
 
-.gdm-modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    padding-top: 15px;
-    border-top: 1px solid #dcdcde;
-}
-
 /* ========================================================================
-   RESPONSIVE - TABLETS Y MÓVILES
-   ======================================================================== */
-@media screen and (max-width: 782px) {
-    .gdm-container {
-        flex-direction: column;
-    }
-    
-    .gdm-column {
-        min-width: 100%;
-    }
-    
-    #gdm-repeater-table {
-        font-size: 12px;
-    }
-    
-    #gdm-repeater-table th,
-    #gdm-repeater-table td {
-        padding: 6px 4px;
-    }
-    
-    .gdm-shortcode-buttons .button {
-        font-size: 12px;
-        padding: 4px 8px;
-    }
-    
-    .gdm-modal-content {
-        padding: 15px;
-        width: 95%;
-    }
-    
-    .gdm-rule-option {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    
-    .gdm-rule-id {
-        margin-left: 20px;
-        margin-top: 5px;
-    }
-}
-
-@media screen and (max-width: 600px) {
-    #gdm-repeater-table {
-        display: block;
-        overflow-x: auto;
-    }
-    
-    .gdm-repeater-actions {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    
-    .gdm-repeater-actions .button {
-        width: 100%;
-        margin-bottom: 5px;
-    }
-    
-    #gdm-variant-counter {
-        text-align: center;
-        margin: 10px 0 0 0;
-    }
-}
-
-/* ========================================================================
-   ANIMACIONES Y TRANSICIONES
+   ANIMACIONES
    ======================================================================== */
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
 }
 
-@keyframes slideDown {
+@keyframes slideIn {
     from {
+        transform: translateY(-50px);
         opacity: 0;
-        transform: translateY(-10px);
     }
     to {
-        opacity: 1;
         transform: translateY(0);
+        opacity: 1;
     }
-}
-
-.gdm-repeater-row {
-    animation: slideDown 0.3s ease;
-}
-
-/* ========================================================================
-   ACCESIBILIDAD
-   ======================================================================== */
-.gdm-rule-option:focus-within {
-    outline: 2px solid #2271b1;
-    outline-offset: 2px;
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-    outline: 2px solid #2271b1;
-    outline-offset: 1px;
 }
 
 /* ========================================================================
@@ -452,10 +233,15 @@ textarea:focus {
     display: none !important;
 }
 
-.gdm-text-muted {
-    color: #646970;
-}
-
 .gdm-text-center {
     text-align: center;
+}
+
+/* ========================================================================
+   RESPONSIVE
+   ======================================================================== */
+@media screen and (max-width: 782px) {
+    .gdm-modal-content {
+        width: 95%;
+    }
 }

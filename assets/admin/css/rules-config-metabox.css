@@ -1,51 +1,32 @@
 /**
- * Estilos para Metabox Principal de Reglas
- * Sistema modular v6.0
+ * ARCHIVO DE COMPONENTE: Metabox de Configuración de Reglas
+ * Versión: 1.0.0
  * Compatible con WordPress 6.8.3
- * 
- * @package ProductConditionalContent
- * @since 6.0.0
+ * * @package ProductConditionalContent
+ * @description Contiene los estilos específicos para el metabox principal 
+ * donde se configuran las reglas, módulos y ámbito de aplicación.
  */
 
 /* ========================================================================
-   ESTRUCTURA GENERAL
+   ESTRUCTURA Y LAYOUT
    ======================================================================== */
 .gdm-config-general {
     padding: 15px;
 }
 
-.gdm-section {
-    margin-bottom: 30px;
-}
-
-.gdm-section-header {
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #e0e0e0;
-}
-
-.gdm-section-header h3 {
-    margin: 0;
+.gdm-container {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 16px;
-    color: #1d2327;
+    gap: 20px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
 }
 
-.gdm-section-header .dashicons {
-    color: #2271b1;
+.gdm-column {
+    flex: 1;
+    min-width: 300px;
+    box-sizing: border-box;
 }
 
-.gdm-separator {
-    margin: 30px 0;
-    border: 0;
-    border-top: 1px solid #ddd;
-}
-
-/* ========================================================================
-   GRID DE FILAS Y COLUMNAS
-   ======================================================================== */
 .gdm-row {
     display: flex;
     gap: 20px;
@@ -54,10 +35,6 @@
 
 .gdm-col-6 {
     flex: 1;
-}
-
-.gdm-field-group {
-    margin-bottom: 20px;
 }
 
 /* ========================================================================
@@ -87,7 +64,7 @@
     border-color: #2271b1;
     background: #f6f7f7;
     transform: translateY(-2px);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .gdm-module-checkbox.active {
@@ -113,10 +90,6 @@
     font-weight: bold;
 }
 
-.gdm-module-checkbox input[type="checkbox"] {
-    margin: 0;
-}
-
 .gdm-module-icon {
     font-size: 24px;
     line-height: 1;
@@ -128,25 +101,8 @@
     flex: 1;
 }
 
-.gdm-modules-hint {
-    margin-top: 10px;
-    padding: 10px;
-    background: #fff3cd;
-    border-left: 4px solid #ffc107;
-    color: #856404;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-}
-
-.gdm-modules-hint .dashicons {
-    color: #ffc107;
-}
-
 /* ========================================================================
-   ÁMBITO DE APLICACIÓN
+   ÁMBITO DE APLICACIÓN (SCOPE)
    ======================================================================== */
 .gdm-scope-group {
     margin-bottom: 25px;
@@ -163,87 +119,106 @@
     cursor: pointer;
 }
 
-.gdm-scope-toggle input[type="checkbox"] {
-    margin: 0;
-}
-
 .gdm-scope-content {
     margin-top: 15px;
     padding-left: 30px;
 }
 
-.gdm-filter-input {
+/* ========================================================================
+   TABLA REPETIDORA DE REGLAS
+   ======================================================================== */
+#gdm-repeater-table {
     width: 100%;
-    padding: 8px 12px;
-    border: 1px solid #8c8f94;
-    border-radius: 4px;
-    margin-bottom: 10px;
-    font-size: 14px;
-}
-
-.gdm-filter-input:focus {
-    border-color: #2271b1;
-    outline: none;
-    box-shadow: 0 0 0 1px #2271b1;
-}
-
-.gdm-category-list,
-.gdm-tag-list {
-    max-height: 200px;
-    overflow-y: auto;
-    padding: 10px;
+    border-collapse: collapse;
+    margin-top: 10px;
+    table-layout: fixed;
     background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 4px;
 }
 
-.gdm-checkbox-item {
-    display: block;
-    padding: 8px;
-    cursor: pointer;
-    transition: background 0.2s ease;
-    border-radius: 3px;
+#gdm-repeater-table th,
+#gdm-repeater-table td {
+    padding: 10px 8px;
+    vertical-align: middle;
+    text-align: left;
+    border: 1px solid #c3c4c7;
 }
 
-.gdm-checkbox-item:hover {
-    background: #f0f0f1;
+#gdm-repeater-table thead th {
+    background: #f6f7f7;
+    font-weight: 600;
 }
 
-.gdm-checkbox-item input[type="checkbox"] {
-    margin-right: 8px;
+.gdm-repeater-row {
+    transition: background-color 0.2s ease, opacity 0.3s ease;
+}
+
+.gdm-repeater-row:hover {
+    background-color: #f6f7f7;
+}
+
+.sort-handle {
+    cursor: move;
+    color: #8c8f94;
+    font-size: 18px;
+}
+
+.sort-handle:hover {
+    color: #1d2327;
 }
 
 /* ========================================================================
-   ANIMACIONES
+   ACCIONES DEL REPETIDOR
    ======================================================================== */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.gdm-repeater-actions {
+    margin-top: 15px;
+    padding: 10px;
+    background: #f6f7f7;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
-.gdm-fade-in {
-    animation: fadeIn 0.3s ease;
+.gdm-repeater-actions .button .dashicons {
+    vertical-align: middle;
+    margin-right: 4px;
 }
 
 /* ========================================================================
    RESPONSIVE
    ======================================================================== */
 @media screen and (max-width: 782px) {
+    .gdm-container,
     .gdm-row {
         flex-direction: column;
     }
-    
+
+    .gdm-column {
+        min-width: 100%;
+    }
+
     .gdm-modules-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .gdm-scope-content {
         padding-left: 0;
+    }
+    
+    #gdm-repeater-table {
+        font-size: 12px;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    #gdm-repeater-table {
+        display: block;
+        overflow-x: auto;
+    }
+    
+    .gdm-repeater-actions {
+        flex-direction: column;
+        align-items: stretch;
     }
 }
