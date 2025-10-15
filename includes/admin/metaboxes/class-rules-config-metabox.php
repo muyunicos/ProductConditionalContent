@@ -1,17 +1,17 @@
 <?php
 /**
- * Metabox de Configuración General de Reglas v6.2.4
- * Sistema modular con ámbitos independientes
+ * Metabox de Configuración de Reglas
  * Compatible con WordPress 6.8.3, PHP 8.2, WooCommerce 10.2.2
  * 
+ * ✅ FIX v6.2.6: Permitir guardado de auto-draft si viene con nonce
+ * 
  * @package ProductConditionalContent
- * @since 6.2.4
- * @date 2025-10-15
+ * @since 5.0.1
  */
 
 if (!defined('ABSPATH')) exit;
 
-final class GDM_Reglas_Metabox {
+final class GDM_Rules_Config_Metabox {
     
     public static function init() {
         add_action('add_meta_boxes', [__CLASS__, 'add_metabox']);
@@ -25,8 +25,6 @@ final class GDM_Reglas_Metabox {
             return;
         }
 
-        wp_enqueue_script('jquery-ui-sortable');
-        
         wp_enqueue_script(
             'gdm-reglas-metabox',
             GDM_PLUGIN_URL . 'assets/admin/js/metaboxes/rules-config-metabox.js',
@@ -55,15 +53,15 @@ final class GDM_Reglas_Metabox {
             'nonce' => wp_create_nonce('gdm_admin_nonce'),
             'i18n' => [
                 'selectModule' => __('Selecciona al menos un módulo', 'product-conditional-content'),
-                'noResults' => __('No se encontraron resultados', 'product-conditional-content'),
-            ]
+                'requiredFields' => __('Completa los campos requeridos', 'product-conditional-content'),
+            ],
         ]);
     }
 
     public static function add_metabox() {
         add_meta_box(
             'gdm_regla_config',
-            __('⚙️ Configuración General de la Regla', 'product-conditional-content'),
+            __('Configuración de la Regla', 'product-conditional-content'),
             [__CLASS__, 'render_metabox'],
             'gdm_regla',
             'normal',
@@ -74,133 +72,88 @@ final class GDM_Reglas_Metabox {
     public static function render_metabox($post) {
         wp_nonce_field('gdm_save_rule_data', 'gdm_nonce');
         
-        $data = self::get_rule_data($post->ID);
+        $reutilizable = get_post_meta($post->ID, '_gdm_reutilizable', true);
+        $aplicar_a = get_post_meta($post->ID, '_gdm_aplicar_a', true) ?: [];
         
-        // Obtener módulos con validación
-        $available_modules = [];
-        $manager_status = 'No inicializado';
-        
-        if (class_exists('GDM_Module_Manager')) {
-            try {
-                $module_manager = GDM_Module_Manager::instance();
-                $available_modules = $module_manager->get_modules_with_icons();
-                $count = $module_manager->get_modules_count();
-                $manager_status = sprintf('Registrados: %d | Habilitados: %d', $count['total'], $count['enabled']);
-            } catch (Exception $e) {
-                $manager_status = 'Error: ' . $e->getMessage();
-            }
-        }
         ?>
-        <div class="gdm-config-general">
+        <div class="gdm-regla-config-wrapper">
             
-            <!-- Información Básica -->
-            <div class="gdm-section">
-                <div class="gdm-section-header">
-                    <h3>
-                        <span class="dashicons dashicons-admin-generic"></span>
-                        <?php _e('Información Básica', 'product-conditional-content'); ?>
-                    </h3>
-                </div>
-                
-                <div class="gdm-row">
-                    <div class="gdm-col-6">
-                        <label for="gdm_prioridad">
-                            <strong><?php _e('🔢 Prioridad:', 'product-conditional-content'); ?></strong>
-                        </label>
-                        <input type="number" 
-                               id="gdm_prioridad" 
-                               name="gdm_prioridad" 
-                               value="<?php echo esc_attr($data['prioridad']); ?>" 
-                               min="1" 
-                               max="999" 
-                               class="small-text">
-                        <p class="description">
-                            <?php _e('Número más bajo = mayor prioridad', 'product-conditional-content'); ?>
-                        </p>
-                    </div>
-                    
-                    <div class="gdm-col-6">
-                        <label>
-                            <input type="checkbox" 
-                                   name="gdm_reutilizable" 
-                                   value="1" 
-                                   <?php checked($data['reutilizable'], '1'); ?>>
-                            <strong><?php _e('🔄 Regla Reutilizable', 'product-conditional-content'); ?></strong>
-                        </label>
-                        <p class="description">
-                            <?php _e('Shortcode: ', 'product-conditional-content'); ?>
-                            <code>[rule-<?php echo esc_attr($post->ID); ?>]</code>
-                        </p>
-                    </div>
-                </div>
+            <!-- Sección: Reutilizable -->
+            <div class="gdm-config-section">
+                <h3><?php _e('🔄 Tipo de Regla', 'product-conditional-content'); ?></h3>
+                <label class="gdm-checkbox-label">
+                    <input type="checkbox" 
+                           name="gdm_reutilizable" 
+                           id="gdm_reutilizable" 
+                           value="1" 
+                           <?php checked($reutilizable, '1'); ?>>
+                    <span><?php _e('Regla reutilizable (puede aplicarse a múltiples productos)', 'product-conditional-content'); ?></span>
+                </label>
+                <p class="description">
+                    <?php _e('Si está marcada, esta regla puede ser asignada manualmente desde la edición de productos.', 'product-conditional-content'); ?>
+                </p>
             </div>
             
             <hr class="gdm-separator">
             
-            <!-- Ámbito de Aplicación (MODULAR) -->
-            <div class="gdm-section">
-                <div class="gdm-section-header">
-                    <h3>
-                        <span class="dashicons dashicons-category"></span>
-                        <?php _e('Ámbito de Aplicación', 'product-conditional-content'); ?>
-                    </h3>
-                </div>
-                
+            <!-- Sección: Aplica a (Módulos) -->
+            <div class="gdm-config-section">
+                <h3><?php _e('📦 Aplica a (Módulos)', 'product-conditional-content'); ?></h3>
                 <p class="description">
-                    <?php _e('Define a qué productos se aplicará esta regla. Si no seleccionas nada, se aplicará a todos.', 'product-conditional-content'); ?>
+                    <?php _e('Selecciona los tipos de contenido que esta regla modificará:', 'product-conditional-content'); ?>
                 </p>
                 
-                <div class="gdm-scopes-container">
+                <div class="gdm-modules-grid">
                     <?php
-                    // Renderizar todos los ámbitos dinámicamente
-                    if (class_exists('GDM_Scope_Manager')) {
-                        $scope_manager = GDM_Scope_Manager::instance();
-                        $scope_manager->render_all($post->ID);
-                    } else {
-                        echo '<p class="notice notice-warning inline">⚠️ El gestor de ámbitos no está disponible.</p>';
+                    if (class_exists('GDM_Module_Manager')) {
+                        $module_manager = GDM_Module_Manager::instance();
+                        $modules = $module_manager->get_modules_ordered();
+                        
+                        foreach ($modules as $module_id => $module_config) {
+                            if (!$module_config['enabled']) {
+                                continue;
+                            }
+                            
+                            $is_checked = in_array($module_id, $aplicar_a);
+                            ?>
+                            <label class="gdm-module-checkbox <?php echo $is_checked ? 'active' : ''; ?>">
+                                <input type="checkbox" 
+                                       class="gdm-module-toggle"
+                                       name="gdm_aplicar_a[]" 
+                                       value="<?php echo esc_attr($module_id); ?>"
+                                       data-module="<?php echo esc_attr($module_id); ?>"
+                                       <?php checked($is_checked); ?>>
+                                <span class="gdm-module-icon"><?php echo esc_html($module_config['icon']); ?></span>
+                                <span class="gdm-module-label"><?php echo esc_html($module_config['label']); ?></span>
+                            </label>
+                            <?php
+                        }
                     }
                     ?>
                 </div>
+                
+                <p class="gdm-validation-message" id="gdm-modules-validation" style="display:none; color:#d63638;">
+                    <?php _e('⚠️ Debes seleccionar al menos un módulo', 'product-conditional-content'); ?>
+                </p>
             </div>
             
             <hr class="gdm-separator">
             
-            <!-- Aplica a (MÓDULOS) -->
-            <div class="gdm-section">
-                <div class="gdm-section-header">
-                    <h3>
-                        <span class="dashicons dashicons-admin-tools"></span>
-                        <?php _e('Aplica a', 'product-conditional-content'); ?>
-                    </h3>
-                </div>
-                
+            <!-- Sección: Ámbitos (Scopes) -->
+            <div class="gdm-config-section">
+                <h3><?php _e('🎯 Ámbito de Aplicación', 'product-conditional-content'); ?></h3>
                 <p class="description">
-                    <?php _e('Selecciona los módulos que deseas activar para esta regla.', 'product-conditional-content'); ?>
+                    <?php _e('Define a qué productos se aplicará esta regla:', 'product-conditional-content'); ?>
                 </p>
                 
-                <?php if (empty($available_modules)): ?>
-                    <div class="notice notice-warning inline">
-                        <p>
-                            <strong><?php _e('⚠️ No hay módulos disponibles', 'product-conditional-content'); ?></strong><br>
-                            <small style="color:#666;"><?php echo esc_html($manager_status); ?></small>
-                        </p>
-                    </div>
-                <?php else: ?>
-                    <div class="gdm-modules-grid">
-                        <?php foreach ($available_modules as $module_id => $module): ?>
-                            <label class="gdm-module-checkbox <?php echo in_array($module_id, $data['aplicar_a']) ? 'active' : ''; ?>">
-                                <input type="checkbox" 
-                                       name="gdm_aplicar_a[]" 
-                                       value="<?php echo esc_attr($module_id); ?>" 
-                                       class="gdm-module-toggle"
-                                       data-module="<?php echo esc_attr($module_id); ?>"
-                                       <?php checked(in_array($module_id, $data['aplicar_a'])); ?>>
-                                <span class="gdm-module-icon"><?php echo esc_html($module['icon']); ?></span>
-                                <span class="gdm-module-label"><?php echo esc_html($module['label']); ?></span>
-                            </label>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
+                <div class="gdm-scopes-wrapper">
+                    <?php
+                    if (class_exists('GDM_Scope_Manager')) {
+                        $scope_manager = GDM_Scope_Manager::instance();
+                        $scope_manager->render_all($post->ID);
+                    }
+                    ?>
+                </div>
             </div>
             
         </div>
@@ -208,7 +161,7 @@ final class GDM_Reglas_Metabox {
     }
 
     /**
-     * ✅ VERSIÓN v6.2.4: Validación mejorada de nonce con manejo de auto-draft
+     * ✅ FIX v6.2.6: Guardar metabox con validación corregida
      * 
      * @param int $post_id ID del post
      * @param WP_Post $post Objeto post
@@ -224,10 +177,19 @@ final class GDM_Reglas_Metabox {
             return;
         }
         
-        // 2️⃣ Ignorar auto-drafts iniciales (antes de que se renderice el metabox)
+        // 2️⃣ ✅ FIX v6.2.6: Ignorar auto-drafts SOLO si no viene de un guardado manual
+        // WordPress crea auto-draft al abrir "Agregar nueva", pero al guardar manualmente
+        // el post sigue siendo auto-draft hasta que se procese wp_insert_post_data
         if ($post->post_status === 'auto-draft') {
-            error_log('⚠️ GDM: Auto-draft detectado, saltando guardado de regla ID ' . $post_id);
-            return;
+            // ✅ PERMITIR guardado si viene con el nonce (guardado manual del usuario)
+            $has_nonce = isset($_POST['gdm_nonce']);
+            
+            if (!$has_nonce) {
+                error_log('⚠️ GDM: Auto-draft sin nonce detectado, saltando guardado de regla ID ' . $post_id);
+                return;
+            }
+            
+            error_log('ℹ️ GDM: Auto-draft CON nonce detectado (primer guardado), continuando...');
         }
         
         // 3️⃣ Verificar que es el post type correcto
@@ -273,22 +235,18 @@ final class GDM_Reglas_Metabox {
         
         if (!current_user_can('edit_post', $post_id)) {
             error_log('❌ GDM: Usuario sin permisos para editar regla ID ' . $post_id);
-            error_log('Usuario actual: ' . wp_get_current_user()->user_login);
             return;
         }
         
         // ========================================================================
-        // ✅ TODAS LAS VALIDACIONES PASADAS - PROCEDER CON EL GUARDADO
+        // ✅ GUARDADO DE DATOS: Procesar y guardar campos del metabox
         // ========================================================================
         
-        error_log('✅ GDM: Iniciando guardado de regla ID ' . $post_id);
-        
         try {
-            // 1️⃣ GUARDAR: Prioridad
-            $prioridad = isset($_POST['gdm_prioridad']) ? absint($_POST['gdm_prioridad']) : 10;
-            $prioridad = max(1, min(999, $prioridad)); // Limitar entre 1 y 999
-            update_post_meta($post_id, '_gdm_prioridad', $prioridad);
-            error_log('✅ Prioridad guardada: ' . $prioridad);
+            error_log('🔵 GDM: Iniciando guardado de regla ID ' . $post_id);
+            
+            // 1️⃣ GUARDAR: Título (ya viene en $_POST['post_title'] - WordPress lo procesa)
+            // No es necesario guardarlo manualmente
             
             // 2️⃣ GUARDAR: Reutilizable
             $reutilizable = isset($_POST['gdm_reutilizable']) && $_POST['gdm_reutilizable'] === '1' ? '1' : '0';
@@ -304,23 +262,28 @@ final class GDM_Reglas_Metabox {
                 // Validar que los módulos existen
                 if (class_exists('GDM_Module_Manager')) {
                     $module_manager = GDM_Module_Manager::instance();
-                    $valid_modules = array_keys($module_manager->get_modules());
-                    $aplicar_a = array_intersect($aplicar_a, $valid_modules);
+                    $valid_modules = [];
+                    
+                    foreach ($aplicar_a as $module_id) {
+                        if ($module_manager->is_module_registered($module_id)) {
+                            $valid_modules[] = $module_id;
+                        } else {
+                            error_log('⚠️ GDM: Módulo inválido ignorado: ' . $module_id);
+                        }
+                    }
+                    
+                    $aplicar_a = $valid_modules;
                 }
             }
             
             update_post_meta($post_id, '_gdm_aplicar_a', $aplicar_a);
-            error_log('✅ Aplicar a guardado: [' . implode(', ', $aplicar_a) . '] (total: ' . count($aplicar_a) . ')');
+            error_log('✅ Módulos guardados: ' . implode(', ', $aplicar_a));
             
-            // 4️⃣ GUARDAR: Ámbitos (Scopes) - SISTEMA MODULAR
+            // 4️⃣ GUARDAR: Scopes (ámbitos de aplicación)
             if (class_exists('GDM_Scope_Manager')) {
-                try {
-                    $scope_manager = GDM_Scope_Manager::instance();
-                    $scope_manager->save_all($post_id);
-                    error_log('✅ Ámbitos guardados correctamente vía Scope Manager');
-                } catch (Exception $e) {
-                    error_log('❌ ERROR al guardar ámbitos: ' . $e->getMessage());
-                }
+                $scope_manager = GDM_Scope_Manager::instance();
+                $scope_manager->save_all($post_id);
+                error_log('✅ Scopes guardados via Scope Manager');
             }
             
             // 5️⃣ LIMPIAR CACHÉ
@@ -342,36 +305,14 @@ final class GDM_Reglas_Metabox {
                 add_action('admin_notices', function() use ($e) {
                     ?>
                     <div class="notice notice-error is-dismissible">
-                        <p>
-                            <strong>❌ Error al guardar regla:</strong>
-                            <?php echo esc_html($e->getMessage()); ?>
-                        </p>
+                        <p><strong><?php _e('Error al guardar la regla:', 'product-conditional-content'); ?></strong></p>
+                        <p><?php echo esc_html($e->getMessage()); ?></p>
                     </div>
                     <?php
                 });
             }
         }
     }
-
-    /**
-     * Obtener datos de la regla con valores predeterminados
-     * 
-     * @param int $post_id ID del post
-     * @return array Datos de la regla
-     */
-    private static function get_rule_data($post_id) {
-        static $cache = [];
-        if (isset($cache[$post_id])) return $cache[$post_id];
-
-        $data = [
-            'prioridad' => get_post_meta($post_id, '_gdm_prioridad', true) ?: 10,
-            'reutilizable' => get_post_meta($post_id, '_gdm_reutilizable', true),
-            'aplicar_a' => get_post_meta($post_id, '_gdm_aplicar_a', true) ?: [],
-        ];
-        
-        $cache[$post_id] = $data;
-        return $data;
-    }
 }
 
-GDM_Reglas_Metabox::init();
+GDM_Rules_Config_Metabox::init();
