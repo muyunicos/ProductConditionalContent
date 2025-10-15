@@ -29,22 +29,36 @@ final class GDM_Admin_Helpers {
      * @return bool True si todas las validaciones pasaron, false si debe abortar
      */
     public static function validate_metabox_save($post_id, $post, $nonce_field, $nonce_action, $post_type, $log_errors = null) {
-        // Determinar si debe hacer logging (por defecto solo en debug)
-        if ($log_errors === null) {
-            $log_errors = defined('WP_DEBUG') && WP_DEBUG;
+    // Determinar si debe hacer logging (por defecto solo en debug)
+    if ($log_errors === null) {
+        $log_errors = defined('WP_DEBUG') && WP_DEBUG;
+    }
+    
+    // ✅ VALIDACIÓN 1: Evitar autosave (PRIMERO)
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        if ($log_errors) {
+            error_log(sprintf(
+                '⚠️ GDM: Autosave detectado, saltando guardado (post_id: %d, post_type: %s)',
+                $post_id,
+                $post_type
+            ));
         }
-        
-        // ✅ VALIDACIÓN 1: Evitar autosave (PRIMERO)
-        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return false;
+    }
+    
+    // ✅ VALIDACIÓN 1.5: NUEVA - Detectar autosave via AJAX
+    if (defined('DOING_AJAX') && DOING_AJAX) {
+        if (isset($_POST['action']) && $_POST['action'] === 'autosave') {
             if ($log_errors) {
                 error_log(sprintf(
-                    '⚠️ GDM: Autosave detectado, saltando guardado (post_id: %d, post_type: %s)',
+                    '⚠️ GDM: AJAX Autosave detectado, saltando guardado (post_id: %d, post_type: %s)',
                     $post_id,
                     $post_type
                 ));
             }
             return false;
         }
+    }
         
         // ✅ VALIDACIÓN 2: Verificar que es el post type correcto
 if ($post->post_type !== $post_type) {

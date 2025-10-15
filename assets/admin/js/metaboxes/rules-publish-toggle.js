@@ -23,18 +23,35 @@
     // =========================================================================
 
     $(document).ready(function() {
-        if (!$('body').hasClass('post-type-gdm_regla')) {
-            return;
-        }
+    if (!$('body').hasClass('post-type-gdm_regla')) {
+        return;
+    }
 
-        initMetaboxToggle();
-        initScheduleFields();
-        initQuickDates();
-        initValidation();
-        initPublishButton();
+    initMetaboxToggle();
+    initScheduleFields();
+    initQuickDates();
+    initValidation();
+    initPublishButton();
+    
+    disableAutosaveInterference();
 
-        console.log('✅ GDM Publish Metabox: Initialized');
-    });
+    console.log('✅ GDM Publish Metabox: Initialized');
+});
+
+function disableAutosaveInterference() {
+    // Deshabilitar autosave automático de WordPress
+    if (typeof autosave !== 'undefined') {
+        // Aumentar el intervalo de autosave a 10 minutos
+        autosave.autosaveExtras.autosaveIntents = 600; // 10 minutos en segundos
+    }
+    
+    // Prevenir triggers de autosave por cambios en nuestros campos
+    $('#gdm-metabox-toggle, #gdm_programar, #gdm_fecha_inicio, #gdm_fecha_fin, #gdm_habilitar_fecha_fin')
+        .off('change.autosave input.autosave')
+        .on('change.custom input.custom', function(e) {
+            e.stopImmediatePropagation();
+        });
+}
 
     // =========================================================================
     // TOGGLE DEL METABOX
@@ -114,11 +131,11 @@
      * Inicializar comportamiento del botón publicar
      */
     function initPublishButton() {
-        // Actualizar el botón cada vez que cambia algo
-        $('#post').on('change', 'input, select, textarea', function() {
-            updatePublishButton();
-        });
-    }
+    updatePublishButton();
+    $('#gdm-metabox-toggle').off('change.publish').on('change.publish', function() {
+        updatePublishButton();
+    });
+}
 
     /**
      * Actualizar texto y comportamiento del botón publicar
@@ -167,49 +184,49 @@
      * Inicializar campos de programación
      */
     function initScheduleFields() {
-        const $programarCheckbox = $('#gdm_programar');
-        const $scheduleFields = $('#gdm-schedule-fields');
+    const $programarCheckbox = $('#gdm_programar');
+    const $scheduleFields = $('#gdm-schedule-fields');
+    
+    $programarCheckbox.off('change.gdm').on('change.gdm', function() {
+        const isChecked = $(this).is(':checked');
         
-        $programarCheckbox.off('change.gdm').on('change.gdm', function() {
-            const isChecked = $(this).is(':checked');
+        if (isChecked) {
+            $scheduleFields.slideDown(200);
             
-            if (isChecked) {
-                $scheduleFields.slideDown(200);
-                
-                // Si activa programación, setear fecha de inicio por defecto si está vacía
-                const $fechaInicio = $('#gdm_fecha_inicio');
-                if (!$fechaInicio.val()) {
-                    setDefaultStartDate();
-                }
-            } else {
-                $scheduleFields.slideUp(200);
+            // Si activa programación, setear fecha de inicio por defecto si está vacía
+            const $fechaInicio = $('#gdm_fecha_inicio');
+            if (!$fechaInicio.val()) {
+                setDefaultStartDate();
             }
-            
-            updateStatusMessage();
-            updateDescriptions();
-        });
+        } else {
+            $scheduleFields.slideUp(200);
+        }
+        
+        updateStatusMessage();
+        updateDescriptions();
+    });
 
-        // Toggle de "Fecha Fin"
-        $('#gdm_habilitar_fecha_fin').off('change.gdm').on('change.gdm', function() {
-            const $wrapper = $('#gdm-fecha-fin-wrapper');
-            
-            if ($(this).is(':checked')) {
-                $wrapper.slideDown(200);
-            } else {
-                $wrapper.slideUp(200);
-            }
-            
-            updateStatusMessage();
-            updateDescriptions();
-        });
+    // Toggle de "Fecha Fin"
+    $('#gdm_habilitar_fecha_fin').off('change.gdm').on('change.gdm', function() {
+        const $wrapper = $('#gdm-fecha-fin-wrapper');
+        
+        if ($(this).is(':checked')) {
+            $wrapper.slideDown(200);
+        } else {
+            $wrapper.slideUp(200);
+        }
+        
+        updateStatusMessage();
+        updateDescriptions();
+    });
 
-        // Validar y actualizar cuando cambian las fechas
-        $('#gdm_fecha_inicio, #gdm_fecha_fin').off('change.gdm blur.gdm').on('change.gdm blur.gdm', function() {
+    $('#gdm_fecha_inicio, #gdm_fecha_fin').off('change.gdm blur.gdm input.gdm')
+        .on('blur.gdm focusout.gdm', function() {
             validateDates();
             updateStatusMessage();
             updateDescriptions();
         });
-    }
+}
 
     /**
      * Establecer fecha de inicio por defecto (mañana 00:00)
@@ -776,3 +793,12 @@ function validateBeforePublish() {
     addValidationStyles();
 
 })(jQuery);
+
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    // Interceptar eventos que puedan triggerar autosave
+    $(document).on('input change keyup', 'input, select, textarea', function(e) {
+        if ($(this).closest('.gdm-regla-config-wrapper, #gdm-publish-metabox').length > 0) {
+            console.warn('🚨 Campo GDM triggeró evento:', e.type, 'en:', this.name || this.id, 'valor:', this.value);
+        }
+    });
+}
