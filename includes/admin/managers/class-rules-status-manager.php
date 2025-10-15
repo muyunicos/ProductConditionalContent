@@ -765,7 +765,7 @@ final class GDM_Regla_Status_Manager {
         
         wp_enqueue_style(
             'gdm-regla-toggle',
-            GDM_PLUGIN_URL . 'assets/admin/regla-toggle.css',
+            GDM_PLUGIN_URL . 'assets/admin/css/rules-toggle.css',
             [],
             GDM_VERSION
         );
@@ -773,7 +773,7 @@ final class GDM_Regla_Status_Manager {
         if ($hook === 'edit.php') {
             wp_enqueue_script(
                 'gdm-regla-toggle',
-                GDM_PLUGIN_URL . 'assets/admin/regla-toggle.js',
+                GDM_PLUGIN_URL . 'assets/admin/js/components/rules-toggle.js',
                 ['jquery'],
                 GDM_VERSION,
                 true
@@ -798,7 +798,7 @@ final class GDM_Regla_Status_Manager {
         if (in_array($hook, ['post.php', 'post-new.php'])) {
             wp_enqueue_script(
                 'gdm-regla-publish-metabox',
-                GDM_PLUGIN_URL . 'assets/admin/regla-publish-metabox.js',
+                GDM_PLUGIN_URL . 'assets/admin/js/metaboxes/rules-publish-toggle.js',
                 ['jquery'],
                 GDM_VERSION,
                 true
@@ -821,7 +821,7 @@ final class GDM_Regla_Status_Manager {
         if ($hook === 'edit.php') {
             wp_enqueue_script(
                 'gdm-regla-quick-edit',
-                GDM_PLUGIN_URL . 'assets/admin/regla-quick-edit.js',
+                GDM_PLUGIN_URL . 'assets/admin/js/components/rules-quick-edit.js',
                 ['jquery', 'inline-edit-post'],
                 GDM_VERSION,
                 true

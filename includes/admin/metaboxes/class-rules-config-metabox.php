@@ -32,7 +32,7 @@ final class GDM_Reglas_Metabox {
         
         wp_enqueue_script(
             'gdm-reglas-metabox',
-            GDM_PLUGIN_URL . 'assets/admin/reglas-metabox.js',
+            GDM_PLUGIN_URL . 'assets/admin/js/metaboxes/rules-config-metabox.js',
             ['jquery'],
             GDM_VERSION,
             true
@@ -40,7 +40,7 @@ final class GDM_Reglas_Metabox {
         
         wp_enqueue_style(
             'gdm-reglas-metabox',
-            GDM_PLUGIN_URL . 'assets/admin/reglas-metabox.css',
+            GDM_PLUGIN_URL . 'assets/admin/css/rules-config-metabox.css',
             [],
             GDM_VERSION
         );
