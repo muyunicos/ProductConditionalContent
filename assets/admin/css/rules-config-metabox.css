@@ -1,543 +1,59 @@
 /**
- * ARCHIVO DE COMPONENTE: Metabox de Configuración de Reglas
- * Versión: 1.0.0
- * Compatible con WordPress 6.8.3
- * * @package ProductConditionalContent
- * @description Contiene los estilos específicos para el metabox principal 
- * donde se configuran las reglas, módulos y ámbito de aplicación.
+ * ESTILOS ESPECÍFICOS DE ÁMBITOS - ProductConditionalContent
+ * Versión: 6.2.0
+ * Compatible con WordPress 6.8.3, PHP 8.2, WooCommerce 10.2.2
+ * 
+ * @package ProductConditionalContent
+ * @description Estilos específicos para el sistema modular de ámbitos de aplicación.
+ *              Este archivo contiene SOLO estilos relacionados con los ámbitos (scopes).
+ * 
+ * RESPONSABILIDADES:
+ * - Estructura de ámbitos (.gdm-scope-group, .gdm-scope-header)
+ * - Toggle y checkbox de ámbitos (.gdm-scope-toggle)
+ * - Contenido expandible (.gdm-scope-content)
+ * - Resumen de selección (.gdm-scope-summary)
+ * - Acciones de ámbitos (.gdm-scope-actions)
+ * - Listas específicas de ámbitos (.gdm-scope-list)
+ * - Scrollbar personalizado para listas
+ * - Estados y transiciones de ámbitos
+ * 
+ * DEPENDENCIAS:
+ * - rules-admin-general.css (debe cargarse ANTES)
+ * 
+ * @since 6.2.0
+ * @date 2025-10-15
  */
 
 /* ========================================================================
-   ESTRUCTURA Y LAYOUT
+   CONTENEDOR GLOBAL DE ÁMBITOS
    ======================================================================== */
-.gdm-config-general {
-    padding: 15px;
-}
 
-.gdm-container {
+.gdm-scopes-container {
     display: flex;
-    gap: 20px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-}
-
-.gdm-column {
-    flex: 1;
-    min-width: 300px;
-    box-sizing: border-box;
-}
-
-.gdm-row {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 20px;
-}
-
-.gdm-col-6 {
-    flex: 1;
-}
-
-/* ========================================================================
-   GRID DE MÓDULOS
-   ======================================================================== */
-.gdm-modules-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 12px;
-    margin: 15px 0;
-}
-
-.gdm-module-checkbox {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 15px;
-    border: 2px solid #ddd;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background: #fff;
-    position: relative;
-}
-
-.gdm-module-checkbox:hover {
-    border-color: #2271b1;
-    background: #f6f7f7;
-    transform: translateY(-2px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.gdm-module-checkbox.active {
-    border-color: #2271b1;
-    background: linear-gradient(135deg, #f0f6ff 0%, #e3f0ff 100%);
-    box-shadow: 0 2px 8px rgba(34, 113, 177, 0.2);
-}
-
-.gdm-module-checkbox.active::before {
-    content: "✓";
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    width: 20px;
-    height: 20px;
-    background: #2271b1;
-    color: #fff;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: bold;
-}
-
-.gdm-module-icon {
-    font-size: 24px;
-    line-height: 1;
-}
-
-.gdm-module-label {
-    font-weight: 600;
-    color: #1d2327;
-    flex: 1;
-}
-
-/* ========================================================================
-   ÁMBITO DE APLICACIÓN (SCOPE)
-   ======================================================================== */
-.gdm-scope-group {
-    margin-bottom: 25px;
-    padding: 15px;
-    background: #f9f9f9;
-    border-radius: 6px;
-}
-
-.gdm-scope-toggle {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 15px;
-    cursor: pointer;
-}
-
-.gdm-scope-content {
-    margin-top: 15px;
-    padding-left: 30px;
-}
-
-/* ========================================================================
-   TABLA REPETIDORA DE REGLAS
-   ======================================================================== */
-#gdm-repeater-table {
-    width: 100%;
-    border-collapse: collapse;
+    flex-direction: column;
+    gap: 15px;
     margin-top: 10px;
-    table-layout: fixed;
-    background: #fff;
-}
-
-#gdm-repeater-table th,
-#gdm-repeater-table td {
-    padding: 10px 8px;
-    vertical-align: middle;
-    text-align: left;
-    border: 1px solid #c3c4c7;
-}
-
-#gdm-repeater-table thead th {
-    background: #f6f7f7;
-    font-weight: 600;
-}
-
-.gdm-repeater-row {
-    transition: background-color 0.2s ease, opacity 0.3s ease;
-}
-
-.gdm-repeater-row:hover {
-    background-color: #f6f7f7;
-}
-
-.sort-handle {
-    cursor: move;
-    color: #8c8f94;
-    font-size: 18px;
-}
-
-.sort-handle:hover {
-    color: #1d2327;
 }
 
 /* ========================================================================
-   ACCIONES DEL REPETIDOR
-   ======================================================================== */
-.gdm-repeater-actions {
-    margin-top: 15px;
-    padding: 10px;
-    background: #f6f7f7;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.gdm-repeater-actions .button .dashicons {
-    vertical-align: middle;
-    margin-right: 4px;
-}
-
-/* ========================================================================
-   RESPONSIVE
-   ======================================================================== */
-@media screen and (max-width: 782px) {
-    .gdm-container,
-    .gdm-row {
-        flex-direction: column;
-    }
-
-    .gdm-column {
-        min-width: 100%;
-    }
-
-    .gdm-modules-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .gdm-scope-content {
-        padding-left: 0;
-    }
-    
-    #gdm-repeater-table {
-        font-size: 12px;
-    }
-}
-
-@media screen and (max-width: 600px) {
-    #gdm-repeater-table {
-        display: block;
-        overflow-x: auto;
-    }
-    
-    .gdm-repeater-actions {
-        flex-direction: column;
-        align-items: stretch;
-    }
-}
-
-/* ========================================================================
-   ÁMBITOS MEJORADOS v6.1
+   ESTRUCTURA DE GRUPO DE ÁMBITO
    ======================================================================== */
 
 .gdm-scope-group {
-    margin-bottom: 15px;
     border: 1px solid #ddd;
     border-radius: 4px;
     background: #fff;
     overflow: hidden;
+    transition: box-shadow 0.3s ease;
 }
 
-.gdm-scope-toggle {
-    display: flex;
-    align-items: center;
-    padding: 12px 15px;
-    background: #f9f9f9;
-    border-bottom: 1px solid #ddd;
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.2s ease;
-    margin: 0;
-}
-
-.gdm-scope-toggle:hover {
-    background: #f0f0f1;
-}
-
-.gdm-scope-toggle input[type="checkbox"] {
-    margin: 0 10px 0 0 !important;
-}
-
-.gdm-scope-content {
-    padding: 15px;
-}
-
-/* Filtros de búsqueda */
-.gdm-filter-input {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    margin-bottom: 10px;
-    box-sizing: border-box;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.gdm-filter-input:focus {
-    border-color: #2271b1;
-    outline: none;
-    box-shadow: 0 0 0 1px #2271b1;
-}
-
-/* Listas con scroll */
-.gdm-category-list,
-.gdm-tag-list,
-.gdm-product-list,
-.gdm-attribute-list {
-    max-height: 250px;
-    overflow-y: auto;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 8px;
-    background: #fafafa;
-    margin-bottom: 12px;
-}
-
-/* Scrollbar personalizado (WebKit) */
-.gdm-category-list::-webkit-scrollbar,
-.gdm-tag-list::-webkit-scrollbar,
-.gdm-product-list::-webkit-scrollbar,
-.gdm-attribute-list::-webkit-scrollbar {
-    width: 8px;
-}
-
-.gdm-category-list::-webkit-scrollbar-track,
-.gdm-tag-list::-webkit-scrollbar-track,
-.gdm-product-list::-webkit-scrollbar-track,
-.gdm-attribute-list::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
-
-.gdm-category-list::-webkit-scrollbar-thumb,
-.gdm-tag-list::-webkit-scrollbar-thumb,
-.gdm-product-list::-webkit-scrollbar-thumb,
-.gdm-attribute-list::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 4px;
-}
-
-.gdm-category-list::-webkit-scrollbar-thumb:hover,
-.gdm-tag-list::-webkit-scrollbar-thumb:hover,
-.gdm-product-list::-webkit-scrollbar-thumb:hover,
-.gdm-attribute-list::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
-}
-
-/* Items de checkbox */
-.gdm-checkbox-item {
-    display: block;
-    padding: 8px 10px;
-    cursor: pointer;
-    transition: background 0.2s ease;
-    border-radius: 3px;
-    margin-bottom: 2px;
-}
-
-.gdm-checkbox-item:hover {
-    background: #e8f0fe;
-}
-
-.gdm-checkbox-item input[type="checkbox"] {
-    margin-right: 8px;
-    vertical-align: middle;
-}
-
-.gdm-checkbox-item span {
-    vertical-align: middle;
-}
-
-/* Descripción de selección */
-.gdm-scope-description {
-    padding: 10px;
-    background: #fff3cd;
-    border: 1px solid #ffc107;
-    border-radius: 4px;
-    margin-bottom: 12px;
-    font-size: 13px;
-    color: #856404;
-    display: none;
-}
-
-.gdm-scope-description.active {
-    display: block;
-}
-
-.gdm-scope-description strong {
-    display: block;
-    margin-bottom: 5px;
-}
-
-.gdm-scope-selected-items {
-    font-size: 12px;
-    margin-top: 5px;
-    line-height: 1.6;
-}
-
-/* Contador de selección */
-.gdm-selection-counter {
-    display: inline-block;
-    background: #2271b1;
-    color: #fff;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 11px;
-    font-weight: 600;
-    margin-left: 10px;
-    vertical-align: middle;
-}
-
-/* Botón aplicar */
-.gdm-scope-apply {
-    width: 100%;
-    padding: 10px 15px;
-    background: #2271b1;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s ease, transform 0.1s ease;
-}
-
-.gdm-scope-apply:hover {
-    background: #135e96;
-}
-
-.gdm-scope-apply:active {
-    transform: translateY(1px);
-}
-
-.gdm-scope-apply .dashicons {
-    vertical-align: middle;
-    margin-right: 5px;
-}
-
-/* Estado vacío */
-.gdm-empty-state {
-    padding: 30px;
-    text-align: center;
-    color: #999;
-}
-
-.gdm-empty-state .dashicons {
-    font-size: 48px;
-    width: 48px;
-    height: 48px;
-    margin-bottom: 10px;
-    opacity: 0.3;
-}
-
-.gdm-empty-state p {
-    margin: 0;
-    font-size: 13px;
-}
-
-/* Grupos de atributos */
-.gdm-attribute-group {
-    margin-bottom: 15px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-.gdm-attribute-group:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
-}
-
-.gdm-attribute-group > strong {
-    display: block;
-    margin-bottom: 8px;
-    color: #1d2327;
-}
-
-/* Animaciones */
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        max-height: 0;
-    }
-    to {
-        opacity: 1;
-        max-height: 500px;
-    }
-}
-
-.gdm-scope-content[style*="display: block"] {
-    animation: slideDown 0.3s ease;
+.gdm-scope-group:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 /* ========================================================================
-   RESPONSIVE
+   HEADER DEL ÁMBITO
    ======================================================================== */
-@media screen and (max-width: 782px) {
-    .gdm-category-list,
-    .gdm-tag-list,
-    .gdm-product-list,
-    .gdm-attribute-list {
-        max-height: 200px;
-    }
-    
-    .gdm-scope-apply {
-        padding: 12px 15px;
-        font-size: 15px;
-    }
-    
-    .gdm-scope-toggle {
-        padding: 15px;
-    }
-    
-    .gdm-filter-input {
-        font-size: 16px; /* Evita zoom en iOS */
-    }
-}
-
-/* Dark mode compatibility (opcional) */
-@media (prefers-color-scheme: dark) {
-    .gdm-scope-group {
-        border-color: #444;
-        background: #1e1e1e;
-    }
-    
-    .gdm-scope-toggle {
-        background: #2a2a2a;
-        border-bottom-color: #444;
-        color: #e0e0e0;
-    }
-    
-    .gdm-scope-toggle:hover {
-        background: #333;
-    }
-    
-    .gdm-filter-input {
-        background: #2a2a2a;
-        border-color: #444;
-        color: #e0e0e0;
-    }
-    
-    .gdm-category-list,
-    .gdm-tag-list,
-    .gdm-product-list,
-    .gdm-attribute-list {
-        background: #2a2a2a;
-        border-color: #444;
-    }
-    
-    .gdm-checkbox-item:hover {
-        background: #333;
-    }
-}
-
-/* ========================================================================
-   ÁMBITOS MEJORADOS v6.1 - NUEVA UX
-   ======================================================================== */
-
-.gdm-scope-group {
-    margin-bottom: 15px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background: #fff;
-    overflow: hidden;
-}
 
 .gdm-scope-header {
     padding: 12px 15px;
@@ -547,7 +63,17 @@
     align-items: center;
     justify-content: space-between;
     gap: 15px;
+    cursor: pointer;
+    transition: background 0.2s ease;
 }
+
+.gdm-scope-header:hover {
+    background: #f0f0f1;
+}
+
+/* ========================================================================
+   TOGGLE Y CHECKBOX
+   ======================================================================== */
 
 .gdm-scope-toggle {
     display: flex;
@@ -555,23 +81,38 @@
     margin: 0;
     cursor: pointer;
     user-select: none;
+    gap: 10px;
 }
 
 .gdm-scope-toggle input[type="checkbox"] {
-    margin: 0 10px 0 0 !important;
+    margin: 0 !important;
     cursor: pointer;
+}
+
+.gdm-scope-toggle strong {
+    font-size: 14px;
+    color: #1d2327;
+    transition: color 0.2s ease;
 }
 
 .gdm-scope-toggle:hover strong {
     color: #2271b1;
 }
 
-/* Resumen de selección */
+.gdm-scope-checkbox {
+    width: 18px;
+    height: 18px;
+}
+
+/* ========================================================================
+   RESUMEN DE SELECCIÓN
+   ======================================================================== */
+
 .gdm-scope-summary {
-    display: none;
-    flex: 1;
+    display: flex;
     align-items: center;
     gap: 10px;
+    flex: 1;
     padding-left: 15px;
     border-left: 2px solid #2271b1;
 }
@@ -589,6 +130,7 @@
     color: #2271b1;
 }
 
+/* Botón editar en resumen */
 .gdm-scope-edit {
     padding: 4px 12px !important;
     height: auto !important;
@@ -596,6 +138,8 @@
     font-size: 12px !important;
     border-color: #2271b1 !important;
     color: #2271b1 !important;
+    background: transparent !important;
+    transition: all 0.2s ease;
 }
 
 .gdm-scope-edit:hover {
@@ -603,7 +147,10 @@
     color: #fff !important;
 }
 
-/* Contenido expandible */
+/* ========================================================================
+   CONTENIDO EXPANDIBLE
+   ======================================================================== */
+
 .gdm-scope-content {
     padding: 15px;
     display: none;
@@ -615,61 +162,12 @@
     animation: slideDown 0.3s ease;
 }
 
-/* Acciones del ámbito */
-.gdm-scope-actions {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid #e0e0e0;
-}
+/* ========================================================================
+   LISTAS ESPECÍFICAS DE ÁMBITOS
+   ======================================================================== */
 
-.gdm-scope-accept {
-    padding: 8px 20px !important;
-    height: auto !important;
-    line-height: 1.4 !important;
-    font-weight: 600 !important;
-}
-
-.gdm-scope-accept .dashicons {
-    vertical-align: middle;
-    margin-right: 5px;
-}
-
-.gdm-selection-counter {
-    font-size: 12px;
-    color: #666;
-    font-weight: 600;
-    padding: 5px 12px;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 3px;
-}
-
-/* Filtros de búsqueda */
-.gdm-filter-input {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    margin-bottom: 10px;
-    box-sizing: border-box;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.gdm-filter-input:focus {
-    border-color: #2271b1;
-    outline: none;
-    box-shadow: 0 0 0 1px #2271b1;
-}
-
-/* Listas con scroll */
-.gdm-category-list,
-.gdm-tag-list,
-.gdm-product-list,
-.gdm-attribute-list {
-    max-height: 250px;
+.gdm-scope-list {
+    max-height: 300px;
     overflow-y: auto;
     border: 1px solid #ddd;
     border-radius: 4px;
@@ -678,123 +176,330 @@
     margin-bottom: 12px;
 }
 
-/* Scrollbar personalizado */
-.gdm-category-list::-webkit-scrollbar,
-.gdm-tag-list::-webkit-scrollbar,
-.gdm-product-list::-webkit-scrollbar,
-.gdm-attribute-list::-webkit-scrollbar {
+/* Scrollbar personalizado (WebKit) */
+.gdm-scope-list::-webkit-scrollbar {
     width: 8px;
 }
 
-.gdm-category-list::-webkit-scrollbar-track,
-.gdm-tag-list::-webkit-scrollbar-track,
-.gdm-product-list::-webkit-scrollbar-track,
-.gdm-attribute-list::-webkit-scrollbar-track {
+.gdm-scope-list::-webkit-scrollbar-track {
     background: #f1f1f1;
     border-radius: 4px;
 }
 
-.gdm-category-list::-webkit-scrollbar-thumb,
-.gdm-tag-list::-webkit-scrollbar-thumb,
-.gdm-product-list::-webkit-scrollbar-thumb,
-.gdm-attribute-list::-webkit-scrollbar-thumb {
+.gdm-scope-list::-webkit-scrollbar-thumb {
     background: #c1c1c1;
     border-radius: 4px;
+    transition: background 0.2s ease;
 }
 
-.gdm-category-list::-webkit-scrollbar-thumb:hover,
-.gdm-tag-list::-webkit-scrollbar-thumb:hover,
-.gdm-product-list::-webkit-scrollbar-thumb:hover,
-.gdm-attribute-list::-webkit-scrollbar-thumb:hover {
+.gdm-scope-list::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
 }
 
-/* Items de checkbox */
-.gdm-checkbox-item {
-    display: block;
-    padding: 8px 10px;
-    cursor: pointer;
-    transition: background 0.2s ease;
-    border-radius: 3px;
-    margin-bottom: 2px;
+/* Scrollbar para Firefox */
+.gdm-scope-list {
+    scrollbar-width: thin;
+    scrollbar-color: #c1c1c1 #f1f1f1;
 }
 
-.gdm-checkbox-item:hover {
+/* ========================================================================
+   ACCIONES DEL ÁMBITO
+   ======================================================================== */
+
+.gdm-scope-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e0e0e0;
+    gap: 10px;
+}
+
+/* Botón guardar/aceptar */
+.gdm-scope-save {
+    padding: 8px 20px !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    font-weight: 600 !important;
+}
+
+.gdm-scope-save .dashicons {
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+/* Botón cancelar */
+.gdm-scope-cancel {
+    padding: 8px 16px !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+}
+
+/* Contador de selección */
+.gdm-selection-counter {
+    font-size: 12px;
+    color: #666;
+    font-weight: 600;
+    padding: 5px 12px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
+/* ========================================================================
+   GRUPOS DE ATRIBUTOS (Específico para scope-attributes)
+   ======================================================================== */
+
+.gdm-attribute-group {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.gdm-attribute-group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.gdm-attribute-title {
+    display: block;
+    margin-bottom: 10px;
+    color: #2271b1;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.gdm-attribute-terms {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+}
+
+.gdm-term-item {
+    margin: 0 !important;
+}
+
+/* ========================================================================
+   CAMPOS DE PRECIO (Específico para scope-price)
+   ======================================================================== */
+
+.gdm-price-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gdm-currency {
+    font-weight: 600;
+    color: #2271b1;
+    font-size: 14px;
+}
+
+.gdm-max-wrapper {
+    transition: opacity 0.3s ease, max-height 0.3s ease;
+}
+
+/* ========================================================================
+   BADGES DE ESTADO (Específico para scope-stock)
+   ======================================================================== */
+
+.gdm-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 13px;
+    gap: 5px;
+}
+
+.gdm-status-instock {
+    background: #d4edda;
+    color: #155724;
+}
+
+.gdm-status-outofstock {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.gdm-status-backorder {
+    background: #fff3cd;
+    color: #856404;
+}
+
+/* ========================================================================
+   ITEMS ADICIONALES
+   ======================================================================== */
+
+.gdm-item-price {
+    color: #2271b1;
+    font-size: 11px;
+    margin-left: auto;
+}
+
+/* ========================================================================
+   GRID DE MÓDULOS (Para sección "Aplica a")
+   ======================================================================== */
+
+.gdm-modules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.gdm-module-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 15px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #fff;
+}
+
+.gdm-module-checkbox:hover {
+    border-color: #2271b1;
+    background: #f0f6fc;
+}
+
+.gdm-module-checkbox.active {
+    border-color: #2271b1;
     background: #e8f0fe;
 }
 
-.gdm-checkbox-item input[type="checkbox"] {
-    margin-right: 8px;
-    vertical-align: middle;
+.gdm-module-checkbox input[type="checkbox"] {
+    margin: 0 !important;
 }
 
-.gdm-checkbox-item span {
-    vertical-align: middle;
+.gdm-module-icon {
+    font-size: 20px;
+    flex-shrink: 0;
 }
 
-/* Estado vacío */
-.gdm-empty-state {
-    padding: 30px;
-    text-align: center;
-    color: #999;
-}
-
-.gdm-empty-state .dashicons {
-    font-size: 48px;
-    width: 48px;
-    height: 48px;
-    margin-bottom: 10px;
-    opacity: 0.3;
-}
-
-.gdm-empty-state p {
-    margin: 0;
-    font-size: 13px;
-}
-
-/* Animaciones */
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.gdm-module-label {
+    flex: 1;
+    font-weight: 500;
+    color: #1d2327;
 }
 
 /* ========================================================================
    RESPONSIVE
    ======================================================================== */
+
 @media screen and (max-width: 782px) {
     .gdm-scope-header {
         flex-direction: column;
         align-items: flex-start;
     }
-    
+
     .gdm-scope-summary {
         padding-left: 0;
         border-left: none;
         padding-top: 10px;
         border-top: 1px solid #ddd;
+        width: 100%;
     }
-    
-    .gdm-category-list,
-    .gdm-tag-list,
-    .gdm-product-list,
-    .gdm-attribute-list {
-        max-height: 200px;
-    }
-    
+
     .gdm-scope-actions {
         flex-direction: column;
         gap: 10px;
     }
-    
-    .gdm-scope-accept,
+
+    .gdm-scope-save,
+    .gdm-scope-cancel,
     .gdm-selection-counter {
         width: 100%;
         text-align: center;
+    }
+
+    .gdm-scope-list {
+        max-height: 200px;
+    }
+
+    .gdm-attribute-terms {
+        grid-template-columns: 1fr;
+    }
+
+    .gdm-modules-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media screen and (min-width: 783px) and (max-width: 1024px) {
+    .gdm-modules-grid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+}
+
+/* ========================================================================
+   DARK MODE
+   ======================================================================== */
+
+@media (prefers-color-scheme: dark) {
+    .gdm-scope-group {
+        border-color: #444;
+        background: #1e1e1e;
+    }
+
+    .gdm-scope-header {
+        background: #2a2a2a;
+        border-bottom-color: #444;
+    }
+
+    .gdm-scope-header:hover {
+        background: #333;
+    }
+
+    .gdm-scope-toggle strong {
+        color: #e0e0e0;
+    }
+
+    .gdm-scope-content {
+        background: #252525;
+    }
+
+    .gdm-scope-list {
+        background: #2a2a2a;
+        border-color: #444;
+    }
+
+    .gdm-scope-list::-webkit-scrollbar-track {
+        background: #1e1e1e;
+    }
+
+    .gdm-scope-list::-webkit-scrollbar-thumb {
+        background: #555;
+    }
+
+    .gdm-scope-list::-webkit-scrollbar-thumb:hover {
+        background: #666;
+    }
+
+    .gdm-selection-counter {
+        background: #2a2a2a;
+        border-color: #444;
+        color: #e0e0e0;
+    }
+
+    .gdm-module-checkbox {
+        background: #2a2a2a;
+        border-color: #444;
+    }
+
+    .gdm-module-checkbox:hover,
+    .gdm-module-checkbox.active {
+        background: #333;
+        border-color: #2271b1;
+    }
+
+    .gdm-module-label {
+        color: #e0e0e0;
     }
 }
