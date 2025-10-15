@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) exit;
 
 final class GDM_Fields_Admin {
     
-    public static function init() {
+    public static function initialize_fields_product_panel() {
         // Hook para añadir tab de campos en producto
         add_filter('woocommerce_product_data_tabs', [__CLASS__, 'add_product_tab']);
         add_action('woocommerce_product_data_panels', [__CLASS__, 'add_product_panel']);
@@ -90,4 +90,4 @@ final class GDM_Fields_Admin {
     }
 }
 
-GDM_Fields_Admin::init();
+GDM_Fields_Admin::initialize_fields_product_panel();

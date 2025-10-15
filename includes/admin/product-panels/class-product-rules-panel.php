@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) exit;
 
 final class GDM_Rules_Admin {
     
-    public static function init() {
+    public static function initialize_rules_product_panel() {
         // Hook para añadir tab de reglas en producto
         add_filter('woocommerce_product_data_tabs', [__CLASS__, 'add_product_tab']);
         add_action('woocommerce_product_data_panels', [__CLASS__, 'add_product_panel']);
@@ -107,4 +107,4 @@ final class GDM_Rules_Admin {
     }
 }
 
-GDM_Rules_Admin::init();
+GDM_Rules_Admin::initialize_rules_product_panel();
