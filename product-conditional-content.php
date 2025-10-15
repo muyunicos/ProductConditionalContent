@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Reglas de Contenido para WooCommerce
  * Description: Motor profesional de reglas y campos personalizados con sistema modular para productos WooCommerce
- * Version: 6.2.3
+ * Version: 6.2.4
  * Author: MuyUnicos
  * Author URI: https://muyunicos.com
  * Text Domain: product-conditional-content
@@ -18,7 +18,7 @@
 if (!defined('ABSPATH')) exit;
 
 // ✅ Constantes globales (ANTES de cualquier hook)
-define('GDM_VERSION', '6.2.3');
+define('GDM_VERSION', '6.2.4'); // Incrementado por fix de traducciones
 define('GDM_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('GDM_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('GDM_PLUGIN_FILE', __FILE__);
@@ -27,7 +27,8 @@ define('GDM_PLUGIN_FILE', __FILE__);
 require_once GDM_PLUGIN_DIR . 'includes/compatibility/class-compat-check.php';
 
 /**
- * ✅ CORRECCIÓN CRÍTICA v6.2.3: Orden de carga correcto
+ * ✅ CORRECCIÓN CRÍTICA v6.2.4: Mover carga de traducciones DENTRO de plugins_loaded
+ * Evita warnings de _load_textdomain_just_in_time en WordPress 6.7+
  */
 add_action('plugins_loaded', function() {
     // Verificar compatibilidad
@@ -48,7 +49,7 @@ add_action('plugins_loaded', function() {
     // Core básico
     require_once GDM_PLUGIN_DIR . 'includes/core/class-plugin-bootstrap.php';
     require_once GDM_PLUGIN_DIR . 'includes/core/class-custom-post-types.php';
-
+    
     // ✅ CRÍTICO: Cargar clases base ANTES de managers
     require_once GDM_PLUGIN_DIR . 'includes/admin/modules/class-module-base.php';
     require_once GDM_PLUGIN_DIR . 'includes/admin/scopes/class-scope-base.php';
@@ -94,10 +95,12 @@ add_action('plugins_loaded', function() {
         require_once GDM_PLUGIN_DIR . 'includes/frontend/class-options-renderer.php';
         require_once GDM_PLUGIN_DIR . 'includes/frontend/class-shortcodes-handler.php';
     }
+    
 }, 10);
 
 /**
- * ✅ Cargar traducciones en init (NO antes)
+ * ✅ FIX CRÍTICO v6.2.4: Cargar traducciones en init (NO antes)
+ * Esto evita el warning: "Translation loading triggered too early"
  */
 add_action('init', function() {
     load_plugin_textdomain(
@@ -105,7 +108,7 @@ add_action('init', function() {
         false,
         dirname(plugin_basename(__FILE__)) . '/languages'
     );
-}, 5);
+}, 5); // Prioridad 5 para cargar antes que otros componentes que usen traducciones
 
 /**
  * Cron para programaciones
