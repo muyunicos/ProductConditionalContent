@@ -108,9 +108,15 @@ class GDM_Scope_Products extends GDM_Scope_Base {
     
     /**
      * AJAX: Buscar productos
+     * ✅ MEJORA #1: Validación de permisos y caché
      */
     public function ajax_search_products() {
         check_ajax_referer('gdm_admin_nonce', 'nonce');
+        
+        // ✅ Verificar permisos
+        if (!current_user_can('edit_posts')) {
+            wp_send_json_error(['message' => __('Permisos insuficientes', 'product-conditional-content')]);
+        }
         
         $search = isset($_POST['search']) ? sanitize_text_field($_POST['search']) : '';
         
@@ -118,7 +124,21 @@ class GDM_Scope_Products extends GDM_Scope_Base {
             wp_send_json_error(['message' => __('Mínimo 3 caracteres', 'product-conditional-content')]);
         }
         
-        $products = wc_get_products(['s' => $search, 'limit' => 50, 'return' => 'ids']);
+        // ✅ Implementar caché
+        $cache_key = 'gdm_product_search_' . md5($search);
+        $products = wp_cache_get($cache_key, 'gdm_scopes');
+        
+        if ($products === false) {
+            $products = wc_get_products([
+                's' => $search, 
+                'limit' => 50, 
+                'return' => 'ids',
+                'orderby' => 'title',
+                'order' => 'ASC'
+            ]);
+            wp_cache_set($cache_key, $products, 'gdm_scopes', 300); // 5 minutos
+        }
+        
         $results = [];
         
         foreach ($products as $product_id) {
@@ -135,20 +155,25 @@ class GDM_Scope_Products extends GDM_Scope_Base {
         wp_send_json_success(['products' => $results]);
     }
     
+    /**
+     * ✅ FIX #1: Corregido selector y lógica de duplicados
+     * ✅ MEJORA #4: Debounce optimizado
+     */
     protected function render_scripts() {
         ?>
         <script>
         jQuery(document).ready(function($) {
-            let searchTimeout;
+            var searchTimeout;
+            var $searchInput = $('#gdm-<?php echo esc_js($this->scope_id); ?>-search');
+            var $list = $('.gdm-<?php echo esc_js($this->scope_id); ?>-list');
             
-            $('#gdm-<?php echo esc_js($this->scope_id); ?>-search').on('keyup', function() {
+            // ✅ Búsqueda con debounce optimizado
+            $searchInput.on('input', function() {
                 clearTimeout(searchTimeout);
-                var search = $(this).val();
+                var search = this.value.trim();
                 
                 if (search.length < 3) {
-                    $('.gdm-<?php echo esc_js($this->scope_id); ?>-list').html(
-                        '<div class="gdm-empty-state"><p>Escribe al menos 3 caracteres</p></div>'
-                    );
+                    $list.html('<div class="gdm-empty-state"><p>Escribe al menos 3 caracteres</p></div>');
                     return;
                 }
                 
@@ -165,37 +190,47 @@ class GDM_Scope_Products extends GDM_Scope_Base {
                             if (response.success && response.data.products.length > 0) {
                                 // ✅ Obtener IDs ya seleccionados
                                 var selectedIds = [];
-                                $('.gdm-productos-list input:checked').each(function() {
+                                $list.find('input:checked').each(function() {
                                     selectedIds.push($(this).val());
                                 });
                                 
-                                // ✅ Agregar productos nuevos SIN borrar los existentes
                                 var html = '';
                                 response.data.products.forEach(function(product) {
-                                    // Marcar como checked si ya estaba seleccionado
-                                    var isChecked = selectedIds.includes(product.id.toString());
+                                    var productIdStr = product.id.toString();
                                     
-                                    // No duplicar si ya existe en la lista
-                                    if ($('.gdm-productos-list input[value="' + product.id + '"]').length > 0) {
+                                    // ✅ No duplicar productos existentes
+                                    if ($list.find('input[value="' + productIdStr + '"]').length > 0) {
                                         return;
                                     }
                                     
+                                    var isChecked = selectedIds.includes(productIdStr);
+                                    
                                     html += '<label class="gdm-checkbox-item">' +
-                                           '<input type="checkbox" name="gdm_productos_objetivo[]" value="' + product.id + '" ' + (isChecked ? 'checked' : '') + ' class="gdm-scope-item-checkbox">' +
+                                           '<input type="checkbox" name="gdm_productos_objetivo[]" value="' + product.id + '" ' + 
+                                           (isChecked ? 'checked' : '') + ' class="gdm-scope-item-checkbox">' +
                                            '<span>' + product.title + '</span>' +
                                            '<span class="gdm-item-price">' + product.price + '</span>' +
                                            '</label>';
                                 });
                                 
-                                $('.gdm-productos-list').append(html); // ✅ APPEND en vez de HTML
+                                // ✅ APPEND en vez de reemplazar
+                                if (html) {
+                                    $list.append(html);
+                                }
+                            } else {
+                                $list.html('<div class="gdm-empty-state"><p>No se encontraron productos</p></div>');
                             }
+                        },
+                        error: function() {
+                            $list.html('<div class="gdm-empty-state"><p>Error en la búsqueda</p></div>');
                         }
                     });
-                }, 500);
+                }, 300); // ✅ Debounce de 300ms
             });
             
+            // ✅ Actualizar contador dinámicamente
             $(document).on('change', '.gdm-<?php echo esc_js($this->scope_id); ?>-list input', function() {
-                var count = $('.gdm-<?php echo esc_js($this->scope_id); ?>-list input:checked').length;
+                var count = $list.find('input:checked').length;
                 $('#gdm-<?php echo esc_js($this->scope_id); ?>-counter').text(
                     count > 0 ? count + ' seleccionados' : 'Ninguno seleccionado'
                 );

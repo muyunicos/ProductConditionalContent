@@ -51,39 +51,40 @@ abstract class GDM_Scope_Base {
             wp_die(__('El ámbito debe definir scope_id y scope_name', 'product-conditional-content'));
         }
         
-        // ✅ AGREGAR ESTA LÍNEA:
-        add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_scope_assets']);
+        // ✅ FIX #3: ELIMINADO - El enqueue se hace desde el Manager
+        // add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_scope_assets']);
         
         // Hooks de inicialización
         $this->scope_init();
     }
 
     /**
-    * Encolar CSS y JS globales de scopes (NUEVO)
-    * 
-    * @since 6.2.0
-    */
+     * Encolar CSS y JS globales de scopes
+     * ✅ MEJORA: Método estático para llamar desde Manager
+     * 
+     * @since 6.2.0
+     */
     public static function enqueue_scope_assets() {
-    $screen = get_current_screen();
-    if (!$screen || $screen->id !== 'gdm_regla') {
-        return;
-    }
+        $screen = get_current_screen();
+        if (!$screen || $screen->id !== 'gdm_regla') {
+            return;
+        }
 
-    // CSS Base Global (Capa 1)
-    wp_enqueue_style(
-        'gdm-rules-admin-general',
-        GDM_PLUGIN_URL . 'assets/admin/css/rules-admin-general.css',
-        [],
-        GDM_VERSION
-    );
+        // CSS Base Global (Capa 1)
+        wp_enqueue_style(
+            'gdm-rules-admin-general',
+            GDM_PLUGIN_URL . 'assets/admin/css/rules-admin-general.css',
+            [],
+            GDM_VERSION
+        );
 
-    // CSS Específico de Scopes (Capa 2)
-    wp_enqueue_style(
-        'gdm-rules-config-metabox',
-        GDM_PLUGIN_URL . 'assets/admin/css/rules-config-metabox.css',
-        ['gdm-rules-admin-general'], // ✅ Dependencia explícita
-        GDM_VERSION
-    );
+        // CSS Específico de Scopes (Capa 2)
+        wp_enqueue_style(
+            'gdm-rules-config-metabox',
+            GDM_PLUGIN_URL . 'assets/admin/css/rules-config-metabox.css',
+            ['gdm-rules-admin-general'], // ✅ Dependencia explícita
+            GDM_VERSION
+        );
     }
 
     /**
@@ -95,6 +96,8 @@ abstract class GDM_Scope_Base {
     
     /**
      * Renderizar el ámbito completo
+     * ✅ MEJORA #2: Cacheo de contador para evitar cálculos duplicados
+     * ✅ MEJORA #3: Accessibility (ARIA labels)
      * 
      * @param int $post_id ID del post
      */
@@ -102,9 +105,14 @@ abstract class GDM_Scope_Base {
         $data = $this->get_scope_data($post_id);
         $has_selection = $this->has_selection($data);
         $summary = $this->get_summary($data);
+        $counter_text = $this->get_counter_text($data); // ✅ Cachear resultado
         
         ?>
-        <div class="gdm-scope-group" data-scope="<?php echo esc_attr($this->scope_id); ?>">
+        <div class="gdm-scope-group" 
+             data-scope="<?php echo esc_attr($this->scope_id); ?>"
+             role="region" 
+             aria-labelledby="gdm-<?php echo esc_attr($this->scope_id); ?>-label">
+            
             <div class="gdm-scope-header">
                 <label class="gdm-scope-toggle">
                     <input type="checkbox" 
@@ -112,8 +120,12 @@ abstract class GDM_Scope_Base {
                            name="gdm_<?php echo esc_attr($this->scope_id); ?>_enabled" 
                            class="gdm-scope-checkbox"
                            value="1"
+                           aria-describedby="gdm-<?php echo esc_attr($this->scope_id); ?>-summary"
+                           aria-controls="gdm-<?php echo esc_attr($this->scope_id); ?>-content"
                            <?php checked($has_selection); ?>>
-                    <strong><?php echo esc_html($this->scope_icon . ' ' . $this->scope_name); ?></strong>
+                    <strong id="gdm-<?php echo esc_attr($this->scope_id); ?>-label">
+                        <?php echo esc_html($this->scope_icon . ' ' . $this->scope_name); ?>
+                    </strong>
                 </label>
                 
                 <div class="gdm-scope-summary" 
@@ -124,7 +136,9 @@ abstract class GDM_Scope_Base {
                     </span>
                     <button type="button" 
                             class="button button-small gdm-scope-edit" 
-                            data-target="<?php echo esc_attr($this->scope_id); ?>">
+                            data-target="<?php echo esc_attr($this->scope_id); ?>"
+                            aria-label="<?php printf(__('Editar %s', 'product-conditional-content'), $this->scope_name); ?>"
+                            aria-expanded="false">
                         <?php _e('Editar', 'product-conditional-content'); ?>
                     </button>
                 </div>
@@ -132,6 +146,8 @@ abstract class GDM_Scope_Base {
             
             <div class="gdm-scope-content" 
                  id="gdm-<?php echo esc_attr($this->scope_id); ?>-content" 
+                 role="group"
+                 aria-hidden="true"
                  style="display:none;">
                 
                 <?php $this->render_content($post_id, $data); ?>
@@ -139,17 +155,21 @@ abstract class GDM_Scope_Base {
                 <div class="gdm-scope-actions">
                     <button type="button" 
                             class="button button-primary gdm-scope-save" 
-                            data-target="<?php echo esc_attr($this->scope_id); ?>">
+                            data-target="<?php echo esc_attr($this->scope_id); ?>"
+                            aria-label="<?php printf(__('Guardar cambios en %s', 'product-conditional-content'), $this->scope_name); ?>">
                         <span class="dashicons dashicons-yes"></span>
                         <?php _e('Guardar', 'product-conditional-content'); ?>
                     </button>
                     <button type="button" 
                             class="button gdm-scope-cancel" 
-                            data-target="<?php echo esc_attr($this->scope_id); ?>">
+                            data-target="<?php echo esc_attr($this->scope_id); ?>"
+                            aria-label="<?php _e('Cancelar cambios', 'product-conditional-content'); ?>">
                         <?php _e('Cancelar', 'product-conditional-content'); ?>
                     </button>
-                    <span class="gdm-selection-counter" id="gdm-<?php echo esc_attr($this->scope_id); ?>-counter">
-                        <?php echo esc_html($this->get_counter_text($data)); ?>
+                    <span class="gdm-selection-counter" 
+                          id="gdm-<?php echo esc_attr($this->scope_id); ?>-counter"
+                          aria-live="polite">
+                        <?php echo esc_html($counter_text); ?>
                     </span>
                 </div>
             </div>

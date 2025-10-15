@@ -18,17 +18,15 @@ class GDM_Scope_Categories extends GDM_Scope_Base {
     protected $scope_icon = '📂';
     protected $priority = 10;
     
-    /**
-     * Renderizar contenido del ámbito
-     */
     protected function render_content($post_id, $data) {
         ?>
         <input type="text" 
                id="gdm-<?php echo esc_attr($this->scope_id); ?>-filter" 
                class="gdm-filter-input" 
-               placeholder="<?php esc_attr_e('🔍 Buscar categorías...', 'product-conditional-content'); ?>">
+               placeholder="<?php esc_attr_e('🔍 Buscar categorías...', 'product-conditional-content'); ?>"
+               aria-label="<?php esc_attr_e('Filtrar categorías', 'product-conditional-content'); ?>">
         
-        <div class="gdm-<?php echo esc_attr($this->scope_id); ?>-list gdm-scope-list">
+        <div class="gdm-<?php echo esc_attr($this->scope_id); ?>-list gdm-scope-list" role="listbox">
             <?php
             $categories = get_terms([
                 'taxonomy' => 'product_cat',
@@ -41,7 +39,7 @@ class GDM_Scope_Categories extends GDM_Scope_Base {
                 foreach ($categories as $cat) {
                     $checked = in_array($cat->term_id, $data['objetivo']);
                     ?>
-                    <label class="gdm-checkbox-item">
+                    <label class="gdm-checkbox-item" role="option">
                         <input type="checkbox" 
                                name="gdm_<?php echo esc_attr($this->scope_id); ?>_objetivo[]" 
                                value="<?php echo esc_attr($cat->term_id); ?>"
@@ -58,9 +56,6 @@ class GDM_Scope_Categories extends GDM_Scope_Base {
         <?php
     }
     
-    /**
-     * Guardar datos
-     */
     public function save($post_id) {
         $objetivo = isset($_POST["gdm_{$this->scope_id}_objetivo"]) 
             ? array_map('intval', $_POST["gdm_{$this->scope_id}_objetivo"]) 
@@ -69,25 +64,14 @@ class GDM_Scope_Categories extends GDM_Scope_Base {
         $this->save_field($post_id, 'objetivo', $objetivo);
     }
     
-    /**
-     * Datos por defecto
-     */
     protected function get_default_data() {
-        return [
-            'objetivo' => [],
-        ];
+        return ['objetivo' => []];
     }
     
-    /**
-     * Verificar si hay selección
-     */
     protected function has_selection($data) {
         return !empty($data['objetivo']);
     }
     
-    /**
-     * Obtener resumen
-     */
     protected function get_summary($data) {
         if (empty($data['objetivo'])) {
             return '';
@@ -109,51 +93,55 @@ class GDM_Scope_Categories extends GDM_Scope_Base {
                ' <em>y ' . (count($names) - 3) . ' más</em>';
     }
     
-    /**
-     * Texto del contador
-     */
     protected function get_counter_text($data) {
         $count = count($data['objetivo']);
         return $count > 0 ? "{$count} seleccionadas" : 'Ninguna seleccionada';
     }
     
-    /**
-     * Verificar si producto cumple condiciones
-     */
     public function matches_product($product_id, $rule_id) {
         $data = $this->get_scope_data($rule_id);
         
-        // Si no hay selección, cumple por defecto
         if (empty($data['objetivo'])) {
             return true;
         }
         
-        // Obtener categorías del producto
         $product_cats = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'ids']);
         
-        // Verificar si tiene alguna de las categorías seleccionadas
         return !empty(array_intersect($data['objetivo'], $product_cats));
     }
     
     /**
-     * Scripts específicos
+     * ✅ MEJORA #4: Debounce optimizado + caché de elementos
      */
     protected function render_scripts() {
         ?>
         <script>
         jQuery(document).ready(function($) {
-            // Filtro de búsqueda
-            $('#gdm-<?php echo esc_js($this->scope_id); ?>-filter').on('keyup', function() {
-                var search = $(this).val().toLowerCase();
+            (function() {
+                var searchTimeout;
+                var $filter = $('#gdm-<?php echo esc_js($this->scope_id); ?>-filter');
                 var $list = $('.gdm-<?php echo esc_js($this->scope_id); ?>-list');
+                var $items = $list.find('.gdm-checkbox-item'); // ✅ Cachear elementos
                 
-                $list.find('.gdm-checkbox-item').each(function() {
-                    var text = $(this).text().toLowerCase();
-                    $(this).toggle(text.indexOf(search) > -1);
+                // ✅ Filtro con debounce
+                $filter.on('input', function() {
+                    clearTimeout(searchTimeout);
+                    var search = this.value.toLowerCase();
+                    
+                    searchTimeout = setTimeout(function() {
+                        if (search === '') {
+                            $items.show(); // ✅ Optimización para búsqueda vacía
+                        } else {
+                            $items.each(function() {
+                                var $this = $(this);
+                                $this.toggle($this.text().toLowerCase().indexOf(search) > -1);
+                            });
+                        }
+                    }, 150); // ✅ Debounce de 150ms
                 });
-            });
+            })();
             
-            // Actualizar contador al cambiar
+            // Actualizar contador
             $('.gdm-<?php echo esc_js($this->scope_id); ?>-list input').on('change', function() {
                 var count = $('.gdm-<?php echo esc_js($this->scope_id); ?>-list input:checked').length;
                 $('#gdm-<?php echo esc_js($this->scope_id); ?>-counter').text(

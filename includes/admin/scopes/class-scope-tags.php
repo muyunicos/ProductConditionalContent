@@ -23,9 +23,10 @@ class GDM_Scope_Tags extends GDM_Scope_Base {
         <input type="text" 
                id="gdm-<?php echo esc_attr($this->scope_id); ?>-filter" 
                class="gdm-filter-input" 
-               placeholder="<?php esc_attr_e('🔍 Buscar etiquetas...', 'product-conditional-content'); ?>">
+               placeholder="<?php esc_attr_e('🔍 Buscar etiquetas...', 'product-conditional-content'); ?>"
+               aria-label="<?php esc_attr_e('Filtrar etiquetas', 'product-conditional-content'); ?>">
         
-        <div class="gdm-<?php echo esc_attr($this->scope_id); ?>-list gdm-scope-list">
+        <div class="gdm-<?php echo esc_attr($this->scope_id); ?>-list gdm-scope-list" role="listbox">
             <?php
             $tags = get_terms([
                 'taxonomy' => 'product_tag',
@@ -38,7 +39,7 @@ class GDM_Scope_Tags extends GDM_Scope_Base {
                 foreach ($tags as $tag) {
                     $checked = in_array($tag->term_id, $data['objetivo']);
                     ?>
-                    <label class="gdm-checkbox-item">
+                    <label class="gdm-checkbox-item" role="option">
                         <input type="checkbox" 
                                name="gdm_<?php echo esc_attr($this->scope_id); ?>_objetivo[]" 
                                value="<?php echo esc_attr($tag->term_id); ?>"
@@ -109,16 +110,33 @@ class GDM_Scope_Tags extends GDM_Scope_Base {
         return !empty(array_intersect($data['objetivo'], $product_tags));
     }
     
+    /**
+     * ✅ MEJORA #4: Debounce optimizado
+     */
     protected function render_scripts() {
         ?>
         <script>
         jQuery(document).ready(function($) {
-            $('#gdm-<?php echo esc_js($this->scope_id); ?>-filter').on('keyup', function() {
-                var search = $(this).val().toLowerCase();
-                $('.gdm-<?php echo esc_js($this->scope_id); ?>-list .gdm-checkbox-item').each(function() {
-                    $(this).toggle($(this).text().toLowerCase().indexOf(search) > -1);
+            (function() {
+                var searchTimeout;
+                var $filter = $('#gdm-<?php echo esc_js($this->scope_id); ?>-filter');
+                var $items = $('.gdm-<?php echo esc_js($this->scope_id); ?>-list .gdm-checkbox-item');
+                
+                $filter.on('input', function() {
+                    clearTimeout(searchTimeout);
+                    var search = this.value.toLowerCase();
+                    
+                    searchTimeout = setTimeout(function() {
+                        if (search === '') {
+                            $items.show();
+                        } else {
+                            $items.each(function() {
+                                $(this).toggle($(this).text().toLowerCase().indexOf(search) > -1);
+                            });
+                        }
+                    }, 150);
                 });
-            });
+            })();
             
             $('.gdm-<?php echo esc_js($this->scope_id); ?>-list input').on('change', function() {
                 var count = $('.gdm-<?php echo esc_js($this->scope_id); ?>-list input:checked').length;

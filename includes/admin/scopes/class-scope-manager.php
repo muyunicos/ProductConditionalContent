@@ -25,6 +25,9 @@ final class GDM_Scope_Manager {
     }
     
     private function __construct() {
+        // ✅ FIX #3: Encolar assets UNA SOLA VEZ desde el Manager
+        add_action('admin_enqueue_scripts', ['GDM_Scope_Base', 'enqueue_scope_assets']);
+        
         // Registrar ámbitos del core inmediatamente
         $this->register_core_scopes();
         

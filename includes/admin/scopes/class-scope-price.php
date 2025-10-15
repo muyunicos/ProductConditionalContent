@@ -109,10 +109,14 @@ class GDM_Scope_Price extends GDM_Scope_Base {
         return $this->has_selection($data) ? 'Configurado' : 'Sin configurar';
     }
     
+    /**
+     * ✅ FIX #2: Soporte para productos variables
+     * ✅ Eliminada duplicación de $price
+     */
     public function matches_product($product_id, $rule_id) {
-    $data = $this->get_scope_data($rule_id);
-    
-    if (!$this->has_selection($data)) {
+        $data = $this->get_scope_data($rule_id);
+        
+        if (!$this->has_selection($data)) {
             return true;
         }
         
@@ -121,7 +125,7 @@ class GDM_Scope_Price extends GDM_Scope_Base {
             return false;
         }
         
-        // ✅ Manejo de productos variables
+        // ✅ Obtener precio según tipo de producto
         if ($product->is_type('variable')) {
             // Usar precio mínimo de variaciones
             $price = floatval($product->get_variation_price('min'));
@@ -130,12 +134,12 @@ class GDM_Scope_Price extends GDM_Scope_Base {
             $price = floatval($product->get_price());
         }
         
-        // Si el precio está vacío, no cumple
+        // Validar precio vacío
         if ($price <= 0) {
             return false;
         }
         
-        $price = floatval($product->get_price());
+        // ✅ ELIMINADA LÍNEA DUPLICADA: $price = floatval($product->get_price());
         
         switch ($data['condicion']) {
             case 'mayor_que':
