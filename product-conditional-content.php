@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Reglas de Contenido para WooCommerce
  * Description: Motor profesional de reglas y campos personalizados con sistema modular para productos WooCommerce
- * Version: 6.2.0
+ * Version: 6.2.1
  * Author: MuyUnicos
  * Author URI: https://muyunicos.com
  * Text Domain: product-conditional-content
@@ -17,9 +17,17 @@
 
 if (!defined('ABSPATH')) exit;
 
-/** --- Cargar clase de compatibilidad --- */
-require_once plugin_dir_path(__FILE__) . 'includes/compatibility/class-compat-check.php';
+/** --- Constantes globales (ANTES de verificar compatibilidad) --- */
+define('GDM_VERSION', '6.2.1');
+define('GDM_PLUGIN_DIR', plugin_dir_path(__FILE__));
+define('GDM_PLUGIN_URL', plugin_dir_url(__FILE__));
 
+/** --- Cargar clase de compatibilidad --- */
+require_once GDM_PLUGIN_DIR . 'includes/compatibility/class-compat-check.php';
+
+/**
+ * ✅ CORRECCIÓN: Inicializar en plugins_loaded con prioridad correcta
+ */
 add_action('plugins_loaded', function() {
     /** --- Verificar compatibilidad antes de cargar --- */
     $compat_result = GDM_Compat_Check::check();
@@ -29,13 +37,15 @@ add_action('plugins_loaded', function() {
         return;
     }
 
-    /** --- Constantes globales --- */
-    define('GDM_VERSION', '6.2.0');
-    define('GDM_PLUGIN_DIR', plugin_dir_path(__FILE__));
-    define('GDM_PLUGIN_URL', plugin_dir_url(__FILE__));
-
     /** --- Declarar compatibilidad HPOS --- */
     GDM_Compat_Check::declare_hpos_compatibility(__FILE__);
+    
+    /** --- ✅ NUEVO: Cargar traducciones en el momento correcto --- */
+    load_plugin_textdomain(
+        'product-conditional-content',
+        false,
+        dirname(plugin_basename(__FILE__)) . '/languages'
+    );
 
     /** --- Inicialización Core --- */
     require_once GDM_PLUGIN_DIR . 'includes/core/class-plugin-bootstrap.php';
@@ -46,7 +56,7 @@ add_action('plugins_loaded', function() {
     require_once GDM_PLUGIN_DIR . 'includes/admin/modules/class-module-manager.php';
     GDM_Module_Manager::instance();
     
-    /** --- Sistema Modular de Ámbitos (NUEVO) --- */
+    /** --- Sistema Modular de Ámbitos --- */
     require_once GDM_PLUGIN_DIR . 'includes/admin/scopes/class-scope-base.php';
     require_once GDM_PLUGIN_DIR . 'includes/admin/scopes/class-scope-manager.php';
     GDM_Scope_Manager::instance();
@@ -70,11 +80,16 @@ add_action('plugins_loaded', function() {
         require_once GDM_PLUGIN_DIR . 'includes/frontend/class-options-renderer.php';
         require_once GDM_PLUGIN_DIR . 'includes/frontend/class-shortcodes-handler.php';
     }
-    
+}, 10); // ✅ Prioridad 10 para asegurar que WooCommerce ya cargó
+
+/**
+ * ✅ CORRECCIÓN: Cron independiente con validación
+ */
+add_action('init', function() {
     if (!wp_next_scheduled('gdm_check_regla_schedules')) {
         wp_schedule_event(time(), 'hourly', 'gdm_check_regla_schedules');
     }
-});
+}, 15);
 
 register_activation_hook(__FILE__, function() {
     flush_rewrite_rules();

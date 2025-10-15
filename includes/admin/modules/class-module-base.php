@@ -29,10 +29,13 @@ abstract class GDM_Module_Base {
         }
         
         add_action('add_meta_boxes', [$this, 'register_metabox']);
+        
+        // ✅ CORRECCIÓN: Prioridad 20 (DESPUÉS del metabox principal pero ANTES del status)
         add_action('save_post_gdm_regla', [$this, 'save_module_data'], 20, 2);
+        
         add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
         
-        // ✅ NUEVO: Hook para controlar estado de metaboxes
+        // ✅ Hook para controlar estado de metaboxes
         add_filter('postbox_classes_gdm_regla_gdm_module_' . $this->module_id, [$this, 'set_metabox_state']);
         
         $this->module_init();

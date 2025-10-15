@@ -214,21 +214,44 @@ final class GDM_Reglas_Metabox {
      */
     public static function save_metabox($post_id, $post) {
         if (!isset($_POST['gdm_nonce']) || !wp_verify_nonce($_POST['gdm_nonce'], 'gdm_save_rule_data')) {
+            error_log('GDM: Nonce inválido al guardar regla ID ' . $post_id);
             return;
         }
-        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
-        if (!current_user_can('edit_post', $post_id)) return;
+        
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            error_log('GDM: Autosave detectado, no guardando regla ID ' . $post_id);
+            return;
+        }
+        
+        if (!current_user_can('edit_post', $post_id)) {
+            error_log('GDM: Usuario sin permisos para editar regla ID ' . $post_id);
+            return;
+        }
+
+        error_log('GDM: Guardando regla ID ' . $post_id);
+        error_log('GDM: POST data: ' . print_r($_POST, true));
 
         // Información básica
-        update_post_meta($post_id, '_gdm_prioridad', isset($_POST['gdm_prioridad']) ? absint($_POST['gdm_prioridad']) : 10);
-        update_post_meta($post_id, '_gdm_reutilizable', isset($_POST['gdm_reutilizable']) ? '1' : '0');
-        update_post_meta($post_id, '_gdm_aplicar_a', isset($_POST['gdm_aplicar_a']) ? array_map('sanitize_text_field', $_POST['gdm_aplicar_a']) : []);
+        $prioridad = isset($_POST['gdm_prioridad']) ? absint($_POST['gdm_prioridad']) : 10;
+        update_post_meta($post_id, '_gdm_prioridad', $prioridad);
+        error_log('GDM: Prioridad guardada: ' . $prioridad);
+        
+        $reutilizable = isset($_POST['gdm_reutilizable']) ? '1' : '0';
+        update_post_meta($post_id, '_gdm_reutilizable', $reutilizable);
+        
+        $aplicar_a = isset($_POST['gdm_aplicar_a']) ? array_map('sanitize_text_field', $_POST['gdm_aplicar_a']) : [];
+        update_post_meta($post_id, '_gdm_aplicar_a', $aplicar_a);
+        error_log('GDM: Aplicar a guardado: ' . print_r($aplicar_a, true));
 
-        // ✅ Guardar ámbitos dinámicamente
         if (class_exists('GDM_Scope_Manager')) {
             $scope_manager = GDM_Scope_Manager::instance();
             $scope_manager->save_all($post_id);
+            error_log('GDM: Ámbitos guardados correctamente');
+        } else {
+            error_log('GDM: ERROR - Scope Manager no disponible');
         }
+        
+        error_log('GDM: Regla ID ' . $post_id . ' guardada exitosamente');
     }
 
     /**

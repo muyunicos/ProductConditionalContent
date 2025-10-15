@@ -35,12 +35,12 @@ final class GDM_Regla_Status_Manager {
         // Enqueue scripts
         add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_scripts']);
         
-        // Guardar datos
-        add_action('save_post_gdm_regla', [__CLASS__, 'save_metabox_data'], 10, 2);
+        // ✅ CORRECCIÓN: Cambiar prioridad a 30 (DESPUÉS del metabox principal)
+        add_action('save_post_gdm_regla', [__CLASS__, 'save_metabox_data'], 30, 2);
         
         // Quick Edit
         add_action('quick_edit_custom_box', [__CLASS__, 'quick_edit_fields'], 10, 2);
-        add_action('save_post_gdm_regla', [__CLASS__, 'save_quick_edit'], 15, 2);
+        add_action('save_post_gdm_regla', [__CLASS__, 'save_quick_edit'], 35, 2);
         
         // Bulk Edit
         add_action('bulk_edit_custom_box', [__CLASS__, 'bulk_edit_fields'], 10, 2);
