@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Reglas de Contenido para WooCommerce
  * Description: Motor profesional de reglas y campos personalizados con sistema modular para productos WooCommerce
- * Version: 6.1.0
+ * Version: 6.2.0
  * Author: MuyUnicos
  * Author URI: https://muyunicos.com
  * Text Domain: product-conditional-content
@@ -30,7 +30,7 @@ add_action('plugins_loaded', function() {
     }
 
     /** --- Constantes globales --- */
-    define('GDM_VERSION', '6.1.0');
+    define('GDM_VERSION', '6.2.0');
     define('GDM_PLUGIN_DIR', plugin_dir_path(__FILE__));
     define('GDM_PLUGIN_URL', plugin_dir_url(__FILE__));
 
