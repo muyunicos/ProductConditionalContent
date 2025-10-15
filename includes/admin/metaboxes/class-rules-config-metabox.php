@@ -11,7 +11,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-final class GDM_Reglas_Metabox {
+final class GDM_Rules_Config_Metabox {
     
     public static function init() {
         add_action('add_meta_boxes', [__CLASS__, 'add_metabox']);
@@ -377,4 +377,4 @@ final class GDM_Reglas_Metabox {
     }
 }
 
-GDM_Reglas_Metabox::init();
+GDM_Rules_Config_Metabox::init();
