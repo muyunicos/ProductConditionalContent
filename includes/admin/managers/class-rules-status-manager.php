@@ -16,42 +16,40 @@ if (!defined('ABSPATH')) exit;
          * Inicializar hooks
          */
         public static function init() {
-            // ✅ FIX: Prioridad 10 (DESPUÉS de load_textdomain que usa prioridad 5)
-            add_action('init', [__CLASS__, 'register_custom_statuses'], 10);
-            
-            // ✅ FIX: Prioridad 11 (DESPUÉS del registro de estados)
-            add_action('init', [__CLASS__, 'register_toggle_handler'], 11);
-            
-            // Columnas del listado
-            add_filter('manage_gdm_regla_posts_columns', [__CLASS__, 'custom_columns']);
-            add_action('manage_gdm_regla_posts_custom_column', [__CLASS__, 'custom_column_content'], 10, 2);
-            add_filter('manage_edit-gdm_regla_sortable_columns', [__CLASS__, 'sortable_columns']);
-            
-            // Modificar metabox nativo sin duplicar elementos
-            add_action('post_submitbox_start', [__CLASS__, 'remove_native_elements']);
-            add_action('post_submitbox_misc_actions', [__CLASS__, 'add_custom_sections']);
-            add_filter('gettext', [__CLASS__, 'change_publish_button_text'], 10, 2);
-            
-            // Enqueue scripts
-            add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_scripts']);
-            
-            // ✅ CORRECCIÓN: Cambiar prioridad a 30 (DESPUÉS del metabox principal)
-            add_action('save_post_gdm_regla', [__CLASS__, 'save_metabox_data'], 30, 2);
-            
-            // Quick Edit
-            add_action('quick_edit_custom_box', [__CLASS__, 'quick_edit_fields'], 10, 2);
-            add_action('save_post_gdm_regla', [__CLASS__, 'save_quick_edit'], 35, 2);
-            
-            // Filtros de listado
-            add_action('restrict_manage_posts', [__CLASS__, 'add_status_filter']);
-            add_filter('parse_query', [__CLASS__, 'filter_by_status_query']);
-            add_filter('views_edit-gdm_regla', [__CLASS__, 'custom_status_views']);
-            add_action('pre_get_posts', [__CLASS__, 'filter_by_status']);
-            add_filter('display_post_states', [__CLASS__, 'display_post_states'], 10, 2);
-            
-            // Convertir publish a habilitada automáticamente
-            add_filter('wp_insert_post_data', [__CLASS__, 'force_custom_status'], 10, 2);
-        }
+        add_action('init', [__CLASS__, 'register_custom_statuses'], 10);
+        add_action('init', [__CLASS__, 'register_toggle_handler'], 11);
+        
+        // Columnas del listado
+        add_filter('manage_gdm_regla_posts_columns', [__CLASS__, 'custom_columns']);
+        add_action('manage_gdm_regla_posts_custom_column', [__CLASS__, 'custom_column_content'], 10, 2);
+        add_filter('manage_edit-gdm_regla_sortable_columns', [__CLASS__, 'sortable_columns']);
+        
+        // Modificar metabox nativo sin duplicar elementos
+        add_action('post_submitbox_start', [__CLASS__, 'remove_native_elements']);
+        add_action('post_submitbox_misc_actions', [__CLASS__, 'add_custom_sections']);
+        add_filter('gettext', [__CLASS__, 'change_publish_button_text'], 10, 2);
+        
+        // Enqueue scripts
+        add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_scripts']);
+        
+        add_action('save_post_gdm_regla', [__CLASS__, 'save_metabox_data'], 30, 2);
+        
+        // Quick Edit
+        add_action('quick_edit_custom_box', [__CLASS__, 'quick_edit_fields'], 10, 2);
+        add_action('save_post_gdm_regla', [__CLASS__, 'save_quick_edit'], 35, 2);
+        
+        // Filtros de listado
+        add_action('restrict_manage_posts', [__CLASS__, 'add_status_filter']);
+        add_filter('views_edit-gdm_regla', [__CLASS__, 'custom_status_views']);
+        add_action('pre_get_posts', [__CLASS__, 'filter_by_status']);
+        add_filter('display_post_states', [__CLASS__, 'display_post_states'], 10, 2);
+        
+        // Convertir publish a habilitada automáticamente
+        add_filter('wp_insert_post_data', [__CLASS__, 'force_custom_status'], 10, 2);
+        
+        // AJAX
+        add_action('wp_ajax_gdm_get_regla_data', [__CLASS__, 'ajax_get_regla_data']);
+    }
 
         /**
          * Registrar estados personalizados
