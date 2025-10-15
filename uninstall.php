@@ -1,0 +1,1 @@
+crear codigo básico para uninstall.php
