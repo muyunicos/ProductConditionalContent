@@ -110,9 +110,6 @@ final class GDM_Rules_Config_Metabox {
                         $modules = $module_manager->get_modules_ordered();
                         
                         foreach ($modules as $module_id => $module_config) {
-                            if (!$module_config['enabled']) {
-                                continue;
-                            }
                             
                             $is_checked = in_array($module_id, $aplicar_a);
                             ?>
