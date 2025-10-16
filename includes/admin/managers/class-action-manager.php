@@ -82,7 +82,12 @@ final class GDM_Action_Manager {
             }
 
             $action_id = $matches[1];
-            $class_name = 'GDM_Action_' . str_replace('-', '_', ucwords($action_id, '-'));
+
+            // Convertir action-id a Action_Id para nombre de clase
+            // Ejemplo: price -> Price, featured -> Featured, product-types -> Product_Types
+            $parts = explode('-', $action_id);
+            $parts = array_map('ucfirst', $parts);
+            $class_name = 'GDM_Action_' . implode('_', $parts);
 
             // Registrar acción
             $this->register_action($action_id, [
