@@ -63,7 +63,13 @@ final class GDM_Action_Manager {
     public function auto_discover_actions() {
         $actions_dir = GDM_PLUGIN_DIR . 'includes/admin/actions/';
 
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('=== GDM Action Manager: Auto-discovery ===');
+            error_log('Escaneando directorio: ' . $actions_dir);
+        }
+
         if (!is_dir($actions_dir)) {
+            error_log('❌ Directorio de acciones no existe: ' . $actions_dir);
             return;
         }
 
@@ -71,13 +77,21 @@ final class GDM_Action_Manager {
         $files = glob($actions_dir . 'class-action-*.php');
 
         if (empty($files)) {
+            error_log('⚠️ No se encontraron archivos class-action-*.php');
             return;
+        }
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Archivos encontrados: ' . count($files));
         }
 
         foreach ($files as $file) {
             // Extraer ID del nombre de archivo: class-action-{id}.php
             $filename = basename($file, '.php');
             if (!preg_match('/^class-action-(.+)$/', $filename, $matches)) {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("⏭️ Omitiendo archivo con formato incorrecto: {$filename}");
+                }
                 continue;
             }
 
@@ -89,13 +103,32 @@ final class GDM_Action_Manager {
             $parts = array_map('ucfirst', $parts);
             $class_name = 'GDM_Action_' . implode('_', $parts);
 
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("🔍 Descubierto: {$filename}");
+                error_log("   ID: {$action_id}");
+                error_log("   Clase: {$class_name}");
+                error_log("   Archivo: {$file}");
+            }
+
             // Registrar acción
-            $this->register_action($action_id, [
+            $success = $this->register_action($action_id, [
                 'class' => $class_name,
                 'file' => $file,
                 'enabled' => true,
                 'auto_discovered' => true,
             ]);
+
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                if ($success) {
+                    error_log("   ✅ Registrado exitosamente");
+                } else {
+                    error_log("   ❌ Error al registrar");
+                }
+            }
+        }
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('=== Auto-discovery completo: ' . count($this->actions) . ' acciones registradas ===');
         }
 
         // Hook para extensiones
@@ -113,14 +146,34 @@ final class GDM_Action_Manager {
      * Inicializar acciones registradas
      */
     public function init_registered_actions() {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('=== GDM Action Manager: Inicializando acciones ===');
+            error_log('Total acciones registradas: ' . count($this->actions));
+        }
+
         foreach ($this->actions as $id => $config) {
             if (!$config['enabled']) {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("⏭️ Acción '{$id}' deshabilitada, omitiendo");
+                }
                 continue;
             }
 
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("🔄 Inicializando acción '{$id}' → Clase: {$config['class']}");
+            }
+
             // Cargar archivo si existe
-            if (!empty($config['file']) && file_exists($config['file'])) {
-                require_once $config['file'];
+            if (!empty($config['file'])) {
+                if (file_exists($config['file'])) {
+                    require_once $config['file'];
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log("   ✅ Archivo cargado: {$config['file']}");
+                    }
+                } else {
+                    error_log("   ❌ Archivo no encontrado: {$config['file']}");
+                    continue;
+                }
             }
 
             // Instanciar clase
@@ -143,20 +196,31 @@ final class GDM_Action_Manager {
                     $this->actions[$id] = $config;
 
                     $this->action_instances[$id] = $instance;
+
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log("   ✅ Instancia creada: {$config['label']} ({$config['icon']})");
+                    }
                 } catch (Exception $e) {
                     error_log(sprintf(
-                        'GDM Action Manager: Error al inicializar acción "%s": %s',
+                        '❌ GDM Action Manager: Error al inicializar acción "%s": %s',
                         $id,
                         $e->getMessage()
                     ));
+                    error_log('   Stack trace: ' . $e->getTraceAsString());
                 }
             } else {
                 error_log(sprintf(
-                    'GDM Action Manager: Clase "%s" no encontrada para acción "%s"',
+                    '❌ GDM Action Manager: Clase "%s" no encontrada para acción "%s"',
                     $config['class'],
                     $id
                 ));
+                error_log('   Clases disponibles: ' . implode(', ', get_declared_classes()));
             }
+        }
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('=== GDM Action Manager: Inicialización completa ===');
+            error_log('Acciones cargadas: ' . count($this->action_instances));
         }
 
         do_action('gdm_actions_loaded', $this->action_instances);
