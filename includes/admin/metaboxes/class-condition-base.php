@@ -1,42 +1,55 @@
 <?php
 /**
- * Clase Base Abstracta para Ámbitos de Aplicación
- * Cada ámbito es un módulo independiente con su UI y lógica
+ * Clase Base Abstracta para Condiciones de Filtrado v7.0
+ * Sistema Universal Multi-Contexto (Products, Posts, Pages, etc.)
  * Compatible con WordPress 6.8.3, PHP 8.2, WooCommerce 10.2.2
- * 
+ *
  * @package ProductConditionalContent
- * @since 6.1.0
- * @date 2025-10-15
+ * @since 7.0.0
+ * @date 2025-10-16
  */
 
 if (!defined('ABSPATH')) exit;
 
 abstract class GDM_Condition_Base {
-    
+
     /**
      * ID único del ámbito
      * @var string
      */
     protected $condition_id = '';
-    
+
     /**
      * Nombre del ámbito
      * @var string
      */
     protected $condition_name = '';
-    
+
     /**
      * Icono del ámbito
      * @var string
      */
     protected $condition_icon = '🎯';
-    
+
+    /**
+     * Descripción corta
+     * @var string
+     */
+    protected $condition_description = '';
+
     /**
      * Prioridad de orden
      * @var int
      */
     protected $priority = 10;
-    
+
+    /**
+     * Contextos soportados
+     * Valores posibles: 'products', 'posts', 'pages', 'shortcode', 'wc_cart', 'wc_checkout', '*' (todos)
+     * @var array
+     */
+    protected $supported_contexts = ['products'];
+
     /**
      * Caché estático
      * @var array
@@ -88,6 +101,97 @@ abstract class GDM_Condition_Base {
      */
     protected function condition_init() {
         // Implementar en clase hija si se necesita
+    }
+
+    /**
+     * Obtener ID del ámbito
+     *
+     * @return string
+     */
+    public function get_id() {
+        return $this->condition_id;
+    }
+
+    /**
+     * Obtener nombre del ámbito
+     *
+     * @return string
+     */
+    public function get_name() {
+        return $this->condition_name;
+    }
+
+    /**
+     * Obtener icono del ámbito
+     *
+     * @return string
+     */
+    public function get_icon() {
+        return $this->condition_icon;
+    }
+
+    /**
+     * Obtener descripción del ámbito
+     *
+     * @return string
+     */
+    public function get_description() {
+        return $this->condition_description;
+    }
+
+    /**
+     * Obtener prioridad del ámbito
+     *
+     * @return int
+     */
+    public function get_priority() {
+        return $this->priority;
+    }
+
+    /**
+     * Obtener contextos soportados
+     *
+     * @return array
+     */
+    public function get_supported_contexts() {
+        return $this->supported_contexts;
+    }
+
+    /**
+     * Verificar si soporta un contexto específico
+     *
+     * @param string $context Contexto a verificar
+     * @return bool
+     */
+    public function supports_context($context) {
+        return in_array('*', $this->supported_contexts, true) ||
+               in_array($context, $this->supported_contexts, true);
+    }
+
+    /**
+     * Obtener etiquetas de contextos soportados
+     *
+     * @return array
+     */
+    public function get_context_labels() {
+        $labels = [
+            'products' => __('Productos WooCommerce', 'product-conditional-content'),
+            'posts' => __('Entradas (Posts)', 'product-conditional-content'),
+            'pages' => __('Páginas', 'product-conditional-content'),
+            'shortcode' => __('Shortcodes', 'product-conditional-content'),
+            'wc_cart' => __('Carrito WooCommerce', 'product-conditional-content'),
+            'wc_checkout' => __('Checkout WooCommerce', 'product-conditional-content'),
+            '*' => __('Todos los contextos', 'product-conditional-content'),
+        ];
+
+        $supported = [];
+        foreach ($this->supported_contexts as $context) {
+            if (isset($labels[$context])) {
+                $supported[$context] = $labels[$context];
+            }
+        }
+
+        return $supported;
     }
     
     /**
@@ -272,11 +376,93 @@ abstract class GDM_Condition_Base {
     }
     
     /**
-     * Verificar si el ámbito cumple condiciones para un producto
-     * 
+     * Verificar si el ámbito cumple condiciones para un producto (RETROCOMPATIBILIDAD)
+     *
      * @param int $product_id ID del producto
      * @param int $rule_id ID de la regla
      * @return bool
      */
     abstract public function matches_product($product_id, $rule_id);
+
+    /**
+     * Verificar si el ámbito cumple condiciones para cualquier objeto (v7.0)
+     *
+     * @param string $context Contexto de evaluación
+     * @param int $object_id ID del objeto (product_id, post_id, etc.)
+     * @param int $rule_id ID de la regla
+     * @return bool
+     */
+    public function matches_object($context, $object_id, $rule_id) {
+        // Verificar si soporta el contexto
+        if (!$this->supports_context($context)) {
+            return true; // No aplica este filtro, pasar
+        }
+
+        // Para contexto 'products', usar método legacy
+        if ($context === 'products') {
+            return $this->matches_product($object_id, $rule_id);
+        }
+
+        // Para otros contextos, implementar en clase hija si necesario
+        return $this->evaluate_condition($context, $object_id, $rule_id);
+    }
+
+    /**
+     * Evaluar condición para contextos nuevos (OPCIONAL - override en clase hija)
+     *
+     * @param string $context Contexto de evaluación
+     * @param int $object_id ID del objeto
+     * @param int $rule_id ID de la regla
+     * @return bool
+     */
+    protected function evaluate_condition($context, $object_id, $rule_id) {
+        // Por defecto, pasar (no filtrar)
+        // Override en clase hija para implementar lógica específica
+        return true;
+    }
+
+    /**
+     * Helper: Sanitizar campo de texto
+     *
+     * @param mixed $value Valor a sanitizar
+     * @return string
+     */
+    protected function sanitize_text($value) {
+        return sanitize_text_field($value);
+    }
+
+    /**
+     * Helper: Sanitizar campo numérico
+     *
+     * @param mixed $value Valor a sanitizar
+     * @param int $default Valor por defecto
+     * @return int
+     */
+    protected function sanitize_number($value, $default = 0) {
+        return absint($value) ?: $default;
+    }
+
+    /**
+     * Helper: Sanitizar campo decimal
+     *
+     * @param mixed $value Valor a sanitizar
+     * @param float $default Valor por defecto
+     * @return float
+     */
+    protected function sanitize_decimal($value, $default = 0.0) {
+        return floatval($value) ?: $default;
+    }
+
+    /**
+     * Helper: Sanitizar array de IDs
+     *
+     * @param mixed $value Valor a sanitizar
+     * @return array
+     */
+    protected function sanitize_id_array($value) {
+        if (!is_array($value)) {
+            return [];
+        }
+        return array_map('absint', $value);
+    }
 }

@@ -1,20 +1,21 @@
 <?php
 /**
- * Gestor de Módulos - Sistema Dinámico y Extensible
+ * Gestor de Acciones v7.0 - Sistema Dinámico con Auto-Discovery
  * Compatible con WordPress 6.8.3, PHP 8.2
- * 
- * ✅ FIX v6.2.4: Registro de módulos DESPUÉS de load_textdomain
- * 
+ *
+ * Sistema universal multi-contexto con carga automática de módulos
+ *
  * @package ProductConditionalContent
- * @since 5.0.0
+ * @since 7.0.0
+ * @date 2025-10-16
  */
 
 if (!defined('ABSPATH')) exit;
 
-final class GDM_Module_Manager {
+final class GDM_Action_Manager {
     private static $instance = null;
-    private $modules = [];
-    private $module_instances = [];
+    private $actions = [];
+    private $action_instances = [];
 
     public static function instance() {
         if (null === self::$instance) {
@@ -24,203 +25,221 @@ final class GDM_Module_Manager {
     }
 
     private function __construct() {
-        // ✅ FIX: Registrar módulos en init con prioridad 10 (DESPUÉS de traducciones)
-        add_action('init', [$this, 'register_core_modules'], 10);
-        
-        // ✅ FIX: Permitir registro externo prioridad 11
+        // Registrar base class
+        add_action('init', [$this, 'load_base_class'], 5);
+
+        // Auto-discovery de acciones en prioridad 10 (DESPUÉS de traducciones)
+        add_action('init', [$this, 'auto_discover_actions'], 10);
+
+        // Permitir registro externo prioridad 11
         add_action('init', [$this, 'allow_external_registration'], 11);
-        
-        // ✅ FIX: Inicializar módulos prioridad 12
-        add_action('init', [$this, 'init_registered_modules'], 12);
+
+        // Inicializar acciones prioridad 12
+        add_action('init', [$this, 'init_registered_actions'], 12);
+
+        // Registrar hook de guardado
+        add_action('gdm_save_modules_data', [$this, 'save_all_actions'], 10, 2);
+
+        // Encolar assets globales
+        add_action('admin_enqueue_scripts', ['GDM_Action_Base', 'enqueue_action_assets']);
+    }
+
+    /**
+     * Cargar clase base
+     */
+    public function load_base_class() {
+        $base_file = GDM_PLUGIN_DIR . 'includes/admin/metaboxes/class-action-base.php';
+        if (file_exists($base_file)) {
+            require_once $base_file;
+        }
     }
     
     /**
-     * Registrar módulos del core
-     * ✅ FIX: Ahora se ejecuta en hook init con prioridad 10
+     * Auto-discovery de acciones desde el directorio actions/
+     * Escanea y registra automáticamente todos los archivos class-action-*.php
+     *
+     * @since 7.0.0
      */
-    public function register_core_modules() {
-        $modules_dir = GDM_PLUGIN_DIR . 'includes/admin/modules/';
-        
-        $this->register_module('descripcion', [
-            'class' => 'GDM_Module_Descripcion',
-            'label' => __('Descripción', 'product-conditional-content'),
-            'icon' => '📝',
-            'file' => $modules_dir . 'class-module-description.php',
-            'enabled' => true,
-            'priority' => 10,
-        ]);
-        
-        // Módulo de Galería
-        $this->register_module('galeria', [
-            'class' => 'GDM_Module_Gallery',
-            'label' => __('Galería', 'product-conditional-content'),
-            'icon' => '🖼️',
-            'file' => $modules_dir . 'class-module-gallery.php',
-            'enabled' => true,
-            'priority' => 20,
-        ]);
-        
-        // Módulo de Precio
-        $this->register_module('precio', [
-            'class' => 'GDM_Module_Price',
-            'label' => __('Precio', 'product-conditional-content'),
-            'icon' => '💰',
-            'file' => $modules_dir . 'class-module-price.php',
-            'enabled' => true,
-            'priority' => 15,
-        ]);
+    public function auto_discover_actions() {
+        $actions_dir = GDM_PLUGIN_DIR . 'includes/admin/actions/';
 
-        $this->register_module('destacado', [
-            'class' => 'GDM_Module_Featured',
-            'label' => __('Destacado', 'product-conditional-content'),
-            'icon' => '⭐',
-            'file' => $modules_dir . 'class-module-featured.php',
-            'enabled' => true,
-            'priority' => 30,
-        ]);
+        if (!is_dir($actions_dir)) {
+            return;
+        }
 
-        $this->register_module('variantes', [
-            'class' => 'GDM_Module_Variants',
-            'label' => __('Variantes Condicionales', 'product-conditional-content'),
-            'icon' => '🔀',
-            'file' => $modules_dir . 'class-module-variants.php',
-            'enabled' => true,
-            'priority' => 12,
-            'description' => __('Sistema de contenido condicional basado en atributos del producto', 'product-conditional-content'),
-        ]);
-        
+        // Escanear directorio buscando archivos class-action-*.php
+        $files = glob($actions_dir . 'class-action-*.php');
+
+        if (empty($files)) {
+            return;
+        }
+
+        foreach ($files as $file) {
+            // Extraer ID del nombre de archivo: class-action-{id}.php
+            $filename = basename($file, '.php');
+            if (!preg_match('/^class-action-(.+)$/', $filename, $matches)) {
+                continue;
+            }
+
+            $action_id = $matches[1];
+            $class_name = 'GDM_Action_' . str_replace('-', '_', ucwords($action_id, '-'));
+
+            // Registrar acción
+            $this->register_action($action_id, [
+                'class' => $class_name,
+                'file' => $file,
+                'enabled' => true,
+                'auto_discovered' => true,
+            ]);
+        }
+
         // Hook para extensiones
-        do_action('gdm_register_modules', $this);
+        do_action('gdm_register_actions', $this);
     }
     
     /**
      * Permitir registro externo
      */
     public function allow_external_registration() {
-        do_action('gdm_modules_init', $this);
+        do_action('gdm_actions_init', $this);
     }
-    
+
     /**
-     * Inicializar módulos registrados
-     * ✅ Solo se ejecuta en init, pero el REGISTRO ya está hecho
+     * Inicializar acciones registradas
      */
-    public function init_registered_modules() {
-        foreach ($this->modules as $id => $config) {
+    public function init_registered_actions() {
+        foreach ($this->actions as $id => $config) {
             if (!$config['enabled']) {
                 continue;
             }
-            
+
             // Cargar archivo si existe
             if (!empty($config['file']) && file_exists($config['file'])) {
                 require_once $config['file'];
             }
-            
+
             // Instanciar clase
             if (class_exists($config['class'])) {
                 try {
-                    $this->module_instances[$id] = new $config['class']();
+                    $instance = new $config['class']();
+
+                    // Obtener datos desde la instancia si no están en config
+                    if (empty($config['label'])) {
+                        $config['label'] = $instance->get_name();
+                    }
+                    if (empty($config['icon'])) {
+                        $config['icon'] = $instance->get_icon();
+                    }
+                    if (empty($config['priority'])) {
+                        $config['priority'] = $instance->get_priority();
+                    }
+
+                    // Actualizar config con datos reales
+                    $this->actions[$id] = $config;
+
+                    $this->action_instances[$id] = $instance;
                 } catch (Exception $e) {
                     error_log(sprintf(
-                        'GDM Module Manager: Error al inicializar módulo "%s": %s',
+                        'GDM Action Manager: Error al inicializar acción "%s": %s',
                         $id,
                         $e->getMessage()
                     ));
                 }
             } else {
                 error_log(sprintf(
-                    'GDM Module Manager: Clase "%s" no encontrada para módulo "%s"',
+                    'GDM Action Manager: Clase "%s" no encontrada para acción "%s"',
                     $config['class'],
                     $id
                 ));
             }
         }
-        
-        do_action('gdm_modules_loaded', $this->module_instances);
+
+        do_action('gdm_actions_loaded', $this->action_instances);
     }
     
     /**
-     * Registrar un módulo
+     * Registrar una acción
      */
-    public function register_module($id, $config = []) {
+    public function register_action($id, $config = []) {
         if (empty($id)) {
             return false;
         }
-        
-        if (isset($this->modules[$id]) && empty($config['force'])) {
+
+        if (isset($this->actions[$id]) && empty($config['force'])) {
             return false;
         }
-        
+
         $defaults = [
             'class' => '',
-            'label' => ucfirst($id),
-            'icon' => '⚙️',
+            'label' => '',
+            'icon' => '',
             'file' => '',
             'enabled' => true,
             'priority' => 10,
             'description' => '',
+            'auto_discovered' => false,
         ];
-        
+
         $config = wp_parse_args($config, $defaults);
-        
+
         if (empty($config['class'])) {
             return false;
         }
-        
-        $this->modules[$id] = $config;
-        
+
+        $this->actions[$id] = $config;
+
         return true;
     }
     
     /**
-     * Desregistrar módulo
+     * Desregistrar acción
      */
-    public function unregister_module($id) {
-        if (isset($this->modules[$id])) {
-            unset($this->modules[$id]);
-            
-            if (isset($this->module_instances[$id])) {
-                unset($this->module_instances[$id]);
+    public function unregister_action($id) {
+        if (isset($this->actions[$id])) {
+            unset($this->actions[$id]);
+
+            if (isset($this->action_instances[$id])) {
+                unset($this->action_instances[$id]);
             }
-            
+
             return true;
         }
-        
+
         return false;
     }
-    
+
     /**
-     * Obtener módulo por ID
+     * Obtener acción por ID
      */
-    public function get_module($id) {
-        return $this->modules[$id] ?? null;
+    public function get_action($id) {
+        return $this->actions[$id] ?? null;
     }
-    
+
     /**
-     * Obtener todos los módulos
+     * Obtener todas las acciones
      */
-    public function get_modules() {
-        return $this->modules;
+    public function get_actions() {
+        return $this->actions;
     }
-    
+
     /**
-     * Obtener módulos habilitados
+     * Obtener acciones habilitadas
      */
-    public function get_enabled_modules() {
-        return array_filter($this->modules, function($module) {
-            return $module['enabled'] === true;
+    public function get_enabled_actions() {
+        return array_filter($this->actions, function($action) {
+            return $action['enabled'] === true;
         });
     }
-    
+
     /**
-     * Obtener módulos con íconos para selector
-     * ✅ Este método es llamado por el metabox
+     * Obtener acciones ordenadas por prioridad (para selector UI)
      */
-    public function get_modules_ordered() {
-        $modules = [];
-        
-        foreach ($this->modules as $id => $config) {
+    public function get_actions_ordered() {
+        $actions = [];
+
+        foreach ($this->actions as $id => $config) {
             if ($config['enabled']) {
-                $modules[$id] = [
+                $actions[$id] = [
                     'id' => $id,
                     'label' => $config['label'],
                     'icon' => $config['icon'],
@@ -229,88 +248,127 @@ final class GDM_Module_Manager {
                 ];
             }
         }
-        
+
         // Ordenar por prioridad
-        uasort($modules, function($a, $b) {
+        uasort($actions, function($a, $b) {
             return $a['priority'] - $b['priority'];
         });
-        
-        return $modules;
+
+        return $actions;
     }
-    
+
     /**
-     * Obtener instancia de módulo
+     * Obtener instancia de acción
      */
-    public function get_module_instance($id) {
-        return $this->module_instances[$id] ?? null;
+    public function get_action_instance($id) {
+        return $this->action_instances[$id] ?? null;
     }
-    
+
     /**
-     * Verificar si módulo está registrado
+     * Verificar si acción está registrada
      */
-    public function is_module_registered($id) {
-        return isset($this->modules[$id]);
+    public function is_action_registered($id) {
+        return isset($this->actions[$id]);
     }
-    
+
     /**
-     * Verificar si módulo está habilitado
+     * Verificar si acción está habilitada
      */
-    public function is_module_enabled($id) {
-        return isset($this->modules[$id]) && $this->modules[$id]['enabled'] === true;
+    public function is_action_enabled($id) {
+        return isset($this->actions[$id]) && $this->actions[$id]['enabled'] === true;
     }
-    
+
     /**
-     * Habilitar/deshabilitar módulo
+     * Habilitar/deshabilitar acción
      */
-    public function set_module_status($id, $enabled = true) {
-        if (isset($this->modules[$id])) {
-            $this->modules[$id]['enabled'] = (bool) $enabled;
+    public function set_action_status($id, $enabled = true) {
+        if (isset($this->actions[$id])) {
+            $this->actions[$id]['enabled'] = (bool) $enabled;
             return true;
         }
-        
+
         return false;
     }
-    
+
     /**
-     * Obtener conteo de módulos
+     * Renderizar todas las acciones para una regla
+     *
+     * @param int $rule_id ID de la regla
      */
-    public function get_modules_count() {
+    public function render_all($rule_id) {
+        $actions = $this->get_actions_ordered();
+
+        foreach ($actions as $id => $config) {
+            $instance = $this->get_action_instance($id);
+            if ($instance) {
+                $instance->render($rule_id);
+            }
+        }
+    }
+
+    /**
+     * Guardar todas las acciones de una regla
+     *
+     * @param int $rule_id ID de la regla
+     * @param WP_Post $post Objeto del post
+     */
+    public function save_all_actions($rule_id, $post) {
+        foreach ($this->action_instances as $instance) {
+            $instance->save($rule_id, $post);
+        }
+    }
+
+    /**
+     * Obtener conteo de acciones
+     */
+    public function get_actions_count() {
         return [
-            'total' => count($this->modules),
-            'enabled' => count($this->get_enabled_modules()),
-            'disabled' => count($this->modules) - count($this->get_enabled_modules()),
+            'total' => count($this->actions),
+            'enabled' => count($this->get_enabled_actions()),
+            'disabled' => count($this->actions) - count($this->get_enabled_actions()),
         ];
     }
-    
+
     /**
      * Debug
      */
-    public function debug_modules() {
+    public function debug_actions() {
         if (!current_user_can('manage_options')) {
             return;
         }
-        
+
         echo '<pre>';
-        echo "=== GDM Module Manager Debug ===\n\n";
-        echo "Módulos registrados: " . count($this->modules) . "\n";
-        echo "Módulos inicializados: " . count($this->module_instances) . "\n\n";
-        
-        foreach ($this->modules as $id => $config) {
+        echo "=== GDM Action Manager v7.0 Debug ===\n\n";
+        echo "Acciones registradas: " . count($this->actions) . "\n";
+        echo "Acciones inicializadas: " . count($this->action_instances) . "\n\n";
+
+        foreach ($this->actions as $id => $config) {
             $status = $config['enabled'] ? '✅' : '❌';
-            $loaded = isset($this->module_instances[$id]) ? '🟢' : '🔴';
-            
-            echo "{$status} {$loaded} {$config['icon']} {$id}\n";
+            $loaded = isset($this->action_instances[$id]) ? '🟢' : '🔴';
+            $auto = !empty($config['auto_discovered']) ? '🔍' : '📝';
+
+            echo "{$status} {$loaded} {$auto} {$config['icon']} {$id}\n";
             echo "   Clase: {$config['class']}\n";
             echo "   Label: {$config['label']}\n";
             echo "   Prioridad: {$config['priority']}\n";
-            
+
             if (!empty($config['file'])) {
                 echo "   Archivo: " . (file_exists($config['file']) ? '✓' : '✗') . " {$config['file']}\n";
             }
-            
+
+            if (isset($this->action_instances[$id])) {
+                $instance = $this->action_instances[$id];
+                $contexts = $instance->get_supported_contexts();
+                echo "   Contextos: " . implode(', ', $contexts) . "\n";
+            }
+
             echo "\n";
         }
-        
+
+        echo "Leyenda:\n";
+        echo "✅ = Habilitado | ❌ = Deshabilitado\n";
+        echo "🟢 = Cargado | 🔴 = No cargado\n";
+        echo "🔍 = Auto-descubierto | 📝 = Registro manual\n";
         echo '</pre>';
     }
 }
@@ -318,9 +376,18 @@ final class GDM_Module_Manager {
 /**
  * Helper function
  */
-function gdm_modules() {
-    return GDM_Module_Manager::instance();
+function gdm_actions() {
+    return GDM_Action_Manager::instance();
 }
+
+/**
+ * RETROCOMPATIBILIDAD: Alias para código legacy
+ */
+function gdm_modules() {
+    return GDM_Action_Manager::instance();
+}
+
+class_alias('GDM_Action_Manager', 'GDM_Module_Manager');
 
 /**
  * Debug (solo desarrollo)
@@ -328,8 +395,8 @@ function gdm_modules() {
 if (defined('WP_DEBUG') && WP_DEBUG && is_admin()) {
     add_action('admin_footer', function() {
         $screen = get_current_screen();
-        if ($screen && $screen->id === 'gdm_regla' && isset($_GET['debug_modules'])) {
-            GDM_Module_Manager::instance()->debug_modules();
+        if ($screen && $screen->id === 'gdm_regla' && isset($_GET['debug_actions'])) {
+            GDM_Action_Manager::instance()->debug_actions();
         }
     });
 }
