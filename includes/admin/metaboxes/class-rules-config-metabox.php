@@ -103,23 +103,23 @@ final class GDM_Rules_Config_Metabox {
                 
                 <div class="gdm-modules-grid">
                     <?php
-                    if (class_exists('GDM_Module_Manager')) {
-                        $module_manager = GDM_Module_Manager::instance();
-                        $modules = $module_manager->get_modules_ordered();
-                        
-                        foreach ($modules as $module_id => $module_config) {
-                            
-                            $is_checked = in_array($module_id, $aplicar_a);
+                    if (class_exists('GDM_Action_Manager')) {
+                        $action_manager = GDM_Action_Manager::instance();
+                        $actions = $action_manager->get_actions_ordered();
+
+                        foreach ($actions as $action_id => $action_config) {
+
+                            $is_checked = in_array($action_id, $aplicar_a);
                             ?>
                             <label class="gdm-module-checkbox <?php echo $is_checked ? 'active' : ''; ?>">
-                                <input type="checkbox" 
+                                <input type="checkbox"
                                        class="gdm-module-toggle"
-                                       name="gdm_aplicar_a[]" 
-                                       value="<?php echo esc_attr($module_id); ?>"
-                                       data-module="<?php echo esc_attr($module_id); ?>"
+                                       name="gdm_aplicar_a[]"
+                                       value="<?php echo esc_attr($action_id); ?>"
+                                       data-module="<?php echo esc_attr($action_id); ?>"
                                        <?php checked($is_checked); ?>>
-                                <span class="gdm-module-icon"><?php echo esc_html($module_config['icon']); ?></span>
-                                <span class="gdm-module-label"><?php echo esc_html($module_config['label']); ?></span>
+                                <span class="gdm-module-icon"><?php echo esc_html($action_config['icon']); ?></span>
+                                <span class="gdm-module-label"><?php echo esc_html($action_config['label']); ?></span>
                             </label>
                             <?php
                         }
