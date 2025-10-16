@@ -424,22 +424,72 @@ final class GDM_Rules_Frontend
     }
     
     /**
-     * Aplicar módulo específico
+     * Aplicar módulo específico v7.0
+     * Usa el nuevo sistema de _gdm_actions_config
      */
     private function apply_module($module_id, $rule_id, $product) {
-        switch ($module_id) {
-            case 'galeria':
-                $this->apply_gallery_module($rule_id, $product);
-                break;
-            case 'titulo':
-                $this->apply_title_module($rule_id, $product);
-                break;
-            case 'precio':
-                $this->apply_price_module($rule_id, $product);
-                break;
-            case 'destacado':
-                $this->apply_featured_module($rule_id, $product);
-                break;
+        // Obtener configuración completa de acciones
+        $all_actions = get_post_meta($rule_id, '_gdm_actions_config', true);
+
+        if (empty($all_actions) || !is_array($all_actions)) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("⚠️ GDM Rules Engine: No hay configuración de acciones para regla {$rule_id}");
+            }
+            return;
+        }
+
+        // Verificar si el módulo específico tiene configuración
+        if (!isset($all_actions[$module_id])) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("⚠️ GDM Rules Engine: Módulo '{$module_id}' no configurado en regla {$rule_id}");
+            }
+            return;
+        }
+
+        $module_config = $all_actions[$module_id];
+
+        // Verificar si está habilitado
+        if (empty($module_config['enabled'])) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("⏭️ GDM Rules Engine: Módulo '{$module_id}' está deshabilitado en regla {$rule_id}");
+            }
+            return;
+        }
+
+        // Verificar si tiene código ejecutable
+        if (empty($module_config['code'])) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("⚠️ GDM Rules Engine: Módulo '{$module_id}' no tiene código ejecutable");
+            }
+            return;
+        }
+
+        // Ejecutar código generado
+        $object_id = $product->get_id();
+        $context = 'products'; // Contexto actual
+
+        try {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("🚀 GDM Rules Engine: Ejecutando módulo '{$module_id}' para producto {$object_id}");
+            }
+
+            $result = eval($module_config['code']);
+
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("✅ GDM Rules Engine: Módulo '{$module_id}' ejecutado correctamente. Resultado: " . var_export($result, true));
+            }
+
+            // Limpiar caché del producto después de la ejecución
+            wc_delete_product_transients($product->get_id());
+            clean_post_cache($product->get_id());
+
+        } catch (Exception $e) {
+            error_log(sprintf(
+                '❌ GDM Rules Engine: Error al ejecutar módulo "%s" en regla %d: %s',
+                $module_id,
+                $rule_id,
+                $e->getMessage()
+            ));
         }
     }
     
