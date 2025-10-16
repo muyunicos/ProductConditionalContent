@@ -38,17 +38,21 @@ add_action('plugins_loaded', function() {
     require_once GDM_PLUGIN_DIR . 'includes/core/class-plugin-bootstrap.php';
     require_once GDM_PLUGIN_DIR . 'includes/core/class-custom-post-types.php';
 
-    require_once GDM_PLUGIN_DIR . 'includes/admin/modules/class-module-base.php';
-    require_once GDM_PLUGIN_DIR . 'includes/admin/conditions/class-condition-base.php';
-    
-    require_once GDM_PLUGIN_DIR . 'includes/admin/modules/class-module-manager.php';
-    require_once GDM_PLUGIN_DIR . 'includes/admin/conditions/class-condition-manager.php';
-    
-    GDM_Module_Manager::instance();
-    GDM_condition_Manager::instance();
-    
+    // Base classes (deben cargarse primero)
+    require_once GDM_PLUGIN_DIR . 'includes/admin/metaboxes/class-action-base.php';
+    require_once GDM_PLUGIN_DIR . 'includes/admin/metaboxes/class-condition-base.php';
+
+    // Managers
+    require_once GDM_PLUGIN_DIR . 'includes/admin/managers/class-action-manager.php';
+    require_once GDM_PLUGIN_DIR . 'includes/admin/managers/class-condition-manager.php';
+
+    // Inicializar managers
+    GDM_Action_Manager::instance();
+    GDM_Condition_Manager::instance();
+
     // Hooks personalizados (para extensiones)
-    do_action('gdm_init_modules');
+    do_action('gdm_init_actions');
+    do_action('gdm_init_modules'); // Retrocompatibilidad
     do_action('gdm_init_conditions');
 
     if (is_admin()) {
