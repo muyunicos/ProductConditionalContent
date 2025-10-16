@@ -26,15 +26,18 @@ final class GDM_Condition_Manager {
     private function __construct() {
         // ✅ FIX: Registrar conditions en init con prioridad 10 (DESPUÉS de traducciones)
         add_action('init', [$this, 'register_core_conditions'], 10);
-        
+
         // ✅ FIX: Permitir registro externo prioridad 11
         add_action('init', [$this, 'allow_external_registration'], 11);
-        
+
         // ✅ FIX: Inicializar conditions prioridad 12
         add_action('init', [$this, 'init_registered_conditions'], 12);
-        
+
         // ✅ FIX v6.2.5: Llamar al método desde GDM_Condition_Base en vez de __CLASS__
         add_action('admin_enqueue_scripts', ['GDM_Condition_Base', 'enqueue_condition_assets']);
+
+        // ✅ FIX v7.0: Registrar hook de guardado para conditions
+        add_action('gdm_save_conditions_data', [$this, 'save_all_conditions'], 10, 2);
     }
     
     /**
@@ -232,11 +235,43 @@ final class GDM_Condition_Manager {
     
     /**
      * Guardar todos los ámbitos
+     *
+     * @param int $post_id ID de la regla
+     * @param WP_Post $post Objeto del post
+     */
+    public function save_all_conditions($post_id, $post) {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('=== GDM Condition Manager: Guardando condiciones ===');
+            error_log('Post ID: ' . $post_id);
+            error_log('Condiciones a guardar: ' . count($this->condition_instances));
+        }
+
+        foreach ($this->condition_instances as $id => $instance) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("💾 Guardando condición: {$id}");
+            }
+
+            try {
+                $instance->save($post_id);
+
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("   ✅ Condición guardada: {$id}");
+                }
+            } catch (Exception $e) {
+                error_log("   ❌ Error al guardar condición {$id}: " . $e->getMessage());
+            }
+        }
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('=== GDM Condition Manager: Guardado completo ===');
+        }
+    }
+
+    /**
+     * Guardar todos los ámbitos (Alias para retrocompatibilidad)
      */
     public function save_all($post_id) {
-        foreach ($this->condition_instances as $instance) {
-            $instance->save($post_id);
-        }
+        $this->save_all_conditions($post_id, get_post($post_id));
     }
     
     /**

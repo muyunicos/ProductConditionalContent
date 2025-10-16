@@ -100,7 +100,7 @@ final class GDM_Rules_Config_Metabox {
                 <p class="description">
                     <?php _e('Selecciona los tipos de contenido que esta regla modificará:', 'product-conditional-content'); ?>
                 </p>
-                
+
                 <div class="gdm-modules-grid">
                     <?php
                     if (class_exists('GDM_Action_Manager')) {
@@ -126,10 +126,29 @@ final class GDM_Rules_Config_Metabox {
                     }
                     ?>
                 </div>
-                
+
                 <p class="gdm-validation-message" id="gdm-modules-validation" style="display:none; color:#d63638;">
                     <?php _e('⚠️ Debes seleccionar al menos un módulo', 'product-conditional-content'); ?>
                 </p>
+            </div>
+
+            <hr class="gdm-separator">
+
+            <!-- Configuración de Acciones/Módulos -->
+            <div class="gdm-config-section">
+                <h3><?php _e('⚙️ Configuración de Módulos', 'product-conditional-content'); ?></h3>
+                <p class="description">
+                    <?php _e('Configura las opciones para cada módulo seleccionado:', 'product-conditional-content'); ?>
+                </p>
+
+                <div class="gdm-actions-wrapper">
+                    <?php
+                    if (class_exists('GDM_Action_Manager')) {
+                        $action_manager = GDM_Action_Manager::instance();
+                        $action_manager->render_all($post->ID);
+                    }
+                    ?>
+                </div>
             </div>
             
             <hr class="gdm-separator">
