@@ -11,25 +11,25 @@
 
 if (!defined('ABSPATH')) exit;
 
-class GDM_Scope_Products extends GDM_Scope_Base {
+class GDM_Condition_Products extends GDM_Condition_Base {
     
-    protected $scope_id = 'productos';
-    protected $scope_name = 'Productos Específicos';
-    protected $scope_icon = '🛍️';
+    protected $condition_id = 'productos';
+    protected $condition_name = 'Productos Específicos';
+    protected $condition_icon = '🛍️';
     protected $priority = 30;
     
-    protected function scope_init() {
+    protected function condition_init() {
         add_action('wp_ajax_gdm_search_products', [$this, 'ajax_search_products']);
     }
     
     protected function render_content($post_id, $data) {
         ?>
         <input type="text" 
-               id="gdm-<?php echo esc_attr($this->scope_id); ?>-search" 
+               id="gdm-<?php echo esc_attr($this->condition_id); ?>-search" 
                class="gdm-filter-input" 
                placeholder="<?php esc_attr_e('🔍 Buscar productos (mín. 3 caracteres)...', 'product-conditional-content'); ?>">
         
-        <div class="gdm-<?php echo esc_attr($this->scope_id); ?>-list gdm-scope-list">
+        <div class="gdm-<?php echo esc_attr($this->condition_id); ?>-list gdm-condition-list">
             <?php if (!empty($data['objetivo'])): ?>
                 <?php foreach ($data['objetivo'] as $product_id): 
                     $product = wc_get_product($product_id);
@@ -37,9 +37,9 @@ class GDM_Scope_Products extends GDM_Scope_Base {
                 ?>
                     <label class="gdm-checkbox-item">
                         <input type="checkbox" 
-                               name="gdm_<?php echo esc_attr($this->scope_id); ?>_objetivo[]" 
+                               name="gdm_<?php echo esc_attr($this->condition_id); ?>_objetivo[]" 
                                value="<?php echo esc_attr($product_id); ?>"
-                               class="gdm-scope-item-checkbox"
+                               class="gdm-condition-item-checkbox"
                                checked>
                         <span><?php echo esc_html($product->get_name()); ?></span>
                         <span class="gdm-item-price"><?php echo $product->get_price_html(); ?></span>
@@ -55,8 +55,8 @@ class GDM_Scope_Products extends GDM_Scope_Base {
     }
     
     public function save($post_id) {
-        $objetivo = isset($_POST["gdm_{$this->scope_id}_objetivo"]) 
-            ? array_map('intval', $_POST["gdm_{$this->scope_id}_objetivo"]) 
+        $objetivo = isset($_POST["gdm_{$this->condition_id}_objetivo"]) 
+            ? array_map('intval', $_POST["gdm_{$this->condition_id}_objetivo"]) 
             : [];
         
         $this->save_field($post_id, 'objetivo', $objetivo);
@@ -97,7 +97,7 @@ class GDM_Scope_Products extends GDM_Scope_Base {
     }
     
     public function matches_product($product_id, $rule_id) {
-        $data = $this->get_scope_data($rule_id);
+        $data = $this->get_condition_data($rule_id);
         
         if (empty($data['objetivo'])) {
             return true;
@@ -126,7 +126,7 @@ class GDM_Scope_Products extends GDM_Scope_Base {
         
         // ✅ Implementar caché
         $cache_key = 'gdm_product_search_' . md5($search);
-        $products = wp_cache_get($cache_key, 'gdm_scopes');
+        $products = wp_cache_get($cache_key, 'gdm_conditions');
         
         if ($products === false) {
             $products = wc_get_products([
@@ -136,7 +136,7 @@ class GDM_Scope_Products extends GDM_Scope_Base {
                 'orderby' => 'title',
                 'order' => 'ASC'
             ]);
-            wp_cache_set($cache_key, $products, 'gdm_scopes', 300); // 5 minutos
+            wp_cache_set($cache_key, $products, 'gdm_conditions', 300); // 5 minutos
         }
         
         $results = [];
@@ -164,8 +164,8 @@ class GDM_Scope_Products extends GDM_Scope_Base {
         <script>
         jQuery(document).ready(function($) {
             var searchTimeout;
-            var $searchInput = $('#gdm-<?php echo esc_js($this->scope_id); ?>-search');
-            var $list = $('.gdm-<?php echo esc_js($this->scope_id); ?>-list');
+            var $searchInput = $('#gdm-<?php echo esc_js($this->condition_id); ?>-search');
+            var $list = $('.gdm-<?php echo esc_js($this->condition_id); ?>-list');
             
             // ✅ Búsqueda con debounce optimizado
             $searchInput.on('input', function() {
@@ -207,7 +207,7 @@ class GDM_Scope_Products extends GDM_Scope_Base {
                                     
                                     html += '<label class="gdm-checkbox-item">' +
                                            '<input type="checkbox" name="gdm_productos_objetivo[]" value="' + product.id + '" ' + 
-                                           (isChecked ? 'checked' : '') + ' class="gdm-scope-item-checkbox">' +
+                                           (isChecked ? 'checked' : '') + ' class="gdm-condition-item-checkbox">' +
                                            '<span>' + product.title + '</span>' +
                                            '<span class="gdm-item-price">' + product.price + '</span>' +
                                            '</label>';
@@ -229,9 +229,9 @@ class GDM_Scope_Products extends GDM_Scope_Base {
             });
             
             // ✅ Actualizar contador dinámicamente
-            $(document).on('change', '.gdm-<?php echo esc_js($this->scope_id); ?>-list input', function() {
+            $(document).on('change', '.gdm-<?php echo esc_js($this->condition_id); ?>-list input', function() {
                 var count = $list.find('input:checked').length;
-                $('#gdm-<?php echo esc_js($this->scope_id); ?>-counter').text(
+                $('#gdm-<?php echo esc_js($this->condition_id); ?>-counter').text(
                     count > 0 ? count + ' seleccionados' : 'Ninguno seleccionado'
                 );
             });

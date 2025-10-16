@@ -11,39 +11,39 @@
 
 if (!defined('ABSPATH')) exit;
 
-class GDM_Scope_Stock extends GDM_Scope_Base {
+class GDM_Condition_Stock extends GDM_Condition_Base {
     
-    protected $scope_id = 'stock';
-    protected $scope_name = 'Estado de Stock';
-    protected $scope_icon = '📦';
+    protected $condition_id = 'stock';
+    protected $condition_name = 'Estado de Stock';
+    protected $condition_icon = '📦';
     protected $priority = 50;
     
     protected function render_content($post_id, $data) {
         ?>
-        <div class="gdm-<?php echo esc_attr($this->scope_id); ?>-options">
+        <div class="gdm-<?php echo esc_attr($this->condition_id); ?>-options">
             <label class="gdm-checkbox-item">
                 <input type="checkbox" 
-                       name="gdm_<?php echo esc_attr($this->scope_id); ?>_status[]" 
+                       name="gdm_<?php echo esc_attr($this->condition_id); ?>_status[]" 
                        value="instock"
-                       class="gdm-scope-item-checkbox"
+                       class="gdm-condition-item-checkbox"
                        <?php checked(in_array('instock', $data['status'])); ?>>
                 <span class="gdm-status-badge gdm-status-instock">✅ En Stock</span>
             </label>
             
             <label class="gdm-checkbox-item">
                 <input type="checkbox" 
-                       name="gdm_<?php echo esc_attr($this->scope_id); ?>_status[]" 
+                       name="gdm_<?php echo esc_attr($this->condition_id); ?>_status[]" 
                        value="outofstock"
-                       class="gdm-scope-item-checkbox"
+                       class="gdm-condition-item-checkbox"
                        <?php checked(in_array('outofstock', $data['status'])); ?>>
                 <span class="gdm-status-badge gdm-status-outofstock">❌ Sin Stock</span>
             </label>
             
             <label class="gdm-checkbox-item">
                 <input type="checkbox" 
-                       name="gdm_<?php echo esc_attr($this->scope_id); ?>_status[]" 
+                       name="gdm_<?php echo esc_attr($this->condition_id); ?>_status[]" 
                        value="onbackorder"
-                       class="gdm-scope-item-checkbox"
+                       class="gdm-condition-item-checkbox"
                        <?php checked(in_array('onbackorder', $data['status'])); ?>>
                 <span class="gdm-status-badge gdm-status-backorder">⏳ Pedido Pendiente</span>
             </label>
@@ -52,8 +52,8 @@ class GDM_Scope_Stock extends GDM_Scope_Base {
     }
     
     public function save($post_id) {
-        $status = isset($_POST["gdm_{$this->scope_id}_status"]) 
-            ? array_map('sanitize_text_field', $_POST["gdm_{$this->scope_id}_status"]) 
+        $status = isset($_POST["gdm_{$this->condition_id}_status"]) 
+            ? array_map('sanitize_text_field', $_POST["gdm_{$this->condition_id}_status"]) 
             : [];
         
         $this->save_field($post_id, 'status', $status);
@@ -91,7 +91,7 @@ class GDM_Scope_Stock extends GDM_Scope_Base {
     }
     
     public function matches_product($product_id, $rule_id) {
-        $data = $this->get_scope_data($rule_id);
+        $data = $this->get_condition_data($rule_id);
         
         if (empty($data['status'])) {
             return true;
@@ -108,7 +108,7 @@ class GDM_Scope_Stock extends GDM_Scope_Base {
     protected function render_styles() {
         ?>
         <style>
-            .gdm-<?php echo esc_attr($this->scope_id); ?>-options {
+            .gdm-<?php echo esc_attr($this->condition_id); ?>-options {
                 display: flex;
                 flex-direction: column;
                 gap: 10px;
@@ -141,9 +141,9 @@ class GDM_Scope_Stock extends GDM_Scope_Base {
         ?>
         <script>
         jQuery(document).ready(function($) {
-            $('.gdm-<?php echo esc_js($this->scope_id); ?>-options input').on('change', function() {
-                var count = $('.gdm-<?php echo esc_js($this->scope_id); ?>-options input:checked').length;
-                $('#gdm-<?php echo esc_js($this->scope_id); ?>-counter').text(
+            $('.gdm-<?php echo esc_js($this->condition_id); ?>-options input').on('change', function() {
+                var count = $('.gdm-<?php echo esc_js($this->condition_id); ?>-options input:checked').length;
+                $('#gdm-<?php echo esc_js($this->condition_id); ?>-counter').text(
                     count > 0 ? count + ' estados seleccionados' : 'Ninguno seleccionado'
                 );
             });

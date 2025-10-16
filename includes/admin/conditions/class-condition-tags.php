@@ -11,22 +11,22 @@
 
 if (!defined('ABSPATH')) exit;
 
-class GDM_Scope_Tags extends GDM_Scope_Base {
+class GDM_Condition_Tags extends GDM_Condition_Base {
     
-    protected $scope_id = 'tags';
-    protected $scope_name = 'Etiquetas Determinadas';
-    protected $scope_icon = '🏷️';
+    protected $condition_id = 'tags';
+    protected $condition_name = 'Etiquetas Determinadas';
+    protected $condition_icon = '🏷️';
     protected $priority = 20;
     
     protected function render_content($post_id, $data) {
         ?>
         <input type="text" 
-               id="gdm-<?php echo esc_attr($this->scope_id); ?>-filter" 
+               id="gdm-<?php echo esc_attr($this->condition_id); ?>-filter" 
                class="gdm-filter-input" 
                placeholder="<?php esc_attr_e('🔍 Buscar etiquetas...', 'product-conditional-content'); ?>"
                aria-label="<?php esc_attr_e('Filtrar etiquetas', 'product-conditional-content'); ?>">
         
-        <div class="gdm-<?php echo esc_attr($this->scope_id); ?>-list gdm-scope-list" role="listbox">
+        <div class="gdm-<?php echo esc_attr($this->condition_id); ?>-list gdm-condition-list" role="listbox">
             <?php
             $tags = get_terms([
                 'taxonomy' => 'product_tag',
@@ -41,9 +41,9 @@ class GDM_Scope_Tags extends GDM_Scope_Base {
                     ?>
                     <label class="gdm-checkbox-item" role="option">
                         <input type="checkbox" 
-                               name="gdm_<?php echo esc_attr($this->scope_id); ?>_objetivo[]" 
+                               name="gdm_<?php echo esc_attr($this->condition_id); ?>_objetivo[]" 
                                value="<?php echo esc_attr($tag->term_id); ?>"
-                               class="gdm-scope-item-checkbox"
+                               class="gdm-condition-item-checkbox"
                                <?php checked($checked); ?>>
                         <span><?php echo esc_html($tag->name); ?></span>
                         <span class="gdm-item-count">(<?php echo esc_html($tag->count); ?>)</span>
@@ -57,8 +57,8 @@ class GDM_Scope_Tags extends GDM_Scope_Base {
     }
     
     public function save($post_id) {
-        $objetivo = isset($_POST["gdm_{$this->scope_id}_objetivo"]) 
-            ? array_map('intval', $_POST["gdm_{$this->scope_id}_objetivo"]) 
+        $objetivo = isset($_POST["gdm_{$this->condition_id}_objetivo"]) 
+            ? array_map('intval', $_POST["gdm_{$this->condition_id}_objetivo"]) 
             : [];
         
         $this->save_field($post_id, 'objetivo', $objetivo);
@@ -99,7 +99,7 @@ class GDM_Scope_Tags extends GDM_Scope_Base {
     }
     
     public function matches_product($product_id, $rule_id) {
-        $data = $this->get_scope_data($rule_id);
+        $data = $this->get_condition_data($rule_id);
         
         if (empty($data['objetivo'])) {
             return true;
@@ -119,8 +119,8 @@ class GDM_Scope_Tags extends GDM_Scope_Base {
         jQuery(document).ready(function($) {
             (function() {
                 var searchTimeout;
-                var $filter = $('#gdm-<?php echo esc_js($this->scope_id); ?>-filter');
-                var $items = $('.gdm-<?php echo esc_js($this->scope_id); ?>-list .gdm-checkbox-item');
+                var $filter = $('#gdm-<?php echo esc_js($this->condition_id); ?>-filter');
+                var $items = $('.gdm-<?php echo esc_js($this->condition_id); ?>-list .gdm-checkbox-item');
                 
                 $filter.on('input', function() {
                     clearTimeout(searchTimeout);
@@ -138,9 +138,9 @@ class GDM_Scope_Tags extends GDM_Scope_Base {
                 });
             })();
             
-            $('.gdm-<?php echo esc_js($this->scope_id); ?>-list input').on('change', function() {
-                var count = $('.gdm-<?php echo esc_js($this->scope_id); ?>-list input:checked').length;
-                $('#gdm-<?php echo esc_js($this->scope_id); ?>-counter').text(
+            $('.gdm-<?php echo esc_js($this->condition_id); ?>-list input').on('change', function() {
+                var count = $('.gdm-<?php echo esc_js($this->condition_id); ?>-list input:checked').length;
+                $('#gdm-<?php echo esc_js($this->condition_id); ?>-counter').text(
                     count > 0 ? count + ' seleccionadas' : 'Ninguna seleccionada'
                 );
             });

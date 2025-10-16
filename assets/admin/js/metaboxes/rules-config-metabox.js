@@ -58,23 +58,23 @@ jQuery(document).ready(function($) {
     // SISTEMA DE ÁMBITOS (GLOBAL)
     // =========================================================================
 
-    function initScopeSystem() {
+    function initconditionSystem() {
         
         // Variables para control de estado
         let originalData = {};
         
         // ✅ FIX: Inicializar estado de resúmenes al cargar página
-        initScopeSummaries();
+        initconditionSummaries();
         
         /**
          * ✅ NUEVO: Inicializar estado de resúmenes existentes
          */
-        function initScopeSummaries() {
-            $('.gdm-scope-group').each(function() {
+        function initconditionSummaries() {
+            $('.gdm-condition-group').each(function() {
                 const $group = $(this);
-                const $checkbox = $group.find('.gdm-scope-checkbox');
-                const $summary = $group.find('.gdm-scope-summary');
-                const $content = $group.find('.gdm-scope-content');
+                const $checkbox = $group.find('.gdm-condition-checkbox');
+                const $summary = $group.find('.gdm-condition-summary');
+                const $content = $group.find('.gdm-condition-content');
                 
                 // Si hay resumen con contenido, mostrarlo
                 if ($checkbox.is(':checked') && $summary.find('.gdm-summary-text').text().trim()) {
@@ -93,16 +93,16 @@ jQuery(document).ready(function($) {
         }
         
         // Toggle checkbox principal
-        $(document).on('change', '.gdm-scope-checkbox', function() {
+        $(document).on('change', '.gdm-condition-checkbox', function() {
             const $checkbox = $(this);
-            const $scopeGroup = $checkbox.closest('.gdm-scope-group');
-            const $content = $scopeGroup.find('.gdm-scope-content');
-            const $summary = $scopeGroup.find('.gdm-scope-summary');
-            const scopeId = $scopeGroup.data('scope');
+            const $conditionGroup = $checkbox.closest('.gdm-condition-group');
+            const $content = $conditionGroup.find('.gdm-condition-content');
+            const $summary = $conditionGroup.find('.gdm-condition-summary');
+            const conditionId = $conditionGroup.data('condition');
             
             if ($checkbox.is(':checked')) {
                 // Guardar estado original antes de abrir
-                saveOriginalState(scopeId);
+                saveOriginalState(conditionId);
                 
                 // Verificar si ya existe un resumen
                 if ($summary.find('.gdm-summary-text').text().trim()) {
@@ -127,16 +127,16 @@ jQuery(document).ready(function($) {
         });
         
         // Botón "Editar"
-        $(document).on('click', '.gdm-scope-edit', function(e) {
+        $(document).on('click', '.gdm-condition-edit', function(e) {
             e.preventDefault();
-            const $scopeGroup = $(this).closest('.gdm-scope-group');
-            const $checkbox = $scopeGroup.find('.gdm-scope-checkbox');
-            const $content = $scopeGroup.find('.gdm-scope-content');
-            const $summary = $scopeGroup.find('.gdm-scope-summary');
-            const scopeId = $scopeGroup.data('scope');
+            const $conditionGroup = $(this).closest('.gdm-condition-group');
+            const $checkbox = $conditionGroup.find('.gdm-condition-checkbox');
+            const $content = $conditionGroup.find('.gdm-condition-content');
+            const $summary = $conditionGroup.find('.gdm-condition-summary');
+            const conditionId = $conditionGroup.data('condition');
             
             // Guardar estado original
-            saveOriginalState(scopeId);
+            saveOriginalState(conditionId);
             
             // Asegurar que checkbox esté marcado
             if (!$checkbox.is(':checked')) {
@@ -149,21 +149,21 @@ jQuery(document).ready(function($) {
         });
         
         // Botón "Guardar"
-        $(document).on('click', '.gdm-scope-save', function(e) {
+        $(document).on('click', '.gdm-condition-save', function(e) {
     e.preventDefault();
     e.stopPropagation();
     
     const $button = $(this);
-    const $scopeGroup = $button.closest('.gdm-scope-group');
-    const $content = $scopeGroup.find('.gdm-scope-content');
-    const $summary = $scopeGroup.find('.gdm-scope-summary');
+    const $conditionGroup = $button.closest('.gdm-condition-group');
+    const $content = $conditionGroup.find('.gdm-condition-content');
+    const $summary = $conditionGroup.find('.gdm-condition-summary');
     const $summaryText = $summary.find('.gdm-summary-text');
-    const $checkbox = $scopeGroup.find('.gdm-scope-checkbox');
-    const $counter = $scopeGroup.find('.gdm-selection-counter');
-    const scopeId = $scopeGroup.data('scope');
+    const $checkbox = $conditionGroup.find('.gdm-condition-checkbox');
+    const $counter = $conditionGroup.find('.gdm-selection-counter');
+    const conditionId = $conditionGroup.data('condition');
     
     // Verificar si hay selección REAL
-    const hasSelection = checkHasSelection($content, scopeId);
+    const hasSelection = checkHasSelection($content, conditionId);
     
     if (!hasSelection) {
         // Si no hay selección, desactivar
@@ -175,11 +175,11 @@ jQuery(document).ready(function($) {
     }
     
     // Generar resumen dinámico
-    const summary = generateSummary(scopeId, $content);
+    const summary = generateSummary(conditionId, $content);
     $summaryText.html(summary);
     
     // Actualizar contador
-    const counterText = generateCounterText(scopeId, $content);
+    const counterText = generateCounterText(conditionId, $content);
     $counter.text(counterText);
     
     // Activar checkbox y mostrar resumen
@@ -203,18 +203,18 @@ jQuery(document).ready(function($) {
 });
 
 // Botón "Cancelar"
-$(document).on('click', '.gdm-scope-cancel', function(e) {
+$(document).on('click', '.gdm-condition-cancel', function(e) {
     e.preventDefault();
     e.stopPropagation();
     
-    const $scopeGroup = $(this).closest('.gdm-scope-group');
-    const $content = $scopeGroup.find('.gdm-scope-content');
-    const $summary = $scopeGroup.find('.gdm-scope-summary');
-    const $checkbox = $scopeGroup.find('.gdm-scope-checkbox');
-    const scopeId = $scopeGroup.data('scope');
+    const $conditionGroup = $(this).closest('.gdm-condition-group');
+    const $content = $conditionGroup.find('.gdm-condition-content');
+    const $summary = $conditionGroup.find('.gdm-condition-summary');
+    const $checkbox = $conditionGroup.find('.gdm-condition-checkbox');
+    const conditionId = $conditionGroup.data('condition');
     
     // Restaurar estado original
-    restoreOriginalState(scopeId);
+    restoreOriginalState(conditionId);
     
     // Cerrar contenido
     $content.removeClass('active').slideUp(300);
@@ -230,7 +230,7 @@ $(document).on('click', '.gdm-scope-cancel', function(e) {
         /**
          * Verificar si hay selección real
          */
-        function checkHasSelection($content, scopeId) {
+        function checkHasSelection($content, conditionId) {
             // Checkboxes marcados
             const checkedBoxes = $content.find('input[type="checkbox"]:checked').length;
             
@@ -255,11 +255,11 @@ $(document).on('click', '.gdm-scope-cancel', function(e) {
         /**
          * ✅ Generar resumen dinámico según tipo de ámbito
          */
-        function generateSummary(scopeId, $content) {
+        function generateSummary(conditionId, $content) {
             let summary = '';
             
             // Categorías, Tags, Productos
-            if (['categorias', 'tags', 'productos'].includes(scopeId)) {
+            if (['categorias', 'tags', 'productos'].includes(conditionId)) {
                 const $checked = $content.find('input[type="checkbox"]:checked');
                 const count = $checked.length;
                 
@@ -280,7 +280,7 @@ $(document).on('click', '.gdm-scope-cancel', function(e) {
             }
             
             // Atributos
-            else if (scopeId === 'atributos') {
+            else if (conditionId === 'atributos') {
                 const groups = {};
                 $content.find('.gdm-attribute-group').each(function() {
                     const attrName = $(this).find('.gdm-attribute-title').text().replace(':', '').trim();
@@ -298,7 +298,7 @@ $(document).on('click', '.gdm-scope-cancel', function(e) {
             }
             
             // Stock
-            else if (scopeId === 'stock') {
+            else if (conditionId === 'stock') {
                 const statuses = [];
                 $content.find('input:checked').each(function() {
                     const badge = $(this).closest('label').find('.gdm-status-badge').text().trim();
@@ -308,7 +308,7 @@ $(document).on('click', '.gdm-scope-cancel', function(e) {
             }
             
             // Precio
-            else if (scopeId === 'precio') {
+            else if (conditionId === 'precio') {
                 const condicion = $content.find('select[name*="_condicion"]').val();
                 const min = $content.find('input[name*="_min"]').val();
                 const max = $content.find('input[name*="_max"]').val();
@@ -332,7 +332,7 @@ $(document).on('click', '.gdm-scope-cancel', function(e) {
             }
             
             // Título
-            else if (scopeId === 'titulo') {
+            else if (conditionId === 'titulo') {
                 const condicion = $content.find('select[name*="_condicion"]').val();
                 const texto = $content.find('input[name*="_texto"]').val();
                 
@@ -353,29 +353,29 @@ $(document).on('click', '.gdm-scope-cancel', function(e) {
         /**
          * ✅ Generar texto del contador
          */
-        function generateCounterText(scopeId, $content) {
-            if (['categorias', 'tags', 'productos'].includes(scopeId)) {
+        function generateCounterText(conditionId, $content) {
+            if (['categorias', 'tags', 'productos'].includes(conditionId)) {
                 const count = $content.find('input[type="checkbox"]:checked').length;
                 const labels = {
                     'categorias': 'seleccionadas',
                     'tags': 'seleccionadas',
                     'productos': 'seleccionados'
                 };
-                return count > 0 ? count + ' ' + labels[scopeId] : 'Ninguno seleccionado';
+                return count > 0 ? count + ' ' + labels[conditionId] : 'Ninguno seleccionado';
             }
             
-            if (scopeId === 'atributos') {
+            if (conditionId === 'atributos') {
                 const count = $content.find('input[type="checkbox"]:checked').length;
                 return count > 0 ? count + ' valores seleccionados' : 'Ninguno seleccionado';
             }
             
-            if (scopeId === 'stock') {
+            if (conditionId === 'stock') {
                 const count = $content.find('input[type="checkbox"]:checked').length;
                 return count > 0 ? count + ' estados seleccionados' : 'Ninguno seleccionado';
             }
             
-            if (['precio', 'titulo'].includes(scopeId)) {
-                return checkHasSelection($content, scopeId) ? 'Configurado' : 'Sin configurar';
+            if (['precio', 'titulo'].includes(conditionId)) {
+                return checkHasSelection($content, conditionId) ? 'Configurado' : 'Sin configurar';
             }
             
             return 'Sin configurar';
@@ -384,11 +384,11 @@ $(document).on('click', '.gdm-scope-cancel', function(e) {
         /**
          * Guardar estado original de un ámbito
          */
-        function saveOriginalState(scopeId) {
-            const $scopeGroup = $('[data-scope="' + scopeId + '"]');
-            const $content = $scopeGroup.find('.gdm-scope-content');
+        function saveOriginalState(conditionId) {
+            const $conditionGroup = $('[data-condition="' + conditionId + '"]');
+            const $content = $conditionGroup.find('.gdm-condition-content');
             
-            originalData[scopeId] = {
+            originalData[conditionId] = {
                 checkboxes: [],
                 inputs: {},
                 selects: {}
@@ -400,7 +400,7 @@ $(document).on('click', '.gdm-scope-cancel', function(e) {
                 const value = $(this).val();
                 const checked = $(this).is(':checked');
                 if (name) {
-                    originalData[scopeId].checkboxes.push({ name, value, checked });
+                    originalData[conditionId].checkboxes.push({ name, value, checked });
                 }
             });
             
@@ -408,7 +408,7 @@ $(document).on('click', '.gdm-scope-cancel', function(e) {
             $content.find('input[type="text"], input[type="number"]').each(function() {
                 const name = $(this).attr('name');
                 if (name) {
-                    originalData[scopeId].inputs[name] = $(this).val();
+                    originalData[conditionId].inputs[name] = $(this).val();
                 }
             });
             
@@ -416,7 +416,7 @@ $(document).on('click', '.gdm-scope-cancel', function(e) {
             $content.find('select').each(function() {
                 const name = $(this).attr('name');
                 if (name) {
-                    originalData[scopeId].selects[name] = $(this).val();
+                    originalData[conditionId].selects[name] = $(this).val();
                 }
             });
         }
@@ -424,26 +424,26 @@ $(document).on('click', '.gdm-scope-cancel', function(e) {
         /**
          * Restaurar estado original de un ámbito
          */
-        function restoreOriginalState(scopeId) {
-            if (!originalData[scopeId]) return;
+        function restoreOriginalState(conditionId) {
+            if (!originalData[conditionId]) return;
             
-            const $scopeGroup = $('[data-scope="' + scopeId + '"]');
-            const $content = $scopeGroup.find('.gdm-scope-content');
+            const $conditionGroup = $('[data-condition="' + conditionId + '"]');
+            const $content = $conditionGroup.find('.gdm-condition-content');
             
             // Restaurar checkboxes
-            originalData[scopeId].checkboxes.forEach(function(item) {
+            originalData[conditionId].checkboxes.forEach(function(item) {
                 $content.find('input[name="' + item.name + '"][value="' + item.value + '"]')
                     .prop('checked', item.checked);
             });
             
             // Restaurar inputs
-            for (let name in originalData[scopeId].inputs) {
-                $content.find('[name="' + name + '"]').val(originalData[scopeId].inputs[name]);
+            for (let name in originalData[conditionId].inputs) {
+                $content.find('[name="' + name + '"]').val(originalData[conditionId].inputs[name]);
             }
             
             // Restaurar selects
-            for (let name in originalData[scopeId].selects) {
-                $content.find('select[name="' + name + '"]').val(originalData[scopeId].selects[name]);
+            for (let name in originalData[conditionId].selects) {
+                $content.find('select[name="' + name + '"]').val(originalData[conditionId].selects[name]);
             }
         }
     }
@@ -458,7 +458,7 @@ if (window.gdmMetaboxInitialized) {
 window.gdmMetaboxInitialized = true;
 
 initModuleToggles();
-initScopeSystem();
+initconditionSystem();
 
     // =========================================================================
     // DEBUG
@@ -468,7 +468,7 @@ initScopeSystem();
         console.log('✅ GDM Metabox v6.2: Inicializado');
         console.log('📦 Módulos disponibles:', $('.gdm-module-toggle').length);
         console.log('✔️ Módulos activos:', $('.gdm-module-toggle:checked').length);
-        console.log('🎯 Ámbitos disponibles:', $('.gdm-scope-group').length);
-        console.log('📊 Ámbitos con selección:', $('.gdm-scope-checkbox:checked').length);
+        console.log('🎯 Ámbitos disponibles:', $('.gdm-condition-group').length);
+        console.log('📊 Ámbitos con selección:', $('.gdm-condition-checkbox:checked').length);
     }
 });

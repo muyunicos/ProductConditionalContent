@@ -11,25 +11,25 @@
 
 if (!defined('ABSPATH')) exit;
 
-abstract class GDM_Scope_Base {
+abstract class GDM_Condition_Base {
     
     /**
      * ID único del ámbito
      * @var string
      */
-    protected $scope_id = '';
+    protected $condition_id = '';
     
     /**
      * Nombre del ámbito
      * @var string
      */
-    protected $scope_name = '';
+    protected $condition_name = '';
     
     /**
      * Icono del ámbito
      * @var string
      */
-    protected $scope_icon = '🎯';
+    protected $condition_icon = '🎯';
     
     /**
      * Prioridad de orden
@@ -47,20 +47,20 @@ abstract class GDM_Scope_Base {
      * Constructor
      */
     public function __construct() {
-        if (empty($this->scope_id) || empty($this->scope_name)) {
-            wp_die(__('El ámbito debe definir scope_id y scope_name', 'product-conditional-content'));
+        if (empty($this->condition_id) || empty($this->condition_name)) {
+            wp_die(__('El ámbito debe definir condition_id y condition_name', 'product-conditional-content'));
         }
         
         // Hooks de inicialización
-        $this->scope_init();
+        $this->condition_init();
     }
 
     /**
-     * Encolar CSS y JS globales de scopes
+     * Encolar CSS y JS globales de conditions
      * 
      * @since 6.2.0
      */
-    public static function enqueue_scope_assets() {
+    public static function enqueue_condition_assets() {
         $screen = get_current_screen();
         if (!$screen || $screen->id !== 'gdm_regla') {
             return;
@@ -74,7 +74,7 @@ abstract class GDM_Scope_Base {
             GDM_VERSION
         );
 
-        // CSS Específico de Scopes (Capa 2)
+        // CSS Específico de conditions (Capa 2)
         wp_enqueue_style(
             'gdm-rules-config-metabox',
             GDM_PLUGIN_URL . 'assets/admin/css/rules-config-metabox.css',
@@ -86,7 +86,7 @@ abstract class GDM_Scope_Base {
     /**
      * Hook de inicialización específica (opcional)
      */
-    protected function scope_init() {
+    protected function condition_init() {
         // Implementar en clase hija si se necesita
     }
     
@@ -96,72 +96,72 @@ abstract class GDM_Scope_Base {
      * @param int $post_id ID del post
      */
     public function render($post_id) {
-        $data = $this->get_scope_data($post_id);
+        $data = $this->get_condition_data($post_id);
         $has_selection = $this->has_selection($data);
         $summary = $this->get_summary($data);
         $counter_text = $this->get_counter_text($data);
         
         ?>
-        <div class="gdm-scope-group" 
-             data-scope="<?php echo esc_attr($this->scope_id); ?>"
+        <div class="gdm-condition-group" 
+             data-condition="<?php echo esc_attr($this->condition_id); ?>"
              role="region" 
-             aria-labelledby="gdm-<?php echo esc_attr($this->scope_id); ?>-label">
+             aria-labelledby="gdm-<?php echo esc_attr($this->condition_id); ?>-label">
             
-            <div class="gdm-scope-header">
-                <label class="gdm-scope-toggle">
+            <div class="gdm-condition-header">
+                <label class="gdm-condition-toggle">
                     <input type="checkbox" 
-                           id="gdm_<?php echo esc_attr($this->scope_id); ?>_enabled" 
-                           name="gdm_<?php echo esc_attr($this->scope_id); ?>_enabled" 
-                           class="gdm-scope-checkbox"
+                           id="gdm_<?php echo esc_attr($this->condition_id); ?>_enabled" 
+                           name="gdm_<?php echo esc_attr($this->condition_id); ?>_enabled" 
+                           class="gdm-condition-checkbox"
                            value="1"
-                           aria-describedby="gdm-<?php echo esc_attr($this->scope_id); ?>-summary"
-                           aria-controls="gdm-<?php echo esc_attr($this->scope_id); ?>-content"
+                           aria-describedby="gdm-<?php echo esc_attr($this->condition_id); ?>-summary"
+                           aria-controls="gdm-<?php echo esc_attr($this->condition_id); ?>-content"
                            <?php checked($has_selection); ?>>
-                    <strong id="gdm-<?php echo esc_attr($this->scope_id); ?>-label">
-                        <?php echo esc_html($this->scope_icon . ' ' . $this->scope_name); ?>
+                    <strong id="gdm-<?php echo esc_attr($this->condition_id); ?>-label">
+                        <?php echo esc_html($this->condition_icon . ' ' . $this->condition_name); ?>
                     </strong>
                 </label>
                 
-                <div class="gdm-scope-summary" 
-                     id="gdm-<?php echo esc_attr($this->scope_id); ?>-summary" 
+                <div class="gdm-condition-summary" 
+                     id="gdm-<?php echo esc_attr($this->condition_id); ?>-summary" 
                      style="<?php echo !$has_selection ? 'display:none;' : ''; ?>">
-                    <span class="gdm-summary-text" id="gdm-<?php echo esc_attr($this->scope_id); ?>-summary-text">
+                    <span class="gdm-summary-text" id="gdm-<?php echo esc_attr($this->condition_id); ?>-summary-text">
                         <?php echo wp_kses_post($summary); ?>
                     </span>
                     <button type="button" 
-                            class="button button-small gdm-scope-edit" 
-                            data-target="<?php echo esc_attr($this->scope_id); ?>"
-                            aria-label="<?php printf(__('Editar %s', 'product-conditional-content'), $this->scope_name); ?>"
+                            class="button button-small gdm-condition-edit" 
+                            data-target="<?php echo esc_attr($this->condition_id); ?>"
+                            aria-label="<?php printf(__('Editar %s', 'product-conditional-content'), $this->condition_name); ?>"
                             aria-expanded="false">
                         <?php _e('Editar', 'product-conditional-content'); ?>
                     </button>
                 </div>
             </div>
             
-            <div class="gdm-scope-content" 
-                 id="gdm-<?php echo esc_attr($this->scope_id); ?>-content" 
+            <div class="gdm-condition-content" 
+                 id="gdm-<?php echo esc_attr($this->condition_id); ?>-content" 
                  role="group"
                  aria-hidden="true"
                  style="display:none;">
                 
                 <?php $this->render_content($post_id, $data); ?>
                 
-                <div class="gdm-scope-actions">
+                <div class="gdm-condition-actions">
                     <button type="button" 
-                            class="button button-primary gdm-scope-save" 
-                            data-target="<?php echo esc_attr($this->scope_id); ?>"
-                            aria-label="<?php printf(__('Guardar cambios en %s', 'product-conditional-content'), $this->scope_name); ?>">
+                            class="button button-primary gdm-condition-save" 
+                            data-target="<?php echo esc_attr($this->condition_id); ?>"
+                            aria-label="<?php printf(__('Guardar cambios en %s', 'product-conditional-content'), $this->condition_name); ?>">
                         <span class="dashicons dashicons-yes"></span>
                         <?php _e('Guardar', 'product-conditional-content'); ?>
                     </button>
                     <button type="button" 
-                            class="button gdm-scope-cancel" 
-                            data-target="<?php echo esc_attr($this->scope_id); ?>"
+                            class="button gdm-condition-cancel" 
+                            data-target="<?php echo esc_attr($this->condition_id); ?>"
                             aria-label="<?php _e('Cancelar cambios', 'product-conditional-content'); ?>">
                         <?php _e('Cancelar', 'product-conditional-content'); ?>
                     </button>
                     <span class="gdm-selection-counter" 
-                          id="gdm-<?php echo esc_attr($this->scope_id); ?>-counter"
+                          id="gdm-<?php echo esc_attr($this->condition_id); ?>-counter"
                           aria-live="polite">
                         <?php echo esc_html($counter_text); ?>
                     </span>
@@ -195,8 +195,8 @@ abstract class GDM_Scope_Base {
      * @param int $post_id ID del post
      * @return array
      */
-    protected function get_scope_data($post_id) {
-        $cache_key = "{$this->scope_id}_{$post_id}";
+    protected function get_condition_data($post_id) {
+        $cache_key = "{$this->condition_id}_{$post_id}";
         
         if (isset(self::$cache[$cache_key])) {
             return self::$cache[$cache_key];
@@ -205,7 +205,7 @@ abstract class GDM_Scope_Base {
         $data = $this->get_default_data();
         
         foreach ($data as $key => $default_value) {
-            $meta_key = "_gdm_{$this->scope_id}_{$key}";
+            $meta_key = "_gdm_{$this->condition_id}_{$key}";
             $value = get_post_meta($post_id, $meta_key, true);
             $data[$key] = ($value !== '' && $value !== false) ? $value : $default_value;
         }
@@ -267,7 +267,7 @@ abstract class GDM_Scope_Base {
      * @param mixed $value Valor a guardar
      */
     protected function save_field($post_id, $field_name, $value) {
-        $meta_key = "_gdm_{$this->scope_id}_{$field_name}";
+        $meta_key = "_gdm_{$this->condition_id}_{$field_name}";
         update_post_meta($post_id, $meta_key, $value);
     }
     

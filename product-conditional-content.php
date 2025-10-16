@@ -39,17 +39,17 @@ add_action('plugins_loaded', function() {
     require_once GDM_PLUGIN_DIR . 'includes/core/class-custom-post-types.php';
 
     require_once GDM_PLUGIN_DIR . 'includes/admin/modules/class-module-base.php';
-    require_once GDM_PLUGIN_DIR . 'includes/admin/scopes/class-scope-base.php';
+    require_once GDM_PLUGIN_DIR . 'includes/admin/conditions/class-condition-base.php';
     
     require_once GDM_PLUGIN_DIR . 'includes/admin/modules/class-module-manager.php';
-    require_once GDM_PLUGIN_DIR . 'includes/admin/scopes/class-scope-manager.php';
+    require_once GDM_PLUGIN_DIR . 'includes/admin/conditions/class-condition-manager.php';
     
     GDM_Module_Manager::instance();
-    GDM_Scope_Manager::instance();
+    GDM_condition_Manager::instance();
     
     // Hooks personalizados (para extensiones)
     do_action('gdm_init_modules');
-    do_action('gdm_init_scopes');
+    do_action('gdm_init_conditions');
 
     if (is_admin()) {
         // Helpers y paneles

@@ -5,15 +5,15 @@
  * 
  * @package ProductConditionalContent
  * @description Estilos específicos para el sistema modular de ámbitos de aplicación.
- *              Este archivo contiene SOLO estilos relacionados con los ámbitos (scopes).
+ *              Este archivo contiene SOLO estilos relacionados con los ámbitos (conditions).
  * 
  * RESPONSABILIDADES:
- * - Estructura de ámbitos (.gdm-scope-group, .gdm-scope-header)
- * - Toggle y checkbox de ámbitos (.gdm-scope-toggle)
- * - Contenido expandible (.gdm-scope-content)
- * - Resumen de selección (.gdm-scope-summary)
- * - Acciones de ámbitos (.gdm-scope-actions)
- * - Listas específicas de ámbitos (.gdm-scope-list)
+ * - Estructura de ámbitos (.gdm-condition-group, .gdm-condition-header)
+ * - Toggle y checkbox de ámbitos (.gdm-condition-toggle)
+ * - Contenido expandible (.gdm-condition-content)
+ * - Resumen de selección (.gdm-condition-summary)
+ * - Acciones de ámbitos (.gdm-condition-actions)
+ * - Listas específicas de ámbitos (.gdm-condition-list)
  * - Scrollbar personalizado para listas
  * - Estados y transiciones de ámbitos
  * 
@@ -28,7 +28,7 @@
    CONTENEDOR GLOBAL DE ÁMBITOS
    ======================================================================== */
 
-.gdm-scopes-container {
+.gdm-conditions-container {
     display: flex;
     flex-direction: column;
     gap: 15px;
@@ -39,7 +39,7 @@
    ESTRUCTURA DE GRUPO DE ÁMBITO
    ======================================================================== */
 
-.gdm-scope-group {
+.gdm-condition-group {
     border: 1px solid #ddd;
     border-radius: 4px;
     background: #fff;
@@ -47,7 +47,7 @@
     transition: box-shadow 0.3s ease;
 }
 
-.gdm-scope-group:hover {
+.gdm-condition-group:hover {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
@@ -55,7 +55,7 @@
    HEADER DEL ÁMBITO
    ======================================================================== */
 
-.gdm-scope-header {
+.gdm-condition-header {
     padding: 12px 15px;
     background: #f9f9f9;
     border-bottom: 1px solid #ddd;
@@ -67,7 +67,7 @@
     transition: background 0.2s ease;
 }
 
-.gdm-scope-header:hover {
+.gdm-condition-header:hover {
     background: #f0f0f1;
 }
 
@@ -75,7 +75,7 @@
    TOGGLE Y CHECKBOX
    ======================================================================== */
 
-.gdm-scope-toggle {
+.gdm-condition-toggle {
     display: flex;
     align-items: center;
     margin: 0;
@@ -84,22 +84,22 @@
     gap: 10px;
 }
 
-.gdm-scope-toggle input[type="checkbox"] {
+.gdm-condition-toggle input[type="checkbox"] {
     margin: 0 !important;
     cursor: pointer;
 }
 
-.gdm-scope-toggle strong {
+.gdm-condition-toggle strong {
     font-size: 14px;
     color: #1d2327;
     transition: color 0.2s ease;
 }
 
-.gdm-scope-toggle:hover strong {
+.gdm-condition-toggle:hover strong {
     color: #2271b1;
 }
 
-.gdm-scope-checkbox {
+.gdm-condition-checkbox {
     width: 18px;
     height: 18px;
 }
@@ -108,7 +108,7 @@
    RESUMEN DE SELECCIÓN
    ======================================================================== */
 
-.gdm-scope-summary {
+.gdm-condition-summary {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -131,7 +131,7 @@
 }
 
 /* Botón editar en resumen */
-.gdm-scope-edit {
+.gdm-condition-edit {
     padding: 4px 12px !important;
     height: auto !important;
     line-height: 1.4 !important;
@@ -142,7 +142,7 @@
     transition: all 0.2s ease;
 }
 
-.gdm-scope-edit:hover {
+.gdm-condition-edit:hover {
     background: #2271b1 !important;
     color: #fff !important;
 }
@@ -151,13 +151,13 @@
    CONTENIDO EXPANDIBLE
    ======================================================================== */
 
-.gdm-scope-content {
+.gdm-condition-content {
     padding: 15px;
     display: none;
     background: #fafafa;
 }
 
-.gdm-scope-content.active {
+.gdm-condition-content.active {
     display: block;
     animation: slideDown 0.3s ease;
 }
@@ -166,7 +166,7 @@
    LISTAS ESPECÍFICAS DE ÁMBITOS
    ======================================================================== */
 
-.gdm-scope-list {
+.gdm-condition-list {
     max-height: 300px;
     overflow-y: auto;
     border: 1px solid #ddd;
@@ -177,27 +177,27 @@
 }
 
 /* Scrollbar personalizado (WebKit) */
-.gdm-scope-list::-webkit-scrollbar {
+.gdm-condition-list::-webkit-scrollbar {
     width: 8px;
 }
 
-.gdm-scope-list::-webkit-scrollbar-track {
+.gdm-condition-list::-webkit-scrollbar-track {
     background: #f1f1f1;
     border-radius: 4px;
 }
 
-.gdm-scope-list::-webkit-scrollbar-thumb {
+.gdm-condition-list::-webkit-scrollbar-thumb {
     background: #c1c1c1;
     border-radius: 4px;
     transition: background 0.2s ease;
 }
 
-.gdm-scope-list::-webkit-scrollbar-thumb:hover {
+.gdm-condition-list::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
 }
 
 /* Scrollbar para Firefox */
-.gdm-scope-list {
+.gdm-condition-list {
     scrollbar-width: thin;
     scrollbar-color: #c1c1c1 #f1f1f1;
 }
@@ -206,7 +206,7 @@
    ACCIONES DEL ÁMBITO
    ======================================================================== */
 
-.gdm-scope-actions {
+.gdm-condition-actions {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -217,20 +217,20 @@
 }
 
 /* Botón guardar/aceptar */
-.gdm-scope-save {
+.gdm-condition-save {
     padding: 8px 20px !important;
     height: auto !important;
     line-height: 1.4 !important;
     font-weight: 600 !important;
 }
 
-.gdm-scope-save .dashicons {
+.gdm-condition-save .dashicons {
     vertical-align: middle;
     margin-right: 5px;
 }
 
 /* Botón cancelar */
-.gdm-scope-cancel {
+.gdm-condition-cancel {
     padding: 8px 16px !important;
     height: auto !important;
     line-height: 1.4 !important;
@@ -249,7 +249,7 @@
 }
 
 /* ========================================================================
-   GRUPOS DE ATRIBUTOS (Específico para scope-attributes)
+   GRUPOS DE ATRIBUTOS (Específico para condition-attributes)
    ======================================================================== */
 
 .gdm-attribute-group {
@@ -283,7 +283,7 @@
 }
 
 /* ========================================================================
-   CAMPOS DE PRECIO (Específico para scope-price)
+   CAMPOS DE PRECIO (Específico para condition-price)
    ======================================================================== */
 
 .gdm-price-input {
@@ -303,7 +303,7 @@
 }
 
 /* ========================================================================
-   BADGES DE ESTADO (Específico para scope-stock)
+   BADGES DE ESTADO (Específico para condition-stock)
    ======================================================================== */
 
 .gdm-status-badge {
@@ -394,12 +394,12 @@
    ======================================================================== */
 
 @media screen and (max-width: 782px) {
-    .gdm-scope-header {
+    .gdm-condition-header {
         flex-direction: column;
         align-items: flex-start;
     }
 
-    .gdm-scope-summary {
+    .gdm-condition-summary {
         padding-left: 0;
         border-left: none;
         padding-top: 10px;
@@ -407,19 +407,19 @@
         width: 100%;
     }
 
-    .gdm-scope-actions {
+    .gdm-condition-actions {
         flex-direction: column;
         gap: 10px;
     }
 
-    .gdm-scope-save,
-    .gdm-scope-cancel,
+    .gdm-condition-save,
+    .gdm-condition-cancel,
     .gdm-selection-counter {
         width: 100%;
         text-align: center;
     }
 
-    .gdm-scope-list {
+    .gdm-condition-list {
         max-height: 200px;
     }
 

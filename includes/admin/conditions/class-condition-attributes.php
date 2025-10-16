@@ -11,11 +11,11 @@
 
 if (!defined('ABSPATH')) exit;
 
-class GDM_Scope_Attributes extends GDM_Scope_Base {
+class GDM_Condition_Attributes extends GDM_Condition_Base {
     
-    protected $scope_id = 'atributos';
-    protected $scope_name = 'Atributos de Productos';
-    protected $scope_icon = '🎨';
+    protected $condition_id = 'atributos';
+    protected $condition_name = 'Atributos de Productos';
+    protected $condition_icon = '🎨';
     protected $priority = 40;
     
     protected function render_content($post_id, $data) {
@@ -27,7 +27,7 @@ class GDM_Scope_Attributes extends GDM_Scope_Base {
         }
         
         ?>
-        <div class="gdm-<?php echo esc_attr($this->scope_id); ?>-list">
+        <div class="gdm-<?php echo esc_attr($this->condition_id); ?>-list">
             <?php foreach ($product_attributes as $attribute): 
                 $taxonomy = wc_attribute_taxonomy_name($attribute->attribute_name);
                 $terms = get_terms(['taxonomy' => $taxonomy, 'hide_empty' => false]);
@@ -45,9 +45,9 @@ class GDM_Scope_Attributes extends GDM_Scope_Base {
                         ?>
                             <label class="gdm-checkbox-item gdm-term-item">
                                 <input type="checkbox" 
-                                       name="gdm_<?php echo esc_attr($this->scope_id); ?>_valores[<?php echo esc_attr($taxonomy); ?>][]" 
+                                       name="gdm_<?php echo esc_attr($this->condition_id); ?>_valores[<?php echo esc_attr($taxonomy); ?>][]" 
                                        value="<?php echo esc_attr($term->term_id); ?>"
-                                       class="gdm-scope-item-checkbox"
+                                       class="gdm-condition-item-checkbox"
                                        <?php checked($checked); ?>>
                                 <span><?php echo esc_html($term->name); ?></span>
                                 <span class="gdm-item-count">(<?php echo esc_html($term->count); ?>)</span>
@@ -61,8 +61,8 @@ class GDM_Scope_Attributes extends GDM_Scope_Base {
     }
     
     public function save($post_id) {
-        $valores = isset($_POST["gdm_{$this->scope_id}_valores"]) && is_array($_POST["gdm_{$this->scope_id}_valores"])
-            ? $_POST["gdm_{$this->scope_id}_valores"]
+        $valores = isset($_POST["gdm_{$this->condition_id}_valores"]) && is_array($_POST["gdm_{$this->condition_id}_valores"])
+            ? $_POST["gdm_{$this->condition_id}_valores"]
             : [];
         
         // Sanitizar valores
@@ -111,7 +111,7 @@ class GDM_Scope_Attributes extends GDM_Scope_Base {
     }
     
     public function matches_product($product_id, $rule_id) {
-        $data = $this->get_scope_data($rule_id);
+        $data = $this->get_condition_data($rule_id);
         
         if (empty($data['valores'])) {
             return true;
@@ -184,9 +184,9 @@ class GDM_Scope_Attributes extends GDM_Scope_Base {
         ?>
         <script>
         jQuery(document).ready(function($) {
-            $('.gdm-<?php echo esc_js($this->scope_id); ?>-list input').on('change', function() {
-                var count = $('.gdm-<?php echo esc_js($this->scope_id); ?>-list input:checked').length;
-                $('#gdm-<?php echo esc_js($this->scope_id); ?>-counter').text(
+            $('.gdm-<?php echo esc_js($this->condition_id); ?>-list input').on('change', function() {
+                var count = $('.gdm-<?php echo esc_js($this->condition_id); ?>-list input:checked').length;
+                $('#gdm-<?php echo esc_js($this->condition_id); ?>-counter').text(
                     count > 0 ? count + ' valores seleccionados' : 'Ninguno seleccionado'
                 );
             });

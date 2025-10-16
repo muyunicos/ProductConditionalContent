@@ -128,10 +128,10 @@ final class GDM_Rules_Frontend
         $tipos = get_post_meta($rule_id, '_gdm_descripcion_tipos', true) ?: ['larga'];
         if (!in_array($type, $tipos)) return false;
 
-        return $this->is_rule_in_scope($data, $product);
+        return $this->is_rule_in_condition($data, $product);
     }
 
-    private function is_rule_in_scope($data, $product) {
+    private function is_rule_in_condition($data, $product) {
         // Todas las categorías
         if (isset($data['todas_categorias']) && $data['todas_categorias'] === '1') {
             return true;
@@ -195,12 +195,12 @@ final class GDM_Rules_Frontend
         }
         
         // ✨ NUEVO: Precio
-        if ($this->check_price_scope($product->get_id(), $product)) {
+        if ($this->check_price_condition($product->get_id(), $product)) {
             return true;
         }
         
         // ✨ NUEVO: Título
-        if ($this->check_title_scope($product->get_id(), $product)) {
+        if ($this->check_title_condition($product->get_id(), $product)) {
             return true;
         }
 
@@ -215,7 +215,7 @@ final class GDM_Rules_Frontend
     }
     
     // ✨ NUEVO: Verificar ámbito de precio
-    private function check_price_scope($rule_id, $product) {
+    private function check_price_condition($rule_id, $product) {
         $precio_enabled = get_post_meta($rule_id, '_gdm_precio_enabled', true);
         if ($precio_enabled !== '1') return false;
         
@@ -239,7 +239,7 @@ final class GDM_Rules_Frontend
     }
     
     // ✨ NUEVO: Verificar ámbito de título
-    private function check_title_scope($rule_id, $product) {
+    private function check_title_condition($rule_id, $product) {
         $titulo_enabled = get_post_meta($rule_id, '_gdm_titulo_enabled', true);
         if ($titulo_enabled !== '1') return false;
         
@@ -410,7 +410,7 @@ final class GDM_Rules_Frontend
             $rule_data = $this->get_rule_data($rule->ID);
             
             // Verificar ámbito
-            if (!$this->is_rule_in_scope($rule_data, $product)) {
+            if (!$this->is_rule_in_condition($rule_data, $product)) {
                 continue;
             }
             

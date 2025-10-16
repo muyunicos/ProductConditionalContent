@@ -11,11 +11,11 @@
 
 if (!defined('ABSPATH')) exit;
 
-class GDM_Scope_Price extends GDM_Scope_Base {
+class GDM_Condition_Price extends GDM_Condition_Base {
     
-    protected $scope_id = 'precio';
-    protected $scope_name = 'Rango de Precio';
-    protected $scope_icon = '💵';
+    protected $condition_id = 'precio';
+    protected $condition_name = 'Rango de Precio';
+    protected $condition_icon = '💵';
     protected $priority = 60;
     
     /**
@@ -60,7 +60,7 @@ class GDM_Scope_Price extends GDM_Scope_Base {
         // ✅ Calcular step dinámico según decimales configurados
         $step = $decimals > 0 ? '0.' . str_repeat('0', $decimals - 1) . '1' : '1';
         ?>
-        <div class="gdm-<?php echo esc_attr($this->scope_id); ?>-fields">
+        <div class="gdm-<?php echo esc_attr($this->condition_id); ?>-fields">
             
             <!-- Información de moneda actual -->
             <div class="gdm-currency-info">
@@ -78,8 +78,8 @@ class GDM_Scope_Price extends GDM_Scope_Base {
             
             <div class="gdm-field-group">
                 <label><strong><?php _e('Condición:', 'product-conditional-content'); ?></strong></label>
-                <select name="gdm_<?php echo esc_attr($this->scope_id); ?>_condicion" 
-                        id="gdm-<?php echo esc_attr($this->scope_id); ?>-condicion" 
+                <select name="gdm_<?php echo esc_attr($this->condition_id); ?>_condicion" 
+                        id="gdm-<?php echo esc_attr($this->condition_id); ?>-condicion" 
                         class="regular-text">
                     <option value="mayor_que" <?php selected($data['condicion'], 'mayor_que'); ?>>
                         <?php _e('Mayor que', 'product-conditional-content'); ?>
@@ -105,8 +105,8 @@ class GDM_Scope_Price extends GDM_Scope_Base {
                     <?php endif; ?>
                     
                     <input type="number" 
-                           name="gdm_<?php echo esc_attr($this->scope_id); ?>_min" 
-                           id="gdm-<?php echo esc_attr($this->scope_id); ?>-min"
+                           name="gdm_<?php echo esc_attr($this->condition_id); ?>_min" 
+                           id="gdm-<?php echo esc_attr($this->condition_id); ?>-min"
                            value="<?php echo esc_attr($this->format_price_input($data['min'])); ?>" 
                            step="<?php echo esc_attr($step); ?>" 
                            min="0"
@@ -134,8 +134,8 @@ class GDM_Scope_Price extends GDM_Scope_Base {
                     <?php endif; ?>
                     
                     <input type="number" 
-                           name="gdm_<?php echo esc_attr($this->scope_id); ?>_max" 
-                           id="gdm-<?php echo esc_attr($this->scope_id); ?>-max"
+                           name="gdm_<?php echo esc_attr($this->condition_id); ?>_max" 
+                           id="gdm-<?php echo esc_attr($this->condition_id); ?>-max"
                            value="<?php echo esc_attr($this->format_price_input($data['max'])); ?>" 
                            step="<?php echo esc_attr($step); ?>" 
                            min="0"
@@ -160,15 +160,15 @@ class GDM_Scope_Price extends GDM_Scope_Base {
     
     public function save($post_id) {
         // ✅ Sanitizar precios respetando configuración de WooCommerce
-        $min = isset($_POST["gdm_{$this->scope_id}_min"]) 
-            ? wc_format_decimal($_POST["gdm_{$this->scope_id}_min"]) 
+        $min = isset($_POST["gdm_{$this->condition_id}_min"]) 
+            ? wc_format_decimal($_POST["gdm_{$this->condition_id}_min"]) 
             : 0;
         
-        $max = isset($_POST["gdm_{$this->scope_id}_max"]) 
-            ? wc_format_decimal($_POST["gdm_{$this->scope_id}_max"]) 
+        $max = isset($_POST["gdm_{$this->condition_id}_max"]) 
+            ? wc_format_decimal($_POST["gdm_{$this->condition_id}_max"]) 
             : 0;
         
-        $this->save_field($post_id, 'condicion', isset($_POST["gdm_{$this->scope_id}_condicion"]) ? sanitize_text_field($_POST["gdm_{$this->scope_id}_condicion"]) : 'mayor_que');
+        $this->save_field($post_id, 'condicion', isset($_POST["gdm_{$this->condition_id}_condicion"]) ? sanitize_text_field($_POST["gdm_{$this->condition_id}_condicion"]) : 'mayor_que');
         $this->save_field($post_id, 'min', $min);
         $this->save_field($post_id, 'max', $max);
     }
@@ -222,7 +222,7 @@ class GDM_Scope_Price extends GDM_Scope_Base {
      * ✅ MEJORA: Usar funciones de WooCommerce para obtener precios
      */
     public function matches_product($product_id, $rule_id) {
-        $data = $this->get_scope_data($rule_id);
+        $data = $this->get_condition_data($rule_id);
         
         if (!$this->has_selection($data)) {
             return true;
@@ -288,7 +288,7 @@ class GDM_Scope_Price extends GDM_Scope_Base {
         $currency = $this->get_currency_config();
         ?>
         <style>
-            .gdm-<?php echo esc_attr($this->scope_id); ?>-fields {
+            .gdm-<?php echo esc_attr($this->condition_id); ?>-fields {
                 display: flex;
                 flex-direction: column;
                 gap: 15px;
@@ -358,7 +358,7 @@ class GDM_Scope_Price extends GDM_Scope_Base {
             var currencyConfig = <?php echo json_encode($currency); ?>;
             
             // ✅ Toggle de campo máximo
-            $('#gdm-<?php echo esc_js($this->scope_id); ?>-condicion').on('change', function() {
+            $('#gdm-<?php echo esc_js($this->condition_id); ?>-condicion').on('change', function() {
                 if ($(this).val() === 'entre') {
                     $('.gdm-max-wrapper').slideDown();
                 } else {
@@ -397,29 +397,29 @@ class GDM_Scope_Price extends GDM_Scope_Base {
             }
             
             // Actualizar preview al cambiar valores
-            $('#gdm-<?php echo esc_js($this->scope_id); ?>-min').on('input', function() {
+            $('#gdm-<?php echo esc_js($this->condition_id); ?>-min').on('input', function() {
                 var preview = formatPrice($(this).val());
                 $('.gdm-preview-min').text(preview);
             });
             
-            $('#gdm-<?php echo esc_js($this->scope_id); ?>-max').on('input', function() {
+            $('#gdm-<?php echo esc_js($this->condition_id); ?>-max').on('input', function() {
                 var preview = formatPrice($(this).val());
                 $('.gdm-preview-max').text(preview);
             });
             
             // ✅ Validación: máximo debe ser mayor que mínimo
-            $('.gdm-scope-save[data-target="<?php echo esc_js($this->scope_id); ?>"]').on('click', function(e) {
-                var condicion = $('#gdm-<?php echo esc_js($this->scope_id); ?>-condicion').val();
+            $('.gdm-condition-save[data-target="<?php echo esc_js($this->condition_id); ?>"]').on('click', function(e) {
+                var condicion = $('#gdm-<?php echo esc_js($this->condition_id); ?>-condicion').val();
                 
                 if (condicion === 'entre') {
-                    var min = parseFloat($('#gdm-<?php echo esc_js($this->scope_id); ?>-min').val()) || 0;
-                    var max = parseFloat($('#gdm-<?php echo esc_js($this->scope_id); ?>-max').val()) || 0;
+                    var min = parseFloat($('#gdm-<?php echo esc_js($this->condition_id); ?>-min').val()) || 0;
+                    var max = parseFloat($('#gdm-<?php echo esc_js($this->condition_id); ?>-max').val()) || 0;
                     
                     if (max > 0 && max <= min) {
                         e.preventDefault();
                         e.stopImmediatePropagation();
                         alert('⚠️ El valor máximo debe ser mayor que el mínimo.');
-                        $('#gdm-<?php echo esc_js($this->scope_id); ?>-max').focus();
+                        $('#gdm-<?php echo esc_js($this->condition_id); ?>-max').focus();
                         return false;
                     }
                 }

@@ -140,11 +140,11 @@ final class GDM_Rules_Config_Metabox {
                     <?php _e('Define a qué productos se aplicará esta regla:', 'product-conditional-content'); ?>
                 </p>
                 
-                <div class="gdm-scopes-wrapper">
+                <div class="gdm-conditions-wrapper">
                     <?php
-                    if (class_exists('GDM_Scope_Manager')) {
-                        $scope_manager = GDM_Scope_Manager::instance();
-                        $scope_manager->render_all($post->ID);
+                    if (class_exists('GDM_Condition_Manager')) {
+                        $condition_manager = GDM_Condition_Manager::instance();
+                        $condition_manager->render_all($post->ID);
                     }
                     ?>
                 </div>
@@ -184,7 +184,7 @@ public static function save_metabox($post_id, $post) {
         
         do_action('gdm_save_modules_data', $post_id, $post);
         
-        do_action('gdm_save_scopes_data', $post_id, $post);
+        do_action('gdm_save_conditions_data', $post_id, $post);
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('✅ GDM: Regla guardada exitosamente ID ' . $post_id);

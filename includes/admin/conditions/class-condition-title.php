@@ -11,19 +11,19 @@
 
 if (!defined('ABSPATH')) exit;
 
-class GDM_Scope_Title extends GDM_Scope_Base {
+class GDM_Condition_Title extends GDM_Condition_Base {
     
-    protected $scope_id = 'titulo';
-    protected $scope_name = 'Filtro por Título';
-    protected $scope_icon = '📝';
+    protected $condition_id = 'titulo';
+    protected $condition_name = 'Filtro por Título';
+    protected $condition_icon = '📝';
     protected $priority = 70;
     
     protected function render_content($post_id, $data) {
         ?>
-        <div class="gdm-<?php echo esc_attr($this->scope_id); ?>-fields">
+        <div class="gdm-<?php echo esc_attr($this->condition_id); ?>-fields">
             <div class="gdm-field-group">
                 <label><strong><?php _e('Condición:', 'product-conditional-content'); ?></strong></label>
-                <select name="gdm_<?php echo esc_attr($this->scope_id); ?>_condicion" class="regular-text">
+                <select name="gdm_<?php echo esc_attr($this->condition_id); ?>_condicion" class="regular-text">
                     <option value="contiene" <?php selected($data['condicion'], 'contiene'); ?>>
                         <?php _e('Contiene', 'product-conditional-content'); ?>
                     </option>
@@ -45,7 +45,7 @@ class GDM_Scope_Title extends GDM_Scope_Base {
             <div class="gdm-field-group">
                 <label><strong><?php _e('Texto:', 'product-conditional-content'); ?></strong></label>
                 <input type="text" 
-                       name="gdm_<?php echo esc_attr($this->scope_id); ?>_texto" 
+                       name="gdm_<?php echo esc_attr($this->condition_id); ?>_texto" 
                        value="<?php echo esc_attr($data['texto']); ?>" 
                        class="regular-text"
                        placeholder="<?php esc_attr_e('Texto a buscar', 'product-conditional-content'); ?>">
@@ -54,7 +54,7 @@ class GDM_Scope_Title extends GDM_Scope_Base {
             <div class="gdm-field-group">
                 <label>
                     <input type="checkbox" 
-                           name="gdm_<?php echo esc_attr($this->scope_id); ?>_case_sensitive" 
+                           name="gdm_<?php echo esc_attr($this->condition_id); ?>_case_sensitive" 
                            value="1" 
                            <?php checked($data['case_sensitive'], '1'); ?>>
                     <?php _e('Distinguir mayúsculas/minúsculas', 'product-conditional-content'); ?>
@@ -65,9 +65,9 @@ class GDM_Scope_Title extends GDM_Scope_Base {
     }
     
     public function save($post_id) {
-        $this->save_field($post_id, 'condicion', isset($_POST["gdm_{$this->scope_id}_condicion"]) ? sanitize_text_field($_POST["gdm_{$this->scope_id}_condicion"]) : 'contiene');
-        $this->save_field($post_id, 'texto', isset($_POST["gdm_{$this->scope_id}_texto"]) ? sanitize_text_field($_POST["gdm_{$this->scope_id}_texto"]) : '');
-        $this->save_field($post_id, 'case_sensitive', isset($_POST["gdm_{$this->scope_id}_case_sensitive"]) ? '1' : '0');
+        $this->save_field($post_id, 'condicion', isset($_POST["gdm_{$this->condition_id}_condicion"]) ? sanitize_text_field($_POST["gdm_{$this->condition_id}_condicion"]) : 'contiene');
+        $this->save_field($post_id, 'texto', isset($_POST["gdm_{$this->condition_id}_texto"]) ? sanitize_text_field($_POST["gdm_{$this->condition_id}_texto"]) : '');
+        $this->save_field($post_id, 'case_sensitive', isset($_POST["gdm_{$this->condition_id}_case_sensitive"]) ? '1' : '0');
     }
     
     protected function get_default_data() {
@@ -103,7 +103,7 @@ class GDM_Scope_Title extends GDM_Scope_Base {
     }
     
     public function matches_product($product_id, $rule_id) {
-        $data = $this->get_scope_data($rule_id);
+        $data = $this->get_condition_data($rule_id);
         
         if (empty($data['texto'])) {
             return true;
@@ -141,7 +141,7 @@ class GDM_Scope_Title extends GDM_Scope_Base {
     protected function render_styles() {
         ?>
         <style>
-            .gdm-<?php echo esc_attr($this->scope_id); ?>-fields {
+            .gdm-<?php echo esc_attr($this->condition_id); ?>-fields {
                 display: flex;
                 flex-direction: column;
                 gap: 15px;
