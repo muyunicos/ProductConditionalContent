@@ -1,0 +1,365 @@
+/**
+ * Estilos para Actions v7.0
+ * Estilos compartidos para todos los módulos de acción
+ *
+ * @package ProductConditionalContent
+ * @since 7.0.0
+ */
+
+/* ========================================
+   CONTENEDOR DE ACCIÓN
+   ======================================== */
+
+.gdm-action-module {
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+    transition: all 0.3s ease;
+}
+
+.gdm-action-module:hover {
+    border-color: #2271b1;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* ========================================
+   HEADER DE ACCIÓN
+   ======================================== */
+
+.gdm-action-header {
+    padding: 15px 20px;
+    background: #f9f9f9;
+    border-bottom: 1px solid #ddd;
+}
+
+.gdm-action-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.gdm-action-toggle input[type="checkbox"] {
+    margin: 0;
+}
+
+.gdm-action-toggle strong {
+    font-size: 14px;
+    color: #1d2327;
+}
+
+.gdm-action-description {
+    margin: 8px 0 0;
+    padding-left: 24px;
+    font-size: 13px;
+    color: #646970;
+}
+
+.gdm-action-contexts {
+    margin: 8px 0 0;
+    padding-left: 24px;
+}
+
+.gdm-action-contexts small {
+    color: #646970;
+    font-size: 12px;
+}
+
+/* ========================================
+   CONTENIDO DE ACCIÓN
+   ======================================== */
+
+.gdm-action-content {
+    padding: 20px;
+    display: none;
+}
+
+.gdm-action-content[aria-hidden="false"] {
+    display: block;
+}
+
+/* ========================================
+   SELECTOR DE CONTEXTOS
+   ======================================== */
+
+.gdm-context-selector {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f0f6fc;
+    border-left: 4px solid #2271b1;
+    border-radius: 3px;
+}
+
+.gdm-context-selector h4 {
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: #1d2327;
+}
+
+.gdm-context-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.gdm-context-checkboxes label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    color: #1d2327;
+}
+
+.gdm-context-checkboxes input[type="checkbox"] {
+    margin: 0;
+}
+
+/* ========================================
+   OPCIONES DE ACCIÓN
+   ======================================== */
+
+.gdm-action-options {
+    margin-bottom: 20px;
+}
+
+/* ========================================
+   CAMPOS DE FORMULARIO
+   ======================================== */
+
+.gdm-field-row {
+    margin-bottom: 20px;
+}
+
+.gdm-field-row:last-child {
+    margin-bottom: 0;
+}
+
+.gdm-field-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #1d2327;
+}
+
+.gdm-field-label strong {
+    font-weight: 600;
+}
+
+.gdm-field-control {
+    width: 100%;
+    max-width: 500px;
+    padding: 6px 10px;
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.gdm-field-control:focus {
+    border-color: #2271b1;
+    outline: none;
+    box-shadow: 0 0 0 1px #2271b1;
+}
+
+.gdm-field-control.small-text {
+    width: 80px;
+}
+
+.gdm-field-help {
+    margin: 5px 0 0;
+    font-size: 12px;
+    color: #646970;
+    font-style: italic;
+}
+
+.gdm-field-separator {
+    margin: 20px 0;
+    border: 0;
+    border-top: 1px solid #ddd;
+}
+
+.gdm-field-with-suffix {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.gdm-field-suffix {
+    font-weight: 600;
+    color: #2271b1;
+    font-size: 14px;
+    min-width: 30px;
+}
+
+.gdm-checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.gdm-checkbox-label input[type="checkbox"] {
+    margin-top: 2px;
+}
+
+/* ========================================
+   FOOTER DE ACCIÓN (BOTONES)
+   ======================================== */
+
+.gdm-action-footer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 15px;
+    margin-top: 15px;
+    border-top: 1px solid #ddd;
+}
+
+.gdm-action-save {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.gdm-action-save .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+.gdm-action-cancel {
+    background: #f0f0f1;
+    border-color: #8c8f94;
+    color: #2c3338;
+}
+
+.gdm-action-cancel:hover {
+    background: #e0e0e1;
+    border-color: #8c8f94;
+    color: #2c3338;
+}
+
+.gdm-action-regenerate {
+    margin-left: auto;
+}
+
+.gdm-action-regenerate .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+/* ========================================
+   ESTADOS
+   ======================================== */
+
+.gdm-action-module[data-action] .gdm-action-content {
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========================================
+   MÓDULOS ESPECÍFICOS
+   ======================================== */
+
+/* Price Module */
+.gdm-price-options .gdm-field-row {
+    margin-bottom: 20px;
+}
+
+.gdm-price-calculator {
+    padding: 15px;
+    background: #f9f9f9;
+    border-left: 4px solid #2271b1;
+    border-radius: 3px;
+}
+
+.gdm-price-calculator .gdm-calc-input-group {
+    margin-bottom: 10px;
+}
+
+.gdm-price-calculator .gdm-calc-input-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #646970;
+    font-size: 12px;
+}
+
+.gdm-price-calculator .gdm-calc-result {
+    margin-top: 15px;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+.gdm-price-calculator .gdm-calc-nuevo {
+    font-weight: 600;
+    color: #2271b1;
+    font-size: 18px;
+}
+
+.gdm-price-calculator .gdm-calc-detalle {
+    color: #646970;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+/* Description Module */
+.gdm-description-options .mce-container {
+    margin-top: 10px;
+}
+
+/* Gallery Module */
+.gdm-gallery-options .gdm-field-row {
+    margin-bottom: 20px;
+}
+
+/* Featured Module */
+.gdm-featured-options .gdm-field-row {
+    margin-bottom: 20px;
+}
+
+/* Title Module */
+.gdm-title-options .gdm-field-row {
+    margin-bottom: 20px;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 782px) {
+    .gdm-action-header {
+        padding: 12px 15px;
+    }
+
+    .gdm-action-content {
+        padding: 15px;
+    }
+
+    .gdm-field-control {
+        max-width: 100%;
+    }
+
+    .gdm-action-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .gdm-action-regenerate {
+        margin-left: 0;
+    }
+}
