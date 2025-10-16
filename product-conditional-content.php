@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Reglas de Contenido para WooCommerce
- * Description: Motor profesional de reglas y campos personalizados con sistema modular para productos WooCommerce
+ * Description: Motor de reglas y campos personalizables para productos WooCommerce
  * Version: 6.2.4
  * Author: MuyUnicos
  * Author URI: https://muyunicos.com
@@ -17,21 +17,14 @@
 
 if (!defined('ABSPATH')) exit;
 
-// ✅ Constantes globales (ANTES de cualquier hook)
-define('GDM_VERSION', '6.2.4'); // Incrementado por fix de traducciones
+define('GDM_VERSION', '6.2.4');
 define('GDM_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('GDM_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('GDM_PLUGIN_FILE', __FILE__);
 
-// ✅ Cargar clase de compatibilidad (SIN traducciones todavía)
 require_once GDM_PLUGIN_DIR . 'includes/compatibility/class-compat-check.php';
 
-/**
- * ✅ CORRECCIÓN CRÍTICA v6.2.4: Mover carga de traducciones DENTRO de plugins_loaded
- * Evita warnings de _load_textdomain_just_in_time en WordPress 6.7+
- */
 add_action('plugins_loaded', function() {
-    // Verificar compatibilidad
     $compat_result = GDM_Compat_Check::check();
     
     if (!$compat_result['compatible']) {
@@ -39,31 +32,17 @@ add_action('plugins_loaded', function() {
         return;
     }
 
-    // Declarar compatibilidad HPOS
     GDM_Compat_Check::declare_hpos_compatibility(__FILE__);
-    
-    // ===================================================================
-    // ✅ PASO 1: Cargar clases base PRIMERO (antes de managers)
-    // ===================================================================
     
     // Core básico
     require_once GDM_PLUGIN_DIR . 'includes/core/class-plugin-bootstrap.php';
     require_once GDM_PLUGIN_DIR . 'includes/core/class-custom-post-types.php';
-    
-    // ✅ CRÍTICO: Cargar clases base ANTES de managers
+
     require_once GDM_PLUGIN_DIR . 'includes/admin/modules/class-module-base.php';
     require_once GDM_PLUGIN_DIR . 'includes/admin/scopes/class-scope-base.php';
     
-    // ===================================================================
-    // ✅ PASO 2: Cargar managers (DESPUÉS de las clases base)
-    // ===================================================================
-    
     require_once GDM_PLUGIN_DIR . 'includes/admin/modules/class-module-manager.php';
     require_once GDM_PLUGIN_DIR . 'includes/admin/scopes/class-scope-manager.php';
-    
-    // ===================================================================
-    // ✅ PASO 3: Inicializar managers (esto carga los módulos/scopes)
-    // ===================================================================
     
     GDM_Module_Manager::instance();
     GDM_Scope_Manager::instance();
@@ -72,10 +51,6 @@ add_action('plugins_loaded', function() {
     do_action('gdm_init_modules');
     do_action('gdm_init_scopes');
 
-    // ===================================================================
-    // ✅ PASO 4: Cargar archivos según contexto (admin/frontend)
-    // ===================================================================
-    
     if (is_admin()) {
         // Helpers y paneles
         require_once GDM_PLUGIN_DIR . 'includes/admin/managers/class-admin-helpers.php';
@@ -98,17 +73,13 @@ add_action('plugins_loaded', function() {
     
 }, 10);
 
-/**
- * ✅ FIX CRÍTICO v6.2.4: Cargar traducciones en init (NO antes)
- * Esto evita el warning: "Translation loading triggered too early"
- */
 add_action('init', function() {
     load_plugin_textdomain(
         'product-conditional-content',
         false,
         dirname(plugin_basename(__FILE__)) . '/languages'
     );
-}, 5); // Prioridad 5 para cargar antes que otros componentes que usen traducciones
+}, 5);
 
 /**
  * Cron para programaciones

@@ -40,11 +40,11 @@
 
 function disableAutosaveInterference() {
     // Deshabilitar autosave automático de WordPress
-    if (typeof autosave !== 'undefined') {
-        // Aumentar el intervalo de autosave a 10 minutos
-        autosave.autosaveExtras.autosaveIntents = 600; // 10 minutos en segundos
+    if (typeof wp !== 'undefined' && wp.autosave) {
+        // Deshabilitar temporalmente el autosave
+        wp.autosave.server.suspend();
     }
-    
+
     // Prevenir triggers de autosave por cambios en nuestros campos
     $('#gdm-metabox-toggle, #gdm_programar, #gdm_fecha_inicio, #gdm_fecha_fin, #gdm_habilitar_fecha_fin')
         .off('change.autosave input.autosave')
@@ -630,7 +630,6 @@ function initValidation() {
             }
         }
         
-        // ✅ Para cualquier otro caso, permitir submit normal
         return true;
     });
 }

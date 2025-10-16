@@ -11,10 +11,7 @@ final class GDM_Plugin_Init {
         return self::$instance;
     }
 
-    private function __construct() {
-        // ✅ ELIMINADO: load_textdomain ya se carga en el archivo principal
-        // Esto evita duplicaciones y warnings
-        
+    private function __construct() {        
         // Hooks y filtros globales
         add_filter('gdm_product_has_rules', [$this, 'default_has_rules'], 10, 2);
         add_filter('gdm_product_has_custom_fields', [$this, 'default_has_fields'], 10, 2);
@@ -23,9 +20,6 @@ final class GDM_Plugin_Init {
         add_action('admin_enqueue_scripts', [$this, 'enqueue_shared_styles_admin']);
         add_action('wp_enqueue_scripts', [$this, 'enqueue_shared_styles_frontend']);
     }
-
-    // ✅ MÉTODO ELIMINADO (ya no es necesario)
-    // public function load_textdomain() { ... }
 
     public function default_has_rules($has, $product_id) {
         $rules = get_post_meta($product_id, '_gdm_product_rules', true);

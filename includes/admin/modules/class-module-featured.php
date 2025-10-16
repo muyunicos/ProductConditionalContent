@@ -73,10 +73,10 @@ class GDM_Module_Featured extends GDM_Module_Base {
                     <label>
                         <strong><?php _e('📊 Límite de Productos Destacados:', 'product-conditional-content'); ?></strong>
                     </label>
-                    <input type="number" 
-                           name="gdm_destacado_limite" 
-                           value="<?php echo esc_attr($data['limite']); ?>" 
-                           min="1" 
+                    <input type="number"
+                           name="gdm_destacado_limite"
+                           value="<?php echo esc_attr($data['limite']); ?>"
+                           min="0"
                            max="100"
                            class="small-text">
                     <p class="gdm-field-description">
@@ -84,7 +84,7 @@ class GDM_Module_Featured extends GDM_Module_Base {
                     </p>
                 </div>
             </div>
-            
+
             <hr class="gdm-separator">
             
             <!-- Comportamiento con variaciones -->
@@ -291,6 +291,7 @@ class GDM_Module_Featured extends GDM_Module_Base {
      */
     public function enqueue_assets($hook) {
         $screen = get_current_screen();
+        
         if ($screen->id !== 'gdm_regla') {
             return;
         }

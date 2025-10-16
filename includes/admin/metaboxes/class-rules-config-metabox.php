@@ -190,10 +190,10 @@ public static function save_metabox($post_id, $post) {
             error_log('✅ GDM: Regla guardada exitosamente ID ' . $post_id);
         }
         
-    } catch (Exception $e) {
-        error_log('❌ GDM: Error al guardar regla ID ' . $post_id . ': ' . $e->getMessage());
+        } catch (Exception $e) {
+            error_log('❌ GDM: Error al guardar regla ID ' . $post_id . ': ' . $e->getMessage());
+        }
     }
-}
 }
 
 GDM_Rules_Config_Metabox::init();
