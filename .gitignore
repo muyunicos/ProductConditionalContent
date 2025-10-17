@@ -5,3 +5,7 @@ ProductConditionalContent.zip
 .idea/
 *.local
 .env
+
+# IDE y configuraciones locales
+.vscode/
+.idea/
