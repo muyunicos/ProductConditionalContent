@@ -3,7 +3,7 @@
  * Custom Post Types
  * Compatible con WordPress 6.8.3, PHP 8.2
  * 
- * Configuración correcta del menú sin duplicaciones:
+ * Configuración del menú:
  * - gdm_regla: Menú principal con icono
  * - gdm_opcion: Submenú bajo gdm_regla
  * 
@@ -38,7 +38,7 @@ final class GDM_CPT {
             'public'             => false,
             'show_ui'            => true,
             'show_in_menu'       => true,
-            'menu_position'      => 56, // Después de WooCommerce (55)
+            'menu_position'      => 56,
             'menu_icon'          => 'dashicons-filter',
             'supports'           => ['title'],
             'capability_type'    => 'post',
@@ -74,12 +74,6 @@ final class GDM_CPT {
         ]);
     }
 
-    /**
-     * Arreglar el resaltado del menú cuando se está en gdm_opcion
-     * 
-     * @param string $parent_file Archivo padre actual
-     * @return string Archivo padre corregido
-     */
     public static function fix_menu_highlight($parent_file) {
         global $current_screen;
         

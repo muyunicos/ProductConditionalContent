@@ -28,8 +28,8 @@ final class GDM_Toggle_AJAX_Handler {
             'enabled_status' => 'habilitada',
             'disabled_status' => 'deshabilitada',
             'capability' => 'edit_posts',
-            'before_toggle' => null, // Callback antes de cambiar
-            'after_toggle' => null,  // Callback después de cambiar
+            'before_toggle' => null,
+            'after_toggle' => null,
         ]);
     }
     
