@@ -1,14 +1,15 @@
 <?php
 /**
- * Rules Config Metabox v7.0 - REORGANIZADO
- * Interfaz mejorada para configuración de reglas
+ * Rules Config Metabox v7.0 - CORREGIDO CON FUNCIONALIDAD DINÁMICA
+ * Interfaz reorganizada + carga dinámica de conditions y actions
  * 
- * MEJORAS IMPLEMENTADAS:
- * ✅ Nuevo orden de campos según especificación
- * ✅ Selector de categorías de contenido
- * ✅ Tooltips informativos mejorados
- * ✅ Validación en tiempo real
- * ✅ UI más intuitiva y organizada
+ * INTEGRA:
+ * ✅ Orden de campos según especificación del usuario
+ * ✅ Selector dinámico de categorías de contenido
+ * ✅ Carga automática de CONDITIONS desde includes/admin/conditions/
+ * ✅ Carga automática de ACTIONS desde includes/admin/actions/
+ * ✅ Filtrado por categorías (productos, entradas, páginas)
+ * ✅ Tooltips informativos y validación
  * 
  * @package ProductConditionalContent
  * @since 7.0.0
@@ -31,6 +32,9 @@ class GDM_Rules_Config_Metabox {
         add_action('add_meta_boxes', [$this, 'add_metaboxes']);
         add_action('save_post', [$this, 'save_rule_config'], 10, 2);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
+        
+        // Hook para guardar datos dinámicos
+        add_action('save_post', [$this, 'save_dynamic_modules'], 15, 2);
     }
     
     /**
@@ -45,10 +49,28 @@ class GDM_Rules_Config_Metabox {
             'side',
             'high'
         );
+        
+        add_meta_box(
+            'gdm-conditions-config',
+            __('Ámbitos de Aplicación (Condiciones)', 'product-conditional-content'),
+            [$this, 'render_conditions_metabox'],
+            'gdm_regla',
+            'normal',
+            'high'
+        );
+        
+        add_meta_box(
+            'gdm-actions-config',
+            __('Aplica a (Acciones)', 'product-conditional-content'),
+            [$this, 'render_actions_metabox'],
+            'gdm_regla',
+            'normal',
+            'high'
+        );
     }
     
     /**
-     * Renderizar metabox de configuración
+     * Renderizar metabox de configuración (reorganizado)
      */
     public function render_config_metabox($post) {
         wp_nonce_field('gdm_rule_config_nonce', 'gdm_rule_config_nonce');
@@ -59,12 +81,11 @@ class GDM_Rules_Config_Metabox {
         $is_forced = (bool) get_post_meta($post->ID, '_gdm_regla_forzada', true);
         $is_reusable = (bool) get_post_meta($post->ID, '_gdm_regla_reutilizable', true);
         $content_categories = get_post_meta($post->ID, '_gdm_regla_content_categories', true) ?: ['productos'];
-        $contexts = get_post_meta($post->ID, '_gdm_regla_contextos', true) ?: ['products'];
         
         ?>
         <div class="gdm-rule-config">
             
-            <!-- SECCIÓN 1: CONFIGURACIÓN BÁSICA -->
+            <!-- CONFIGURACIÓN BÁSICA -->
             <div class="gdm-config-section">
                 <h4><?php _e('Configuración', 'product-conditional-content'); ?></h4>
                 
@@ -126,206 +147,46 @@ class GDM_Rules_Config_Metabox {
             
             <hr class="gdm-separator">
             
-            <!-- SECCIÓN 2: ÁMBITOS DE APLICACIÓN -->
+            <!-- CATEGORÍAS DE CONTENIDO -->
             <div class="gdm-config-section">
-                <h4><?php _e('Ámbitos de Aplicación', 'product-conditional-content'); ?></h4>
+                <h4><?php _e('Categorías de Contenido', 'product-conditional-content'); ?></h4>
+                <p class="description"><?php _e('Selecciona los tipos de contenido que se verán afectados por esta regla', 'product-conditional-content'); ?></p>
                 
-                <div class="gdm-field-group">
-                    <label class="gdm-field-label">
-                        <strong><?php _e('Categorías de Contenido', 'product-conditional-content'); ?></strong>
-                        <span class="gdm-tooltip" data-tooltip="<?php esc_attr_e('Selecciona qué tipos de contenido se verán afectados por esta regla.', 'product-conditional-content'); ?>">ℹ️</span>
-                    </label>
-                    
-                    <div class="gdm-content-categories">
-                        <?php $this->render_content_categories($content_categories); ?>
-                    </div>
-                </div>
-                
-                <div class="gdm-field-group" id="gdm-contexts-container">
-                    <label class="gdm-field-label">
-                        <strong><?php _e('Aplica a', 'product-conditional-content'); ?></strong>
-                    </label>
-                    
-                    <div class="gdm-contexts" id="gdm-contexts-list">
-                        <?php $this->render_contexts_by_categories($content_categories, $contexts); ?>
-                    </div>
+                <div class="gdm-content-categories">
+                    <?php $this->render_content_categories($content_categories); ?>
                 </div>
             </div>
             
-            <hr class="gdm-separator">
-            
-            <!-- SECCIÓN 3: INFORMACIÓN ADICIONAL -->
-            <div class="gdm-config-section">
-                <div class="gdm-info-box">
-                    <h4><?php _e('🔍 Vista Previa de Configuración', 'product-conditional-content'); ?></h4>
-                    <div id="gdm-config-preview">
-                        <?php $this->render_config_preview($priority, $is_last, $is_forced, $is_reusable); ?>
-                    </div>
-                </div>
-                
-                <?php if ($is_reusable): ?>
-                <div class="gdm-info-box gdm-shortcode-info">
-                    <h4><?php _e('📋 Shortcode', 'product-conditional-content'); ?></h4>
-                    <code>[gdm_content rule="<?php echo $post->ID; ?>"]</code>
-                    <p class="description"><?php _e('Usa este shortcode para aplicar esta regla en cualquier lugar.', 'product-conditional-content'); ?></p>
-                </div>
-                <?php endif; ?>
+            <?php if ($is_reusable): ?>
+            <div class="gdm-info-box gdm-shortcode-info">
+                <h4><?php _e('📋 Shortcode', 'product-conditional-content'); ?></h4>
+                <code>[gdm_content rule="<?php echo $post->ID; ?>"]</code>
+                <p class="description"><?php _e('Usa este shortcode para aplicar esta regla en cualquier lugar.', 'product-conditional-content'); ?></p>
             </div>
+            <?php endif; ?>
             
         </div>
         
         <style>
-        .gdm-rule-config {
-            font-size: 13px;
-        }
-        
-        .gdm-config-section {
-            margin-bottom: 20px;
-        }
-        
-        .gdm-config-section h4 {
-            margin: 0 0 15px 0;
-            font-size: 14px;
-            color: #1d2327;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 5px;
-        }
-        
-        .gdm-field-group {
-            margin-bottom: 15px;
-        }
-        
-        .gdm-field-label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-        }
-        
-        .gdm-checkbox-label {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-            margin-bottom: 5px;
-        }
-        
-        .gdm-checkbox-label input[type="checkbox"] {
-            margin: 2px 0 0 0;
-        }
-        
-        .gdm-tooltip {
-            cursor: help;
-            font-size: 12px;
-            color: #2271b1;
-            position: relative;
-        }
-        
-        .gdm-tooltip:hover::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #333;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 3px;
-            white-space: nowrap;
-            font-size: 11px;
-            z-index: 1000;
-            max-width: 200px;
-            white-space: normal;
-        }
-        
-        .gdm-separator {
-            border: 0;
-            border-top: 1px solid #ddd;
-            margin: 20px 0;
-        }
-        
-        .gdm-content-categories {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        
-        .gdm-category-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            padding: 5px 10px;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-            background: #f9f9f9;
-            transition: all 0.2s ease;
-        }
-        
-        .gdm-category-item:hover {
-            background: #e6f3ff;
-            border-color: #2271b1;
-        }
-        
-        .gdm-category-item input[type="checkbox"] {
-            margin: 0;
-        }
-        
-        .gdm-contexts {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 10px;
-            padding: 10px;
-            background: #f6f7f7;
-            border-radius: 3px;
-        }
-        
-        .gdm-context-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 12px;
-        }
-        
-        .gdm-context-item input[type="checkbox"] {
-            margin: 0;
-        }
-        
-        .gdm-info-box {
-            padding: 10px;
-            background: #e6f3ff;
-            border-left: 4px solid #2271b1;
-            border-radius: 3px;
-            margin-bottom: 15px;
-        }
-        
-        .gdm-info-box h4 {
-            margin: 0 0 8px 0;
-            border: none;
-            padding: 0;
-        }
-        
-        .gdm-shortcode-info {
-            background: #f0f6fc;
-        }
-        
-        .gdm-shortcode-info code {
-            display: block;
-            padding: 5px;
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-            margin: 5px 0;
-        }
-        
-        #gdm-config-preview {
-            font-size: 11px;
-            color: #666;
-        }
-        
-        .description {
-            font-size: 11px;
-            color: #646970;
-            margin: 3px 0 0 0;
-        }
+        .gdm-rule-config { font-size: 13px; }
+        .gdm-config-section { margin-bottom: 20px; }
+        .gdm-config-section h4 { margin: 0 0 15px 0; font-size: 14px; color: #1d2327; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+        .gdm-field-group { margin-bottom: 15px; }
+        .gdm-field-label { display: block; margin-bottom: 5px; font-weight: 600; }
+        .gdm-checkbox-label { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 5px; }
+        .gdm-checkbox-label input[type="checkbox"] { margin: 2px 0 0 0; }
+        .gdm-tooltip { cursor: help; font-size: 12px; color: #2271b1; position: relative; }
+        .gdm-tooltip:hover::after { content: attr(data-tooltip); position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 5px 10px; border-radius: 3px; white-space: nowrap; font-size: 11px; z-index: 1000; max-width: 200px; white-space: normal; }
+        .gdm-separator { border: 0; border-top: 1px solid #ddd; margin: 20px 0; }
+        .gdm-content-categories { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+        .gdm-category-item { display: flex; align-items: center; gap: 5px; padding: 5px 10px; border: 1px solid #ddd; border-radius: 3px; background: #f9f9f9; transition: all 0.2s ease; }
+        .gdm-category-item:hover { background: #e6f3ff; border-color: #2271b1; }
+        .gdm-category-item input[type="checkbox"] { margin: 0; }
+        .gdm-info-box { padding: 10px; background: #e6f3ff; border-left: 4px solid #2271b1; border-radius: 3px; margin-bottom: 15px; }
+        .gdm-info-box h4 { margin: 0 0 8px 0; border: none; padding: 0; }
+        .gdm-shortcode-info { background: #f0f6fc; }
+        .gdm-shortcode-info code { display: block; padding: 5px; background: #fff; border: 1px solid #ddd; border-radius: 3px; margin: 5px 0; }
+        .description { font-size: 11px; color: #646970; margin: 3px 0 0 0; }
         </style>
         <?php
     }
@@ -368,85 +229,205 @@ class GDM_Rules_Config_Metabox {
     }
     
     /**
-     * Renderizar contextos según categorías seleccionadas
+     * Renderizar metabox de CONDITIONS (dinámico)
      */
-    private function render_contexts_by_categories($selected_categories, $selected_contexts) {
-        $category_contexts = [
-            'productos' => [
-                'products' => __('Páginas de productos individuales', 'product-conditional-content'),
-                'wc_shop' => __('Página de tienda y categorías', 'product-conditional-content'),
-                'wc_cart' => __('Página de carrito', 'product-conditional-content'),
-                'wc_checkout' => __('Página de checkout', 'product-conditional-content'),
-            ],
-            'entradas' => [
-                'posts' => __('Páginas de entradas individuales', 'product-conditional-content'),
-                'archive' => __('Páginas de archivo del blog', 'product-conditional-content'),
-                'category' => __('Páginas de categorías', 'product-conditional-content'),
-                'tag' => __('Páginas de etiquetas', 'product-conditional-content'),
-            ],
-            'páginas' => [
-                'pages' => __('Páginas individuales', 'product-conditional-content'),
-                'front_page' => __('Página de inicio', 'product-conditional-content'),
-                'blog_page' => __('Página del blog', 'product-conditional-content'),
-            ]
-        ];
+    public function render_conditions_metabox($post) {
+        $condition_manager = GDM_Condition_Manager::instance();
+        $conditions = $condition_manager->get_conditions_ordered();
+        $content_categories = get_post_meta($post->ID, '_gdm_regla_content_categories', true) ?: ['productos'];
         
-        foreach ($selected_categories as $category) {
-            if (isset($category_contexts[$category])) {
-                ?>
-                <div class="gdm-category-contexts" data-category="<?php echo esc_attr($category); ?>">
-                    <h5><?php 
-                    switch($category) {
-                        case 'productos': echo '🛍️ ' . __('Productos', 'product-conditional-content'); break;
-                        case 'entradas': echo '📝 ' . __('Entradas', 'product-conditional-content'); break;
-                        case 'páginas': echo '📄 ' . __('Páginas', 'product-conditional-content'); break;
+        ?>
+        <div class="gdm-conditions-wrapper">
+            <div class="gdm-conditions-info">
+                <p><?php _e('Las condiciones determinan <strong>cuándo</strong> se aplicará esta regla. Se filtran automáticamente según las categorías de contenido seleccionadas.', 'product-conditional-content'); ?></p>
+            </div>
+            
+            <div id="gdm-conditions-container">
+                <?php foreach ($conditions as $id => $config): ?>
+                    <?php 
+                    // Filtrar por categoría
+                    if (!$this->condition_supports_categories($id, $content_categories)) {
+                        continue;
                     }
-                    ?></h5>
-                    <?php foreach ($category_contexts[$category] as $context_key => $context_label): ?>
-                        <label class="gdm-context-item">
-                            <input type="checkbox" 
-                                   name="gdm_regla_contextos[]" 
-                                   value="<?php echo esc_attr($context_key); ?>"
-                                   <?php checked(in_array($context_key, $selected_contexts), true); ?>>
-                            <?php echo esc_html($context_label); ?>
-                        </label>
-                    <?php endforeach; ?>
-                </div>
-                <?php
-            }
-        }
+                    
+                    $instance = $condition_manager->get_condition_instance($id);
+                    if (!$instance) {
+                        continue;
+                    }
+                    ?>
+                    
+                    <div class="gdm-condition-module" data-condition="<?php echo esc_attr($id); ?>" data-categories="<?php echo esc_attr(implode(',', $this->get_condition_categories($id))); ?>">
+                        <div class="gdm-module-header">
+                            <h4>
+                                <span class="gdm-module-icon"><?php echo $config['icon']; ?></span>
+                                <?php echo esc_html($config['label']); ?>
+                                <span class="gdm-module-toggle">
+                                    <input type="checkbox" 
+                                           name="gdm_conditions[<?php echo esc_attr($id); ?>][enabled]" 
+                                           value="1"
+                                           class="gdm-condition-toggle">
+                                </span>
+                            </h4>
+                        </div>
+                        
+                        <div class="gdm-module-content" style="display: none;">
+                            <?php 
+                            // Renderizar el módulo condition usando su instancia
+                            $instance->render($post->ID);
+                            ?>
+                        </div>
+                    </div>
+                    
+                <?php endforeach; ?>
+            </div>
+        </div>
+        
+        <style>
+        .gdm-conditions-wrapper { font-size: 13px; }
+        .gdm-conditions-info { margin-bottom: 20px; padding: 15px; background: #f0f6fc; border-left: 4px solid #2271b1; }
+        .gdm-condition-module { margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; background: #fff; }
+        .gdm-module-header { padding: 12px 15px; background: #f9f9f9; border-bottom: 1px solid #eee; cursor: pointer; }
+        .gdm-module-header h4 { margin: 0; display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
+        .gdm-module-icon { margin-right: 8px; }
+        .gdm-module-content { padding: 15px; }
+        .gdm-module-toggle input[type="checkbox"] { margin: 0; }
+        </style>
+        <?php
     }
     
     /**
-     * Renderizar vista previa de configuración
+     * Renderizar metabox de ACTIONS (dinámico)
      */
-    private function render_config_preview($priority, $is_last, $is_forced, $is_reusable) {
+    public function render_actions_metabox($post) {
+        $action_manager = GDM_Action_Manager::instance();
+        $actions = $action_manager->get_actions_ordered();
+        $content_categories = get_post_meta($post->ID, '_gdm_regla_content_categories', true) ?: ['productos'];
+        
         ?>
-        <div id="preview-content">
-            <p><strong><?php _e('Prioridad:', 'product-conditional-content'); ?></strong> 
-               <span id="preview-priority"><?php echo esc_html($priority); ?></span>
-               <small>(<?php echo $priority <= 5 ? __('Alta prioridad', 'product-conditional-content') : 
-                                ($priority <= 15 ? __('Prioridad media', 'product-conditional-content') : 
-                                __('Baja prioridad', 'product-conditional-content')); ?>)</small>
-            </p>
+        <div class="gdm-actions-wrapper">
+            <div class="gdm-actions-info">
+                <p><?php _e('Las acciones determinan <strong>qué</strong> modificar cuando se cumplan las condiciones. Se filtran automáticamente según las categorías de contenido seleccionadas.', 'product-conditional-content'); ?></p>
+            </div>
             
-            <p><strong><?php _e('Comportamiento:', 'product-conditional-content'); ?></strong></p>
-            <ul id="preview-behavior">
-                <?php if ($is_forced): ?>
-                    <li>⚡ <?php _e('Regla forzada - siempre se ejecuta', 'product-conditional-content'); ?></li>
-                <?php endif; ?>
-                <?php if ($is_last): ?>
-                    <li>🛑 <?php _e('Última regla - bloquea reglas posteriores', 'product-conditional-content'); ?></li>
-                <?php endif; ?>
-                <?php if ($is_reusable): ?>
-                    <li>🔄 <?php _e('Reutilizable - disponible como shortcode', 'product-conditional-content'); ?></li>
-                <?php endif; ?>
-                <?php if (!$is_forced && !$is_last && !$is_reusable): ?>
-                    <li>📋 <?php _e('Regla estándar', 'product-conditional-content'); ?></li>
-                <?php endif; ?>
-            </ul>
+            <div id="gdm-actions-container">
+                <?php foreach ($actions as $id => $config): ?>
+                    <?php 
+                    // Filtrar por categoría
+                    if (!$this->action_supports_categories($id, $content_categories)) {
+                        continue;
+                    }
+                    
+                    $instance = $action_manager->get_action_instance($id);
+                    if (!$instance) {
+                        continue;
+                    }
+                    ?>
+                    
+                    <div class="gdm-action-module" data-action="<?php echo esc_attr($id); ?>" data-categories="<?php echo esc_attr(implode(',', $this->get_action_categories($id))); ?>">
+                        <div class="gdm-module-header">
+                            <h4>
+                                <span class="gdm-module-icon"><?php echo $config['icon']; ?></span>
+                                <?php echo esc_html($config['label']); ?>
+                                <span class="gdm-module-toggle">
+                                    <input type="checkbox" 
+                                           name="gdm_actions[<?php echo esc_attr($id); ?>][enabled]" 
+                                           value="1"
+                                           class="gdm-action-toggle">
+                                </span>
+                            </h4>
+                        </div>
+                        
+                        <div class="gdm-module-content" style="display: none;">
+                            <?php 
+                            // Renderizar el módulo action usando su instancia
+                            $instance->render($post->ID);
+                            ?>
+                        </div>
+                    </div>
+                    
+                <?php endforeach; ?>
+            </div>
         </div>
+        
+        <style>
+        .gdm-actions-wrapper { font-size: 13px; }
+        .gdm-actions-info { margin-bottom: 20px; padding: 15px; background: #f0f6fc; border-left: 4px solid #2271b1; }
+        .gdm-action-module { margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; background: #fff; }
+        </style>
         <?php
+    }
+    
+    /**
+     * Verificar si condition soporta las categorías seleccionadas
+     */
+    private function condition_supports_categories($condition_id, $content_categories) {
+        // Mapeo de conditions a categorías
+        $condition_categories = [
+            'productos' => ['productos', 'categorias', 'etiquetas', 'atributos', 'tipos', 'precio', 'stock'],
+            'entradas' => ['titulo', 'categorias', 'etiquetas'],
+            'páginas' => ['titulo']
+        ];
+        
+        foreach ($content_categories as $category) {
+            if (isset($condition_categories[$category]) && in_array($condition_id, $condition_categories[$category])) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Verificar si action soporta las categorías seleccionadas
+     */
+    private function action_supports_categories($action_id, $content_categories) {
+        // Mapeo de actions a categorías
+        $action_categories = [
+            'productos' => ['price', 'description', 'gallery', 'featured', 'title'],
+            'entradas' => ['description', 'featured', 'title'],
+            'páginas' => ['description', 'featured', 'title']
+        ];
+        
+        foreach ($content_categories as $category) {
+            if (isset($action_categories[$category]) && in_array($action_id, $action_categories[$category])) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Obtener categorías soportadas por condition
+     */
+    private function get_condition_categories($condition_id) {
+        $mappings = [
+            'productos' => ['productos'],
+            'categorias' => ['productos', 'entradas'],
+            'etiquetas' => ['productos', 'entradas'],
+            'atributos' => ['productos'],
+            'tipos' => ['productos'],
+            'precio' => ['productos'],
+            'stock' => ['productos'],
+            'titulo' => ['productos', 'entradas', 'páginas']
+        ];
+        
+        return $mappings[$condition_id] ?? [];
+    }
+    
+    /**
+     * Obtener categorías soportadas por action
+     */
+    private function get_action_categories($action_id) {
+        $mappings = [
+            'price' => ['productos'],
+            'description' => ['productos', 'entradas', 'páginas'],
+            'gallery' => ['productos'],
+            'featured' => ['productos', 'entradas', 'páginas'],
+            'title' => ['productos', 'entradas', 'páginas']
+        ];
+        
+        return $mappings[$action_id] ?? [];
     }
     
     /**
@@ -471,12 +452,10 @@ class GDM_Rules_Config_Metabox {
             return;
         }
         
-        // Guardar prioridad
-        $priority = isset($_POST['gdm_regla_prioridad']) ? 
-                   (int) $_POST['gdm_regla_prioridad'] : 10;
+        // Guardar configuración básica
+        $priority = isset($_POST['gdm_regla_prioridad']) ? (int) $_POST['gdm_regla_prioridad'] : 10;
         update_post_meta($post_id, '_gdm_regla_prioridad', $priority);
         
-        // Guardar checkboxes
         update_post_meta($post_id, '_gdm_regla_ultima', !empty($_POST['gdm_regla_ultima']));
         update_post_meta($post_id, '_gdm_regla_forzada', !empty($_POST['gdm_regla_forzada']));
         update_post_meta($post_id, '_gdm_regla_reutilizable', !empty($_POST['gdm_regla_reutilizable']));
@@ -485,11 +464,19 @@ class GDM_Rules_Config_Metabox {
         $content_categories = isset($_POST['gdm_regla_content_categories']) ? 
                              (array) $_POST['gdm_regla_content_categories'] : ['productos'];
         update_post_meta($post_id, '_gdm_regla_content_categories', $content_categories);
+    }
+    
+    /**
+     * Guardar datos de módulos dinámicos (conditions y actions)
+     */
+    public function save_dynamic_modules($post_id, $post) {
+        if ($post->post_type !== 'gdm_regla') {
+            return;
+        }
         
-        // Guardar contextos
-        $contexts = isset($_POST['gdm_regla_contextos']) ? 
-                   (array) $_POST['gdm_regla_contextos'] : ['products'];
-        update_post_meta($post_id, '_gdm_regla_contextos', $contexts);
+        // Usar los managers para guardar
+        do_action('gdm_save_conditions_data', $post_id, $post);
+        do_action('gdm_save_modules_data', $post_id, $post); // Para actions (retrocompatibilidad)
     }
     
     /**
@@ -503,16 +490,16 @@ class GDM_Rules_Config_Metabox {
         }
         
         wp_enqueue_script(
-            'gdm-rule-config',
-            GDM_PLUGIN_URL . 'assets/admin/js/rule-config.js',
+            'gdm-rules-config-dynamic',
+            GDM_PLUGIN_URL . 'assets/admin/js/rules-config-dynamic.js',
             ['jquery'],
             GDM_VERSION,
             true
         );
         
-        wp_localize_script('gdm-rule-config', 'gdm_rule_config', [
+        wp_localize_script('gdm-rules-config-dynamic', 'gdm_rules_config', [
             'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('gdm_rule_config'),
+            'nonce' => wp_create_nonce('gdm_rules_config'),
         ]);
     }
 }
