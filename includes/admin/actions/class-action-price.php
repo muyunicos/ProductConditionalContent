@@ -1,33 +1,27 @@
 <?php
 /**
- * Acción de Precio v7.0 - VERSIÓN REFACTORIZADA
- * Ejemplo de cómo quedará después de aplicar las mejoras de código
- * 
- * MEJORAS IMPLEMENTADAS:
- * ✅ Eliminado eval() - Ahora usa callbacks seguros
- * ✅ Eliminado HTML embebido - Usa Field Renderer
- * ✅ Reducido código duplicado de ~300 líneas a ~150 líneas
- * ✅ Mejorada legibilidad y mantenibilidad
- * ✅ Separación clara de responsabilidades
- * 
+ * Acción de Precio v7.0
+ * Permite modificar el precio de productos con descuentos o adicionales
+ * Compatible con WordPress 6.8.3, PHP 8.2, WooCommerce 10.2.2
+ *
  * @package ProductConditionalContent
  * @since 7.0.0
- * @date 2025-10-17
+ * @date 2025-10-16
  */
 
 if (!defined('ABSPATH')) exit;
 
 class GDM_Action_Price extends GDM_Action_Base {
-    
-    protected $action_id = 'price';
-    protected $action_name = 'Modificador de Precio';
+
+    protected $action_id = 'product-price';
+    protected $action_name = 'Precio de Producto';
     protected $action_icon = '💰';
     protected $action_description = 'Aplica descuentos, incrementos o precios fijos con reglas de redondeo';
     protected $priority = 15;
-    protected $supported_contexts = ['products', 'wc_cart'];
-    
+    protected $supported_contexts = ['products'];
+
     /**
-     * Opciones por defecto
+     * Obtener opciones por defecto
      */
     protected function get_default_options() {
         return [
@@ -39,114 +33,204 @@ class GDM_Action_Price extends GDM_Action_Base {
             'badge_descuento' => false,
         ];
     }
-    
+
     /**
-     * Renderizar opciones - REFACTORIZADO usando Field Renderer
-     * ANTES: 200+ líneas de HTML repetitivo
-     * DESPUÉS: ~50 líneas limpias y reutilizables
+     * Renderizar opciones del módulo
      */
     protected function render_options($rule_id, $options) {
-        // Cargar helper si no está disponible
-        if (!class_exists('GDM_Field_Renderer')) {
-            require_once GDM_PLUGIN_DIR . 'includes/admin/helpers/class-field-renderer.php';
-        }
-        
         ?>
         <div class="gdm-price-options">
-            
-            <?php 
-            // Campo: Tipo de modificación
-            GDM_Field_Renderer::action_field('price', 'tipo', [
-                'type' => 'select',
-                'value' => $options['tipo'],
-                'label' => __('⚙️ Tipo de Modificación', 'product-conditional-content'),
-                'options' => $this->get_tipo_options()
-            ]);
-            
-            // Campo: Valor (dinámico según tipo)
-            $suffix = $this->get_value_suffix($options['tipo']);
-            $label = $this->get_value_label($options['tipo']);
-            
-            GDM_Field_Renderer::action_field('price', 'valor', [
-                'type' => 'number',
-                'value' => $options['valor'],
-                'label' => $label,
-                'min' => 0,
-                'step' => 0.01,
-                'suffix' => $suffix,
-                'description' => $this->get_description_by_type($options['tipo'])
-            ]);
-            
-            // Campo: Aplicar a
-            GDM_Field_Renderer::action_field('price', 'aplicar_a', [
-                'type' => 'select',
-                'value' => $options['aplicar_a'],
-                'label' => __('🎯 Aplicar a', 'product-conditional-content'),
-                'options' => $this->get_aplicar_options()
-            ]);
-            
-            // Campo: Redondeo
-            GDM_Field_Renderer::action_field('price', 'redondeo', [
-                'type' => 'select',
-                'value' => $options['redondeo'],
-                'label' => __('🔢 Redondeo del Precio', 'product-conditional-content'),
-                'options' => $this->get_redondeo_options()
-            ]);
-            ?>
-            
+
+            <!-- Tipo de modificación -->
+            <div class="gdm-field-row">
+                <label class="gdm-field-label">
+                    <strong><?php _e('⚙️ Tipo de Modificación', 'product-conditional-content'); ?></strong>
+                </label>
+                <select name="gdm_actions[price][options][tipo]"
+                        id="gdm_action_price_tipo"
+                        class="gdm-field-control">
+                    <option value="descuento_porcentaje" <?php selected($options['tipo'], 'descuento_porcentaje'); ?>>
+                        <?php _e('Descuento en Porcentaje (%)', 'product-conditional-content'); ?>
+                    </option>
+                    <option value="descuento_fijo" <?php selected($options['tipo'], 'descuento_fijo'); ?>>
+                        <?php _e('Descuento Fijo (monto)', 'product-conditional-content'); ?>
+                    </option>
+                    <option value="adicional_porcentaje" <?php selected($options['tipo'], 'adicional_porcentaje'); ?>>
+                        <?php _e('Adicional en Porcentaje (%)', 'product-conditional-content'); ?>
+                    </option>
+                    <option value="adicional_fijo" <?php selected($options['tipo'], 'adicional_fijo'); ?>>
+                        <?php _e('Adicional Fijo (monto)', 'product-conditional-content'); ?>
+                    </option>
+                    <option value="precio_fijo" <?php selected($options['tipo'], 'precio_fijo'); ?>>
+                        <?php _e('Establecer Precio Fijo', 'product-conditional-content'); ?>
+                    </option>
+                </select>
+            </div>
+
+            <!-- Valor del cambio -->
+            <div class="gdm-field-row">
+                <label class="gdm-field-label">
+                    <strong id="gdm_action_price_valor_label">
+                        <?php
+                        if (strpos($options['tipo'], 'porcentaje') !== false) {
+                            _e('💯 Porcentaje', 'product-conditional-content');
+                        } elseif ($options['tipo'] === 'precio_fijo') {
+                            _e('💵 Precio Fijo', 'product-conditional-content');
+                        } else {
+                            _e('💵 Monto', 'product-conditional-content');
+                        }
+                        ?>
+                    </strong>
+                </label>
+                <div class="gdm-field-with-suffix">
+                    <input type="number"
+                           name="gdm_actions[price][options][valor]"
+                           id="gdm_action_price_valor"
+                           value="<?php echo esc_attr($options['valor']); ?>"
+                           min="0"
+                           step="0.01"
+                           class="gdm-field-control">
+                    <span class="gdm-field-suffix" id="gdm_action_price_simbolo">
+                        <?php echo strpos($options['tipo'], 'porcentaje') !== false ? '%' : get_woocommerce_currency_symbol(); ?>
+                    </span>
+                </div>
+                <p class="gdm-field-help" id="gdm_action_price_descripcion">
+                    <?php echo esc_html($this->get_description_by_type($options['tipo'])); ?>
+                </p>
+            </div>
+
+            <!-- Aplicar a precio regular o de oferta -->
+            <div class="gdm-field-row">
+                <label class="gdm-field-label">
+                    <strong><?php _e('🎯 Aplicar a', 'product-conditional-content'); ?></strong>
+                </label>
+                <select name="gdm_actions[price][options][aplicar_a]" class="gdm-field-control">
+                    <option value="regular" <?php selected($options['aplicar_a'], 'regular'); ?>>
+                        <?php _e('Precio Regular', 'product-conditional-content'); ?>
+                    </option>
+                    <option value="sale" <?php selected($options['aplicar_a'], 'sale'); ?>>
+                        <?php _e('Precio de Oferta (si existe)', 'product-conditional-content'); ?>
+                    </option>
+                    <option value="ambos" <?php selected($options['aplicar_a'], 'ambos'); ?>>
+                        <?php _e('Ambos Precios', 'product-conditional-content'); ?>
+                    </option>
+                    <option value="activo" <?php selected($options['aplicar_a'], 'activo'); ?>>
+                        <?php _e('Precio Activo (el que se muestra)', 'product-conditional-content'); ?>
+                    </option>
+                </select>
+            </div>
+
+            <!-- Redondeo -->
+            <div class="gdm-field-row">
+                <label class="gdm-field-label">
+                    <strong><?php _e('🔢 Redondeo del Precio', 'product-conditional-content'); ?></strong>
+                </label>
+                <select name="gdm_actions[price][options][redondeo]" class="gdm-field-control">
+                    <option value="ninguno" <?php selected($options['redondeo'], 'ninguno'); ?>>
+                        <?php _e('Sin redondeo', 'product-conditional-content'); ?>
+                    </option>
+                    <option value="arriba" <?php selected($options['redondeo'], 'arriba'); ?>>
+                        <?php _e('Redondear hacia arriba', 'product-conditional-content'); ?>
+                    </option>
+                    <option value="abajo" <?php selected($options['redondeo'], 'abajo'); ?>>
+                        <?php _e('Redondear hacia abajo', 'product-conditional-content'); ?>
+                    </option>
+                    <option value="cercano" <?php selected($options['redondeo'], 'cercano'); ?>>
+                        <?php _e('Redondear al más cercano', 'product-conditional-content'); ?>
+                    </option>
+                    <option value="terminacion_99" <?php selected($options['redondeo'], 'terminacion_99'); ?>>
+                        <?php _e('Terminar en .99', 'product-conditional-content'); ?>
+                    </option>
+                    <option value="terminacion_95" <?php selected($options['redondeo'], 'terminacion_95'); ?>>
+                        <?php _e('Terminar en .95', 'product-conditional-content'); ?>
+                    </option>
+                    <option value="terminacion_00" <?php selected($options['redondeo'], 'terminacion_00'); ?>>
+                        <?php _e('Terminar en .00', 'product-conditional-content'); ?>
+                    </option>
+                </select>
+            </div>
+
             <hr class="gdm-field-separator">
-            
-            <?php 
-            // Checkbox: Mostrar precio anterior
-            GDM_Field_Renderer::action_field('price', 'mostrar_antes', [
-                'type' => 'checkbox',
-                'value' => $options['mostrar_antes'],
-                'label' => __('💸 Mostrar precio anterior tachado', 'product-conditional-content'),
-                'description' => __('Muestra el precio original tachado junto al nuevo precio (solo para descuentos)', 'product-conditional-content')
-            ]);
-            
-            // Checkbox: Badge de descuento
-            GDM_Field_Renderer::action_field('price', 'badge_descuento', [
-                'type' => 'checkbox',
-                'value' => $options['badge_descuento'],
-                'label' => __('🏷️ Mostrar badge de descuento', 'product-conditional-content'),
-                'description' => __('Agrega un badge visual con el porcentaje de descuento (ej: "20% OFF")', 'product-conditional-content')
-            ]);
-            ?>
-            
+
+            <!-- Opciones avanzadas -->
+            <div class="gdm-field-row">
+                <label class="gdm-checkbox-label">
+                    <input type="checkbox"
+                           name="gdm_actions[price][options][mostrar_antes]"
+                           value="1"
+                           <?php checked($options['mostrar_antes'], true); ?>>
+                    <strong><?php _e('💸 Mostrar precio anterior tachado', 'product-conditional-content'); ?></strong>
+                </label>
+                <p class="gdm-field-help">
+                    <?php _e('Muestra el precio original tachado junto al nuevo precio (solo para descuentos)', 'product-conditional-content'); ?>
+                </p>
+            </div>
+
+            <div class="gdm-field-row">
+                <label class="gdm-checkbox-label">
+                    <input type="checkbox"
+                           name="gdm_actions[price][options][badge_descuento]"
+                           value="1"
+                           <?php checked($options['badge_descuento'], true); ?>>
+                    <strong><?php _e('🏷️ Mostrar badge de descuento', 'product-conditional-content'); ?></strong>
+                </label>
+                <p class="gdm-field-help">
+                    <?php _e('Agrega un badge visual con el porcentaje de descuento (ej: "20% OFF")', 'product-conditional-content'); ?>
+                </p>
+            </div>
+
             <hr class="gdm-field-separator">
-            
-            <!-- Calculadora de precios (JavaScript) -->
-            <div class="gdm-price-calculator">
-                <h4><?php _e('🧮 Calculadora de Precios', 'product-conditional-content'); ?></h4>
-                
-                <?php 
-                GDM_Field_Renderer::render_field([
-                    'name' => 'calc_precio_original',
-                    'type' => 'number',
-                    'value' => 100.00,
-                    'label' => __('Precio Original:', 'product-conditional-content'),
-                    'step' => 0.01,
-                    'wrapper_class' => 'gdm-calc-input-group'
-                ]);
-                ?>
-                
-                <div class="gdm-calc-result" id="gdm-price-calc-result">
-                    <div class="gdm-calc-nuevo">Precio Nuevo: <span id="calc-nuevo-precio">$100.00</span></div>
-                    <div class="gdm-calc-detalle" id="calc-detalle">Sin modificación aplicada</div>
+
+            <!-- Calculadora de precios -->
+            <div class="gdm-field-row">
+                <label class="gdm-field-label">
+                    <strong><?php _e('🧮 Calculadora de Precios', 'product-conditional-content'); ?></strong>
+                </label>
+                <div class="gdm-price-calculator">
+                    <div class="gdm-calc-input-group">
+                        <label><?php _e('Precio Original:', 'product-conditional-content'); ?></label>
+                        <input type="number"
+                               id="gdm_action_price_calc_original"
+                               value="100.00"
+                               step="0.01"
+                               class="gdm-field-control">
+                    </div>
+                    <button type="button" class="button" id="gdm_action_price_calc_btn">
+                        <span class="dashicons dashicons-calculator"></span>
+                        <?php _e('Calcular', 'product-conditional-content'); ?>
+                    </button>
+                    <div id="gdm_action_price_calc_resultado" class="gdm-calc-result" style="display:none;">
+                        <div class="gdm-calc-nuevo" id="gdm_action_price_calc_nuevo"></div>
+                        <div class="gdm-calc-detalle" id="gdm_action_price_calc_detalle"></div>
+                    </div>
                 </div>
             </div>
-            
+
         </div>
         <?php
     }
-    
+
+    /**
+     * Obtener descripción según tipo
+     */
+    private function get_description_by_type($tipo) {
+        $descriptions = [
+            'descuento_porcentaje' => __('Ejemplo: 20 para aplicar 20% de descuento', 'product-conditional-content'),
+            'descuento_fijo' => __('Ejemplo: 50 para descontar 50 del precio', 'product-conditional-content'),
+            'adicional_porcentaje' => __('Ejemplo: 15 para incrementar el precio en 15%', 'product-conditional-content'),
+            'adicional_fijo' => __('Ejemplo: 30 para agregar 30 al precio', 'product-conditional-content'),
+            'precio_fijo' => __('El precio del producto será exactamente este valor', 'product-conditional-content'),
+        ];
+
+        return $descriptions[$tipo] ?? '';
+    }
+
     /**
      * Sanitizar opciones
      */
     protected function sanitize_options($post_data) {
         $options = isset($post_data['options']) ? $post_data['options'] : [];
-        
+
         return [
             'tipo' => $this->sanitize_text($options['tipo'] ?? 'descuento_porcentaje'),
             'valor' => $this->sanitize_decimal($options['valor'] ?? 0, 0.0),
@@ -156,217 +240,280 @@ class GDM_Action_Price extends GDM_Action_Base {
             'badge_descuento' => !empty($options['badge_descuento']),
         ];
     }
-    
+
     /**
-     * ELIMINADO eval() - Ahora usa callback seguro
-     * ANTES: Generaba string de código PHP inseguro
-     * DESPUÉS: Callback directo y seguro
+     * Generar código ejecutable
      */
-    public function execute_action($object_id, $context = 'products') {
-        $options = $this->get_options();
-        if (!$options || !$this->is_enabled()) {
-            return false;
-        }
-        
-        return $this->calculate_new_price($object_id, $options);
-    }
-    
-    /**
-     * Calcular nuevo precio - Lógica separada para testing
-     */
-    private function calculate_new_price($object_id, $options) {
-        $product = wc_get_product($object_id);
-        if (!$product) {
-            return false;
-        }
-        
-        $precio_original = (float) $product->get_price();
-        $nuevo_precio = $this->apply_price_modification($precio_original, $options);
-        $nuevo_precio = $this->apply_rounding($nuevo_precio, $options['redondeo']);
-        
-        // Asegurar que el precio no sea negativo
-        return max(0, $nuevo_precio);
-    }
-    
-    /**
-     * Aplicar modificación de precio
-     */
-    private function apply_price_modification($precio_original, $options) {
+    protected function generate_execution_code($options) {
         $tipo = $options['tipo'];
         $valor = $options['valor'];
-        
-        switch ($tipo) {
+        $redondeo = $options['redondeo'];
+
+        // Generar código PHP como string para ejecutar dinámicamente
+        $code = "
+        \$product = wc_get_product(\$object_id);
+        if (!\$product) return false;
+
+        \$precio_original = (float) \$product->get_price();
+        \$nuevo_precio = \$precio_original;
+
+        // Aplicar modificación
+        switch ('{$tipo}') {
             case 'descuento_porcentaje':
-                return $precio_original - ($precio_original * $valor / 100);
-                
+                \$nuevo_precio = \$precio_original - (\$precio_original * {$valor} / 100);
+                break;
             case 'descuento_fijo':
-                return $precio_original - $valor;
-                
+                \$nuevo_precio = \$precio_original - {$valor};
+                break;
             case 'adicional_porcentaje':
-                return $precio_original + ($precio_original * $valor / 100);
-                
+                \$nuevo_precio = \$precio_original + (\$precio_original * {$valor} / 100);
+                break;
             case 'adicional_fijo':
-                return $precio_original + $valor;
-                
+                \$nuevo_precio = \$precio_original + {$valor};
+                break;
             case 'precio_fijo':
-                return $valor;
-                
-            default:
-                return $precio_original;
+                \$nuevo_precio = {$valor};
+                break;
         }
-    }
-    
-    /**
-     * Aplicar reglas de redondeo
-     */
-    private function apply_rounding($precio, $redondeo) {
-        switch ($redondeo) {
+
+        // Aplicar redondeo
+        switch ('{$redondeo}') {
             case 'arriba':
-                return ceil($precio);
-                
+                \$nuevo_precio = ceil(\$nuevo_precio);
+                break;
             case 'abajo':
-                return floor($precio);
-                
+                \$nuevo_precio = floor(\$nuevo_precio);
+                break;
             case 'cercano':
-                return round($precio);
-                
+                \$nuevo_precio = round(\$nuevo_precio);
+                break;
             case 'terminacion_99':
-                return floor($precio) + 0.99;
-                
+                \$nuevo_precio = floor(\$nuevo_precio) + 0.99;
+                break;
             case 'terminacion_95':
-                return floor($precio) + 0.95;
-                
+                \$nuevo_precio = floor(\$nuevo_precio) + 0.95;
+                break;
             case 'terminacion_00':
-                return round($precio);
-                
-            default: // ninguno
-                return $precio;
+                \$nuevo_precio = round(\$nuevo_precio);
+                break;
         }
+
+        // Asegurar que el precio no sea negativo
+        \$nuevo_precio = max(0, \$nuevo_precio);
+
+        return \$nuevo_precio;
+        ";
+
+        return $code;
     }
-    
-    // ===== MÉTODOS HELPER PARA OPCIONES =====
-    
-    private function get_tipo_options() {
-        return [
-            'descuento_porcentaje' => __('Descuento en Porcentaje (%)', 'product-conditional-content'),
-            'descuento_fijo' => __('Descuento Fijo (monto)', 'product-conditional-content'),
-            'adicional_porcentaje' => __('Adicional en Porcentaje (%)', 'product-conditional-content'),
-            'adicional_fijo' => __('Adicional Fijo (monto)', 'product-conditional-content'),
-            'precio_fijo' => __('Establecer Precio Fijo', 'product-conditional-content'),
-        ];
-    }
-    
-    private function get_aplicar_options() {
-        return [
-            'regular' => __('Precio Regular', 'product-conditional-content'),
-            'oferta' => __('Precio de Oferta (si existe)', 'product-conditional-content'),
-            'ambos' => __('Ambos Precios', 'product-conditional-content'),
-            'activo' => __('Precio Activo (el que se muestra)', 'product-conditional-content'),
-        ];
-    }
-    
-    private function get_redondeo_options() {
-        return [
-            'ninguno' => __('Sin redondeo', 'product-conditional-content'),
-            'arriba' => __('Redondear hacia arriba', 'product-conditional-content'),
-            'abajo' => __('Redondear hacia abajo', 'product-conditional-content'),
-            'cercano' => __('Redondear al más cercano', 'product-conditional-content'),
-            'terminacion_99' => __('Terminar en .99', 'product-conditional-content'),
-            'terminacion_95' => __('Terminar en .95', 'product-conditional-content'),
-            'terminacion_00' => __('Terminar en .00', 'product-conditional-content'),
-        ];
-    }
-    
-    private function get_value_suffix($tipo) {
-        if (strpos($tipo, 'porcentaje') !== false) {
-            return '%';
-        }
-        return get_woocommerce_currency_symbol();
-    }
-    
-    private function get_value_label($tipo) {
-        if (strpos($tipo, 'porcentaje') !== false) {
-            return __('💯 Porcentaje', 'product-conditional-content');
-        } elseif ($tipo === 'precio_fijo') {
-            return __('💵 Precio Fijo', 'product-conditional-content');
-        }
-        return __('💵 Monto', 'product-conditional-content');
-    }
-    
-    private function get_description_by_type($tipo) {
-        $descriptions = [
-            'descuento_porcentaje' => __('Ejemplo: 20 para aplicar 20% de descuento', 'product-conditional-content'),
-            'descuento_fijo' => __('Ejemplo: 50 para descontar 50 del precio', 'product-conditional-content'),
-            'adicional_porcentaje' => __('Ejemplo: 15 para incrementar el precio en 15%', 'product-conditional-content'),
-            'adicional_fijo' => __('Ejemplo: 30 para agregar 30 al precio', 'product-conditional-content'),
-            'precio_fijo' => __('El precio del producto será exactamente este valor', 'product-conditional-content'),
-        ];
-        
-        return $descriptions[$tipo] ?? '';
-    }
-    
+
     /**
-     * Scripts específicos - Mejorados
+     * Renderizar scripts específicos
      */
     protected function render_scripts() {
         $currency_symbol = get_woocommerce_currency_symbol();
         ?>
         <script>
         jQuery(document).ready(function($) {
-            // Calculadora de precios mejorada
-            function updatePriceCalculator() {
-                const tipo = $('#gdm_action_price_tipo').val();
-                const valor = parseFloat($('#gdm_action_price_valor').val()) || 0;
-                const precioOriginal = parseFloat($('input[name="calc_precio_original"]').val()) || 100;
-                
-                let nuevoPrecio = precioOriginal;
-                let detalle = 'Sin modificación';
-                
-                switch (tipo) {
+            // Actualizar labels y símbolos según tipo
+            $('#gdm_action_price_tipo').on('change', function() {
+                var tipo = $(this).val();
+                var esPorcentaje = tipo.indexOf('porcentaje') !== -1;
+                var esFijo = tipo === 'precio_fijo';
+
+                // Actualizar símbolo
+                if (esPorcentaje) {
+                    $('#gdm_action_price_simbolo').text('%');
+                    $('#gdm_action_price_valor_label').text('💯 Porcentaje');
+                } else if (esFijo) {
+                    $('#gdm_action_price_simbolo').text('<?php echo $currency_symbol; ?>');
+                    $('#gdm_action_price_valor_label').text('💵 Precio Fijo');
+                } else {
+                    $('#gdm_action_price_simbolo').text('<?php echo $currency_symbol; ?>');
+                    $('#gdm_action_price_valor_label').text('💵 Monto');
+                }
+
+                // Actualizar descripción
+                var descripciones = {
+                    'descuento_porcentaje': <?php echo json_encode(__('Ejemplo: 20 para aplicar 20% de descuento', 'product-conditional-content')); ?>,
+                    'descuento_fijo': <?php echo json_encode(__('Ejemplo: 50 para descontar 50 del precio', 'product-conditional-content')); ?>,
+                    'adicional_porcentaje': <?php echo json_encode(__('Ejemplo: 15 para incrementar el precio en 15%', 'product-conditional-content')); ?>,
+                    'adicional_fijo': <?php echo json_encode(__('Ejemplo: 30 para agregar 30 al precio', 'product-conditional-content')); ?>,
+                    'precio_fijo': <?php echo json_encode(__('El precio del producto será exactamente este valor', 'product-conditional-content')); ?>
+                };
+
+                $('#gdm_action_price_descripcion').text(descripciones[tipo] || '');
+            });
+
+            // Calculadora
+            $('#gdm_action_price_calc_btn').on('click', function() {
+                var original = parseFloat($('#gdm_action_price_calc_original').val()) || 100;
+                var tipo = $('#gdm_action_price_tipo').val();
+                var valor = parseFloat($('#gdm_action_price_valor').val()) || 0;
+                var redondeo = $('[name="gdm_actions[price][options][redondeo]"]').val();
+                var nuevo = original;
+                var detalle = '';
+
+                // Calcular nuevo precio
+                switch(tipo) {
                     case 'descuento_porcentaje':
-                        nuevoPrecio = precioOriginal - (precioOriginal * valor / 100);
-                        detalle = `Descuento de ${valor}%`;
+                        nuevo = original - (original * valor / 100);
+                        detalle = original + ' - ' + valor + '% = ';
                         break;
                     case 'descuento_fijo':
-                        nuevoPrecio = precioOriginal - valor;
-                        detalle = `Descuento fijo de <?php echo $currency_symbol; ?>${valor}`;
+                        nuevo = original - valor;
+                        detalle = original + ' - ' + valor + ' = ';
                         break;
                     case 'adicional_porcentaje':
-                        nuevoPrecio = precioOriginal + (precioOriginal * valor / 100);
-                        detalle = `Incremento de ${valor}%`;
+                        nuevo = original + (original * valor / 100);
+                        detalle = original + ' + ' + valor + '% = ';
                         break;
                     case 'adicional_fijo':
-                        nuevoPrecio = precioOriginal + valor;
-                        detalle = `Incremento fijo de <?php echo $currency_symbol; ?>${valor}`;
+                        nuevo = original + valor;
+                        detalle = original + ' + ' + valor + ' = ';
                         break;
                     case 'precio_fijo':
-                        nuevoPrecio = valor;
-                        detalle = 'Precio fijo establecido';
+                        nuevo = valor;
+                        detalle = <?php echo json_encode(__('Precio fijo: ', 'product-conditional-content')); ?>;
                         break;
                 }
-                
-                $('#calc-nuevo-precio').text('<?php echo $currency_symbol; ?>' + nuevoPrecio.toFixed(2));
-                $('#calc-detalle').text(detalle);
-            }
-            
-            // Event listeners
-            $('#gdm_action_price_tipo, #gdm_action_price_valor, input[name="calc_precio_original"]')
-                .on('change input', updatePriceCalculator);
-            
-            // Inicializar
-            updatePriceCalculator();
+
+                // Aplicar redondeo
+                switch(redondeo) {
+                    case 'arriba':
+                        nuevo = Math.ceil(nuevo);
+                        break;
+                    case 'abajo':
+                        nuevo = Math.floor(nuevo);
+                        break;
+                    case 'cercano':
+                        nuevo = Math.round(nuevo);
+                        break;
+                    case 'terminacion_99':
+                        nuevo = Math.floor(nuevo) + 0.99;
+                        break;
+                    case 'terminacion_95':
+                        nuevo = Math.floor(nuevo) + 0.95;
+                        break;
+                    case 'terminacion_00':
+                        nuevo = Math.round(nuevo);
+                        break;
+                }
+
+                // Asegurar no negativo
+                nuevo = Math.max(0, nuevo);
+
+                // Mostrar resultado
+                $('#gdm_action_price_calc_nuevo').text('<?php echo $currency_symbol; ?>' + nuevo.toFixed(2));
+                $('#gdm_action_price_calc_detalle').text(detalle + nuevo.toFixed(2));
+                $('#gdm_action_price_calc_resultado').slideDown();
+            });
+
+            // Auto-calcular al cambiar valores
+            $('#gdm_action_price_tipo, #gdm_action_price_valor, [name="gdm_actions[price][options][redondeo]"]').on('change', function() {
+                if ($('#gdm_action_price_calc_resultado').is(':visible')) {
+                    $('#gdm_action_price_calc_btn').click();
+                }
+            });
         });
         </script>
         <?php
     }
-    
+
     /**
-     * COMPATIBILIDAD CON VERSIÓN ANTERIOR
-     * Mantener método generate_execution_code para evitar errores
-     * Pero ahora devuelve callback en lugar de eval string
+     * Renderizar estilos específicos
      */
-    protected function generate_execution_code($options) {
-        // En lugar de eval, ahora usamos callback directo
-        return 'return $this->execute_action($object_id, $context);';
+    protected function render_styles() {
+        ?>
+        <style>
+            .gdm-price-options .gdm-field-row {
+                margin-bottom: 20px;
+            }
+
+            .gdm-price-options .gdm-field-label {
+                display: block;
+                margin-bottom: 8px;
+            }
+
+            .gdm-price-options .gdm-field-control {
+                width: 100%;
+                max-width: 400px;
+            }
+
+            .gdm-price-options .gdm-field-with-suffix {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .gdm-price-options .gdm-field-suffix {
+                font-weight: 600;
+                color: #2271b1;
+                min-width: 30px;
+            }
+
+            .gdm-price-options .gdm-field-help {
+                margin: 5px 0 0;
+                color: #666;
+                font-size: 13px;
+            }
+
+            .gdm-price-options .gdm-field-separator {
+                margin: 20px 0;
+                border: 0;
+                border-top: 1px solid #ddd;
+            }
+
+            .gdm-price-options .gdm-checkbox-label {
+                display: flex;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .gdm-price-calculator {
+                padding: 15px;
+                background: #f9f9f9;
+                border-left: 4px solid #2271b1;
+                border-radius: 3px;
+            }
+
+            .gdm-price-calculator .gdm-calc-input-group {
+                margin-bottom: 10px;
+            }
+
+            .gdm-price-calculator .gdm-calc-input-group label {
+                display: block;
+                margin-bottom: 5px;
+                color: #666;
+                font-size: 12px;
+            }
+
+            .gdm-price-calculator .gdm-calc-result {
+                margin-top: 15px;
+                padding: 10px;
+                background: #fff;
+                border: 1px solid #ddd;
+                border-radius: 3px;
+            }
+
+            .gdm-price-calculator .gdm-calc-nuevo {
+                font-weight: 600;
+                color: #2271b1;
+                font-size: 18px;
+            }
+
+            .gdm-price-calculator .gdm-calc-detalle {
+                color: #666;
+                font-size: 12px;
+                margin-top: 5px;
+            }
+        </style>
+        <?php
     }
+}
+public function get_supported_context() {
+    return $this->$supported_contexts ?? [];
+}
+public function supports_context($context) {
+    return in_array($context, $this->get_supported_categories());
 }

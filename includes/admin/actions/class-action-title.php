@@ -13,12 +13,12 @@ if (!defined('ABSPATH')) exit;
 
 class GDM_Action_Title extends GDM_Action_Base {
 
-    protected $action_id = 'title';
-    protected $action_name = 'Título';
+    protected $action_id = 'product-title';
+    protected $action_name = 'Título de Producto';
     protected $action_icon = '📝';
     protected $action_description = 'Modifica el título del producto';
     protected $priority = 5;
-    protected $supported_contexts = ['products', 'posts'];
+    protected $supported_contexts = ['products'];
 
     protected function get_default_options() {
         return [
@@ -95,4 +95,10 @@ class GDM_Action_Title extends GDM_Action_Base {
         }
         return false;";
     }
+}
+public function get_supported_context() {
+    return $this->$supported_contexts ?? [];
+}
+public function supports_context($context) {
+    return in_array($context, $this->get_supported_categories());
 }

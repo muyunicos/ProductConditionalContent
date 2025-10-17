@@ -13,12 +13,12 @@ if (!defined('ABSPATH')) exit;
 
 class GDM_Action_Description extends GDM_Action_Base {
 
-    protected $action_id = 'description';
-    protected $action_name = 'Descripción';
+    protected $action_id = 'product-description';
+    protected $action_name = 'Descripción de Producto';
     protected $action_icon = '📝';
     protected $action_description = 'Modifica la descripción del producto';
     protected $priority = 10;
-    protected $supported_contexts = ['products', 'posts'];
+    protected $supported_contexts = ['products'];
 
     protected function get_default_options() {
         return [
@@ -98,4 +98,10 @@ class GDM_Action_Description extends GDM_Action_Base {
         }
         return false;";
     }
+}
+public function get_supported_context() {
+    return $this->$supported_contexts ?? [];
+}
+public function supports_context($context) {
+    return in_array($context, $this->get_supported_categories());
 }

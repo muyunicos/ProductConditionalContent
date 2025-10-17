@@ -13,10 +13,12 @@ if (!defined('ABSPATH')) exit;
 
 class GDM_Condition_Title extends GDM_Condition_Base {
     
-    protected $condition_id = 'titulo';
+    protected $condition_id = 'product-title';
     protected $condition_name = 'Filtro por Título';
+    protected $condition_description = 'Filtra productos por contenido en el título';
     protected $condition_icon = '📝';
     protected $priority = 70;
+    protected $supported_contexts = ['products'];
     
     protected function render_content($post_id, $data) {
         ?>

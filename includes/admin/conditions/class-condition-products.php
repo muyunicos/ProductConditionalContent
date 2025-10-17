@@ -13,10 +13,12 @@ if (!defined('ABSPATH')) exit;
 
 class GDM_Condition_Products extends GDM_Condition_Base {
     
-    protected $condition_id = 'productos';
+    protected $condition_id = 'products';
     protected $condition_name = 'Productos Específicos';
+    protected $condition_description = 'La regla solo se aplica a productos específicos';
     protected $condition_icon = '🛍️';
     protected $priority = 30;
+    protected $supported_contexts = ['products'];
     
     protected function condition_init() {
         add_action('wp_ajax_gdm_search_products', [$this, 'ajax_search_products']);
@@ -239,4 +241,10 @@ class GDM_Condition_Products extends GDM_Condition_Base {
         </script>
         <?php
     }
+}
+public function get_supported_context() {
+    return $this->$supported_contexts ?? [];
+}
+public function supports_context($context) {
+    return in_array($context, $this->get_supported_categories());
 }

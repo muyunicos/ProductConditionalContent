@@ -13,10 +13,12 @@ if (!defined('ABSPATH')) exit;
 
 class GDM_Condition_Attributes extends GDM_Condition_Base {
     
-    protected $condition_id = 'atributos';
+    protected $condition_id = 'product-atribute';
     protected $condition_name = 'Atributos de Productos';
+    protected $condition_description = 'Filtra según atributos de productos';
     protected $condition_icon = '🎨';
     protected $priority = 40;
+    protected $supported_contexts = ['products'];
     
     protected function render_content($post_id, $data) {
         $product_attributes = wc_get_attribute_taxonomies();
@@ -194,4 +196,10 @@ class GDM_Condition_Attributes extends GDM_Condition_Base {
         </script>
         <?php
     }
+}
+public function get_supported_context() {
+    return $this->$supported_contexts ?? [];
+}
+public function supports_context($context) {
+    return in_array($context, $this->get_supported_categories());
 }

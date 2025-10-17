@@ -13,10 +13,12 @@ if (!defined('ABSPATH')) exit;
 
 class GDM_Condition_Tags extends GDM_Condition_Base {
     
-    protected $condition_id = 'tags';
+    protected $condition_id = 'product-tags';
     protected $condition_name = 'Etiquetas Determinadas';
+    protected $condition_description = 'Filtra según tags de productos';
     protected $condition_icon = '🏷️';
     protected $priority = 20;
+    protected $supported_contexts = ['products'];
     
     protected function render_content($post_id, $data) {
         ?>
@@ -148,4 +150,10 @@ class GDM_Condition_Tags extends GDM_Condition_Base {
         </script>
         <?php
     }
+}
+public function get_supported_context() {
+    return $this->$supported_contexts ?? [];
+}
+public function supports_context($context) {
+    return in_array($context, $this->get_supported_categories());
 }

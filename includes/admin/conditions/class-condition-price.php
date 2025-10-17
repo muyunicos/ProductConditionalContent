@@ -13,10 +13,12 @@ if (!defined('ABSPATH')) exit;
 
 class GDM_Condition_Price extends GDM_Condition_Base {
     
-    protected $condition_id = 'precio';
+    protected $condition_id = 'prodcut-price';
     protected $condition_name = 'Rango de Precio';
+    protected $condition_description = 'Filtra según el precio de un producto';
     protected $condition_icon = '💵';
     protected $priority = 60;
+    protected $supported_contexts = ['products'];
     
     /**
      * ✅ NUEVO: Obtener configuración de moneda de WooCommerce
@@ -428,4 +430,10 @@ class GDM_Condition_Price extends GDM_Condition_Base {
         </script>
         <?php
     }
+}
+public function get_supported_context() {
+    return $this->$supported_contexts ?? [];
+}
+public function supports_context($context) {
+    return in_array($context, $this->get_supported_categories());
 }

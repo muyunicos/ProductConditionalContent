@@ -10,10 +10,7 @@
  * @date 2025-10-15
  */
 
-// Si no se llama desde WordPress, salir
-if (!defined('WP_UNINSTALL_PLUGIN')) {
-    exit;
-}
+if (!defined('WP_UNINSTALL_PLUGIN')) {exit;}
 
 /**
  * Eliminar Custom Post Types

@@ -13,10 +13,12 @@ if (!defined('ABSPATH')) exit;
 
 class GDM_Condition_Stock extends GDM_Condition_Base {
     
-    protected $condition_id = 'stock';
+    protected $condition_id = 'product-stock';
     protected $condition_name = 'Estado de Stock';
+    protected $condition_description = 'Filtra según el estado de stock de un producto';
     protected $condition_icon = '📦';
     protected $priority = 50;
+    protected $supported_contexts = ['products'];
     
     protected function render_content($post_id, $data) {
         ?>
@@ -151,4 +153,10 @@ class GDM_Condition_Stock extends GDM_Condition_Base {
         </script>
         <?php
     }
+}
+public function get_supported_context() {
+    return $this->$supported_contexts ?? [];
+}
+public function supports_context($context) {
+    return in_array($context, $this->get_supported_categories());
 }

@@ -13,10 +13,12 @@ if (!defined('ABSPATH')) exit;
 
 class GDM_Condition_Categories extends GDM_Condition_Base {
     
-    protected $condition_id = 'categorias';
+    protected $condition_id = 'product-categories';
     protected $condition_name = 'Categorías Determinadas';
+    protected $condition_description = 'Filtra según categoria de productos';
     protected $condition_icon = '📂';
     protected $priority = 10;
+    protected $supported_contexts = ['products'];
     
     protected function render_content($post_id, $data) {
         ?>
@@ -152,4 +154,10 @@ class GDM_Condition_Categories extends GDM_Condition_Base {
         </script>
         <?php
     }
+}
+public function get_supported_context() {
+    return $this->$supported_contexts ?? [];
+}
+public function supports_context($context) {
+    return in_array($context, $this->get_supported_categories());
 }

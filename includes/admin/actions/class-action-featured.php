@@ -13,8 +13,8 @@ if (!defined('ABSPATH')) exit;
 
 class GDM_Action_Featured extends GDM_Action_Base {
 
-    protected $action_id = 'featured';
-    protected $action_name = 'Destacado';
+    protected $action_id = 'featured-product';
+    protected $action_name = 'Producto Destacado';
     protected $action_icon = '⭐';
     protected $action_description = 'Marca o desmarca productos como destacados';
     protected $priority = 30;
@@ -81,4 +81,10 @@ class GDM_Action_Featured extends GDM_Action_Base {
         }
         return false;";
     }
+}
+public function get_supported_context() {
+    return $this->$supported_contexts ?? [];
+}
+public function supports_context($context) {
+    return in_array($context, $this->get_supported_categories());
 }

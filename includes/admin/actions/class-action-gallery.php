@@ -13,8 +13,8 @@ if (!defined('ABSPATH')) exit;
 
 class GDM_Action_Gallery extends GDM_Action_Base {
 
-    protected $action_id = 'gallery';
-    protected $action_name = 'Galería';
+    protected $action_id = 'product-gallery';
+    protected $action_name = 'Galería de Producto';
     protected $action_icon = '🖼️';
     protected $action_description = 'Modifica la galería de imágenes del producto';
     protected $priority = 20;
@@ -105,4 +105,10 @@ class GDM_Action_Gallery extends GDM_Action_Base {
         }
         return false;";
     }
+}
+public function get_supported_context() {
+    return $this->$supported_contexts ?? [];
+}
+public function supports_context($context) {
+    return in_array($context, $this->get_supported_categories());
 }
