@@ -1,12 +1,7 @@
 <?php
 /**
- * Funciones Helper para Admin v6.2.3 MEJORADO
+ * Funciones Helper para Admin
  * Compatible con WordPress 6.8.3, PHP 8.2, WooCommerce 10.2.2
- * 
- * MEJORAS v6.2.3:
- * - Método validate_metabox_save() centralizado
- * - Debug configurable vía WP_DEBUG
- * - Sanitización mejorada
  * 
  * @package ProductConditionalContent
  * @since 6.2.3

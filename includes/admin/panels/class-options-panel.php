@@ -1,6 +1,6 @@
 <?php
 /**
- * Gestión de campos personalizados en productos (Admin)
+ * Gestión de campos personalizados (Admin)
  * Compatible con WordPress 6.8.3, PHP 8.2, WooCommerce 10.2.2
  * 
  * @package ProductConditionalContent

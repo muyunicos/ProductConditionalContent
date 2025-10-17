@@ -1,11 +1,11 @@
 <?php
 /**
- * Plugin Name: Reglas de Contenido para WooCommerce
- * Description: Motor de reglas y campos personalizables para productos WooCommerce
- * Version: 6.2.4
+ * Plugin Name: Reglas Avanzadas para WordPress
+ * Description: Motor de reglas y campos personalizados para WordPress y WooCommerce
+ * Version: 0.0.1
  * Author: MuyUnicos
  * Author URI: https://muyunicos.com
- * Text Domain: product-conditional-content
+ * Text Domain: wp-advanced-rules
  * Domain Path: /languages
  * Requires at least: 6.0
  * Requires PHP: 8.0
@@ -17,7 +17,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-define('GDM_VERSION', '6.2.4');
+define('GDM_VERSION', '0.0.1');
 define('GDM_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('GDM_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('GDM_PLUGIN_FILE', __FILE__);
@@ -57,8 +57,8 @@ add_action('plugins_loaded', function() {
     if (is_admin()) {
         // Helpers y paneles
         require_once GDM_PLUGIN_DIR . 'includes/admin/managers/class-admin-helpers.php';
-        require_once GDM_PLUGIN_DIR . 'includes/admin/panels/class-options-panel.php';
-        require_once GDM_PLUGIN_DIR . 'includes/admin/panels/class-rules-panel.php';
+        require_once GDM_PLUGIN_DIR . 'includes/admin/product-panels/class-product-options-panel.php';
+        require_once GDM_PLUGIN_DIR . 'includes/admin/product-panels/class-product-rules-panel.php';
         
         // Metaboxes
         require_once GDM_PLUGIN_DIR . 'includes/admin/metaboxes/class-rules-config-metabox.php';
